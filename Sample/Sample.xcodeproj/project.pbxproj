@@ -7,72 +7,72 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5CDD94FD29732CF7005EAF2A /* SwiftAutoGUI_SampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CDD94FC29732CF7005EAF2A /* SwiftAutoGUI_SampleApp.swift */; };
-		5CDD94FF29732CF7005EAF2A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CDD94FE29732CF7005EAF2A /* ContentView.swift */; };
-		5CDD950129732CF7005EAF2A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5CDD950029732CF7005EAF2A /* Assets.xcassets */; };
-		5CDD950429732CF7005EAF2A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5CDD950329732CF7005EAF2A /* Preview Assets.xcassets */; };
-		5CDD950D29732D17005EAF2A /* SwiftAutoGUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5CDD950C29732D17005EAF2A /* SwiftAutoGUI */; };
+		5C3CE0222973398300D9CE50 /* SampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C3CE0212973398300D9CE50 /* SampleApp.swift */; };
+		5C3CE0242973398300D9CE50 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C3CE0232973398300D9CE50 /* ContentView.swift */; };
+		5C3CE0262973398400D9CE50 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0252973398400D9CE50 /* Assets.xcassets */; };
+		5C3CE0292973398400D9CE50 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */; };
+		5C3CE032297339AA00D9CE50 /* SwiftAutoGUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		5CDD94F929732CF7005EAF2A /* SwiftAutoGUI-Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "SwiftAutoGUI-Sample.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5CDD94FC29732CF7005EAF2A /* SwiftAutoGUI_SampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftAutoGUI_SampleApp.swift; sourceTree = "<group>"; };
-		5CDD94FE29732CF7005EAF2A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		5CDD950029732CF7005EAF2A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		5CDD950329732CF7005EAF2A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		5CDD950529732CF7005EAF2A /* SwiftAutoGUI_Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftAutoGUI_Sample.entitlements; sourceTree = "<group>"; };
+		5C3CE01E2973398300D9CE50 /* Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C3CE0212973398300D9CE50 /* SampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleApp.swift; sourceTree = "<group>"; };
+		5C3CE0232973398300D9CE50 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5C3CE0252973398400D9CE50 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		5C3CE02A2973398400D9CE50 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5CDD94F629732CF7005EAF2A /* Frameworks */ = {
+		5C3CE01B2973398300D9CE50 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5CDD950D29732D17005EAF2A /* SwiftAutoGUI in Frameworks */,
+				5C3CE032297339AA00D9CE50 /* SwiftAutoGUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		5CDD94F029732CF7005EAF2A = {
+		5C3CE0152973398300D9CE50 = {
 			isa = PBXGroup;
 			children = (
-				5CDD94FB29732CF7005EAF2A /* SwiftAutoGUI-Sample */,
-				5CDD94FA29732CF7005EAF2A /* Products */,
-				5CDD950B29732D17005EAF2A /* Frameworks */,
+				5C3CE0202973398300D9CE50 /* Sample */,
+				5C3CE01F2973398300D9CE50 /* Products */,
+				5C3CE030297339AA00D9CE50 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
-		5CDD94FA29732CF7005EAF2A /* Products */ = {
+		5C3CE01F2973398300D9CE50 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5CDD94F929732CF7005EAF2A /* SwiftAutoGUI-Sample.app */,
+				5C3CE01E2973398300D9CE50 /* Sample.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		5CDD94FB29732CF7005EAF2A /* SwiftAutoGUI-Sample */ = {
+		5C3CE0202973398300D9CE50 /* Sample */ = {
 			isa = PBXGroup;
 			children = (
-				5CDD94FC29732CF7005EAF2A /* SwiftAutoGUI_SampleApp.swift */,
-				5CDD94FE29732CF7005EAF2A /* ContentView.swift */,
-				5CDD950029732CF7005EAF2A /* Assets.xcassets */,
-				5CDD950529732CF7005EAF2A /* SwiftAutoGUI_Sample.entitlements */,
-				5CDD950229732CF7005EAF2A /* Preview Content */,
+				5C3CE0212973398300D9CE50 /* SampleApp.swift */,
+				5C3CE0232973398300D9CE50 /* ContentView.swift */,
+				5C3CE0252973398400D9CE50 /* Assets.xcassets */,
+				5C3CE02A2973398400D9CE50 /* Sample.entitlements */,
+				5C3CE0272973398400D9CE50 /* Preview Content */,
 			);
-			path = "SwiftAutoGUI-Sample";
+			path = Sample;
 			sourceTree = "<group>";
 		};
-		5CDD950229732CF7005EAF2A /* Preview Content */ = {
+		5C3CE0272973398400D9CE50 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
-				5CDD950329732CF7005EAF2A /* Preview Assets.xcassets */,
+				5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		5CDD950B29732D17005EAF2A /* Frameworks */ = {
+		5C3CE030297339AA00D9CE50 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -82,42 +82,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5CDD94F829732CF7005EAF2A /* SwiftAutoGUI-Sample */ = {
+		5C3CE01D2973398300D9CE50 /* Sample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5CDD950829732CF7005EAF2A /* Build configuration list for PBXNativeTarget "SwiftAutoGUI-Sample" */;
+			buildConfigurationList = 5C3CE02D2973398400D9CE50 /* Build configuration list for PBXNativeTarget "Sample" */;
 			buildPhases = (
-				5CDD94F529732CF7005EAF2A /* Sources */,
-				5CDD94F629732CF7005EAF2A /* Frameworks */,
-				5CDD94F729732CF7005EAF2A /* Resources */,
+				5C3CE01A2973398300D9CE50 /* Sources */,
+				5C3CE01B2973398300D9CE50 /* Frameworks */,
+				5C3CE01C2973398300D9CE50 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = "SwiftAutoGUI-Sample";
+			name = Sample;
 			packageProductDependencies = (
-				5CDD950C29732D17005EAF2A /* SwiftAutoGUI */,
+				5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */,
 			);
-			productName = "SwiftAutoGUI-Sample";
-			productReference = 5CDD94F929732CF7005EAF2A /* SwiftAutoGUI-Sample.app */;
+			productName = Sample;
+			productReference = 5C3CE01E2973398300D9CE50 /* Sample.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		5CDD94F129732CF7005EAF2A /* Project object */ = {
+		5C3CE0162973398300D9CE50 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1410;
 				LastUpgradeCheck = 1410;
 				TargetAttributes = {
-					5CDD94F829732CF7005EAF2A = {
+					5C3CE01D2973398300D9CE50 = {
 						CreatedOnToolsVersion = 14.1;
 					};
 				};
 			};
-			buildConfigurationList = 5CDD94F429732CF7005EAF2A /* Build configuration list for PBXProject "SwiftAutoGUI-Sample" */;
+			buildConfigurationList = 5C3CE0192973398300D9CE50 /* Build configuration list for PBXProject "Sample" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -125,42 +125,42 @@
 				en,
 				Base,
 			);
-			mainGroup = 5CDD94F029732CF7005EAF2A;
-			productRefGroup = 5CDD94FA29732CF7005EAF2A /* Products */;
+			mainGroup = 5C3CE0152973398300D9CE50;
+			productRefGroup = 5C3CE01F2973398300D9CE50 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5CDD94F829732CF7005EAF2A /* SwiftAutoGUI-Sample */,
+				5C3CE01D2973398300D9CE50 /* Sample */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		5CDD94F729732CF7005EAF2A /* Resources */ = {
+		5C3CE01C2973398300D9CE50 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5CDD950429732CF7005EAF2A /* Preview Assets.xcassets in Resources */,
-				5CDD950129732CF7005EAF2A /* Assets.xcassets in Resources */,
+				5C3CE0292973398400D9CE50 /* Preview Assets.xcassets in Resources */,
+				5C3CE0262973398400D9CE50 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		5CDD94F529732CF7005EAF2A /* Sources */ = {
+		5C3CE01A2973398300D9CE50 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5CDD94FF29732CF7005EAF2A /* ContentView.swift in Sources */,
-				5CDD94FD29732CF7005EAF2A /* SwiftAutoGUI_SampleApp.swift in Sources */,
+				5C3CE0242973398300D9CE50 /* ContentView.swift in Sources */,
+				5C3CE0222973398300D9CE50 /* SampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		5CDD950629732CF7005EAF2A /* Debug */ = {
+		5C3CE02B2973398400D9CE50 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -220,7 +220,7 @@
 			};
 			name = Debug;
 		};
-		5CDD950729732CF7005EAF2A /* Release */ = {
+		5C3CE02C2973398400D9CE50 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -273,16 +273,16 @@
 			};
 			name = Release;
 		};
-		5CDD950929732CF7005EAF2A /* Debug */ = {
+		5C3CE02E2973398400D9CE50 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "SwiftAutoGUI-Sample/SwiftAutoGUI_Sample.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Sample/Sample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SwiftAutoGUI-Sample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Sample/Preview Content\"";
 				DEVELOPMENT_TEAM = 7ZJJ7KR6WA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -293,23 +293,23 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.me.n.rei.SwiftAutoGUI-Sample";
+				PRODUCT_BUNDLE_IDENTIFIER = com.me.n.rei.Sample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
-		5CDD950A29732CF7005EAF2A /* Release */ = {
+		5C3CE02F2973398400D9CE50 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "SwiftAutoGUI-Sample/SwiftAutoGUI_Sample.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Sample/Sample.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SwiftAutoGUI-Sample/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Sample/Preview Content\"";
 				DEVELOPMENT_TEAM = 7ZJJ7KR6WA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -320,7 +320,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.me.n.rei.SwiftAutoGUI-Sample";
+				PRODUCT_BUNDLE_IDENTIFIER = com.me.n.rei.Sample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -330,20 +330,20 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5CDD94F429732CF7005EAF2A /* Build configuration list for PBXProject "SwiftAutoGUI-Sample" */ = {
+		5C3CE0192973398300D9CE50 /* Build configuration list for PBXProject "Sample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5CDD950629732CF7005EAF2A /* Debug */,
-				5CDD950729732CF7005EAF2A /* Release */,
+				5C3CE02B2973398400D9CE50 /* Debug */,
+				5C3CE02C2973398400D9CE50 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5CDD950829732CF7005EAF2A /* Build configuration list for PBXNativeTarget "SwiftAutoGUI-Sample" */ = {
+		5C3CE02D2973398400D9CE50 /* Build configuration list for PBXNativeTarget "Sample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5CDD950929732CF7005EAF2A /* Debug */,
-				5CDD950A29732CF7005EAF2A /* Release */,
+				5C3CE02E2973398400D9CE50 /* Debug */,
+				5C3CE02F2973398400D9CE50 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -351,11 +351,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		5CDD950C29732D17005EAF2A /* SwiftAutoGUI */ = {
+		5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SwiftAutoGUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 5CDD94F129732CF7005EAF2A /* Project object */;
+	rootObject = 5C3CE0162973398300D9CE50 /* Project object */;
 }

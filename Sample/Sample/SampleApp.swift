@@ -1,6 +1,6 @@
 //
-//  SwiftAutoGUI_SampleApp.swift
-//  SwiftAutoGUI-Sample
+//  SampleApp.swift
+//  Sample
 //
 //  Created by NakaokaRei on 2023/01/15.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct SwiftAutoGUI_SampleApp: App {
+struct SampleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
