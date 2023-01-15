@@ -24,6 +24,13 @@ public class SwiftAutoGUI {
         CGDisplayMoveCursorToPoint(0, newLoc)
     }
 
+    public static func leftClick() {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
+        leftClickDown(position: mouseLoc)
+        leftClickUp(position: mouseLoc)
+    }
+
     public static func leftClickDown(position: CGPoint) {
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
         let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDown,

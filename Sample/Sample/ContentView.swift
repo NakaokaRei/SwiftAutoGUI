@@ -20,6 +20,9 @@ struct ContentView: View {
             Button("move mouse") {
                 SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
             }
+            Button("click") {
+                SwiftAutoGUI.leftClick()
+            }
         }
         .padding()
     }
