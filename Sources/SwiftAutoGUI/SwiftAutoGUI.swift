@@ -21,14 +21,14 @@ public class SwiftAutoGUI {
         }
     }
 
-    public static func normalKeyEvent(_ key: CGKeyCode, down: Bool) {
+    private static func normalKeyEvent(_ key: CGKeyCode, down: Bool) {
         let source = CGEventSource(stateID: .hidSystemState)
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
         event?.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    public static func specialKeyEvent(_ key: UInt8, down: Bool) {
+    private static func specialKeyEvent(_ key: UInt8, down: Bool) {
         // TODO
     }
 
