@@ -9,12 +9,14 @@ public class SwiftAutoGUI {
         let source = CGEventSource(stateID: .hidSystemState)
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true)
         event?.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.01)
     }
 
     public static func keyUp(_ key: CGKeyCode) {
         let source = CGEventSource(stateID: .hidSystemState)
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false)
         event?.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.01)
     }
 
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
