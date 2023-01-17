@@ -12,10 +12,10 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Button("key event") {
-                SwiftAutoGUI.keyDown(Keycode.control)
-                SwiftAutoGUI.keyDown(Keycode.leftArrow)
-                SwiftAutoGUI.keyUp(Keycode.leftArrow)
-                SwiftAutoGUI.keyUp(Keycode.control)
+                SwiftAutoGUI.keyDown(.control)
+                SwiftAutoGUI.keyDown(.leftArrow)
+                SwiftAutoGUI.keyUp(.leftArrow)
+                SwiftAutoGUI.keyUp(.control)
             }
             Button("move mouse") {
                 SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
