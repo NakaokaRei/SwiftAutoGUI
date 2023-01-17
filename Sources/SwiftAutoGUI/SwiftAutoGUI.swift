@@ -24,6 +24,7 @@ public class SwiftAutoGUI {
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
         let newLoc = CGPoint(x: mouseLoc.x-CGFloat(dx), y: mouseLoc.y + CGFloat(dy))
         CGDisplayMoveCursorToPoint(0, newLoc)
+        Thread.sleep(forTimeInterval: 0.01)
     }
 
     public static func leftClick() {
