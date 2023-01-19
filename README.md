@@ -13,6 +13,8 @@
 Used to programmatically control the mouse & keyboard.
 A library for manipulating MacOS with Swift.
 
+This repository is implemented with reference to [pyautogui](https://github.com/asweigart/pyautogui).
+
 # Installation
 SwiftAutoGUI is available through [Swift Package Manager](https://www.swift.org/package-manager/).
 
