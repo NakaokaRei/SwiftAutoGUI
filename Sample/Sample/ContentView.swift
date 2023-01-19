@@ -12,10 +12,7 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Button("key event") {
-                SwiftAutoGUI.keyDown(.control)
-                SwiftAutoGUI.keyDown(.leftArrow)
-                SwiftAutoGUI.keyUp(.leftArrow)
-                SwiftAutoGUI.keyUp(.control)
+                SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
             }
             Button("special key event") {
                 SwiftAutoGUI.keyDown(.soundUp)

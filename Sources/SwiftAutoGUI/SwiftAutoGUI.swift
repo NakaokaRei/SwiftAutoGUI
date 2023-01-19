@@ -5,6 +5,15 @@ public class SwiftAutoGUI {
 
     public init() {}
 
+    public static func sendKeyShortcut(_ keys: [Key]) {
+        for key in keys {
+            keyDown(key)
+        }
+        for key in keys.reversed() {
+            keyUp(key)
+        }
+    }
+
     public static func keyDown(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: true)
