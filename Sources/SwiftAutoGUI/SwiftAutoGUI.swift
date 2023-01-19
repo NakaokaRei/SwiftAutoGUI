@@ -29,7 +29,21 @@ public class SwiftAutoGUI {
     }
 
     private static func specialKeyEvent(_ key: UInt8, down: Bool) {
-        // TODO
+        let modifierFlags = NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00)
+        let nsEvent = NSEvent.otherEvent(
+            with: .systemDefined,
+            location: NSPoint(x: 0, y: 0),
+            modifierFlags: modifierFlags,
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            subtype: 8,
+            data1: Int((key << 16)) | ((down ? 0xA : 0xB) << 8),
+            data2: -1
+        )
+        let cgEvent = nsEvent?.cgEvent
+        cgEvent?.post(tap: .cghidEventTap)
+        Thread.sleep(forTimeInterval: 0.01)
     }
 
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {

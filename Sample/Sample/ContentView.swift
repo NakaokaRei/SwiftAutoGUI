@@ -17,6 +17,10 @@ struct ContentView: View {
                 SwiftAutoGUI.keyUp(.leftArrow)
                 SwiftAutoGUI.keyUp(.control)
             }
+            Button("special key event") {
+                SwiftAutoGUI.keyDown(.soundUp)
+                SwiftAutoGUI.keyUp(.soundUp)
+            }
             Button("move mouse") {
                 SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
             }
