@@ -124,6 +124,11 @@ public enum Key {
     // special keycode
     // TODO: add other code
     case soundUp
+    case soundDown
+    case brightnessUp
+    case brightnessDown
+    case numLock
+
 
     public var normalKeycode: CGKeyCode? {
         switch self {
@@ -248,9 +253,13 @@ public enum Key {
         }
     }
 
-    public var specialKeycode: UInt8? {
+    public var specialKeycode: Int32? {
         switch self {
-        case .soundUp        : return 0
+        case .soundUp        : return NX_KEYTYPE_SOUND_UP
+        case .soundDown      : return NX_KEYTYPE_SOUND_DOWN
+        case .brightnessUp   : return NX_KEYTYPE_BRIGHTNESS_UP
+        case .brightnessDown : return NX_KEYTYPE_BRIGHTNESS_DOWN
+        case .numLock        : return NX_KEYTYPE_NUM_LOCK
         default              : return nil
         }
     }

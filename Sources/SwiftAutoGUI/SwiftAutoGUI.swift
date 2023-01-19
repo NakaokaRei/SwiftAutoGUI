@@ -28,7 +28,7 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    private static func specialKeyEvent(_ key: UInt8, down: Bool) {
+    private static func specialKeyEvent(_ key: Int32, down: Bool) {
         let modifierFlags = NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00)
         let nsEvent = NSEvent.otherEvent(
             with: .systemDefined,
