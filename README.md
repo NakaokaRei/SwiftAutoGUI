@@ -55,6 +55,12 @@ SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
 
 // Click where the mouse is located
 SwiftAutoGUI.leftClick()
+
+// Scroll
+SwiftAutoGUI.vscroll(clicks: 10) // up
+SwiftAutoGUI.vscroll(clicks: -10) // down
+SwiftAutoGUI.hscroll(clicks: 10) // left
+SwiftAutoGUI.hscroll(clicks: -10) // right
 ```
 
 # Contributors
