@@ -5,6 +5,8 @@ public class SwiftAutoGUI {
 
     public init() {}
 
+    // MARK: Key Event
+
     public static func sendKeyShortcut(_ keys: [Key]) {
         for key in keys {
             keyDown(key)
@@ -55,6 +57,8 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
+    // MARK: Mouse Event
+
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
@@ -70,20 +74,6 @@ public class SwiftAutoGUI {
         leftClickUp(position: mouseLoc)
     }
 
-    public static func leftClickDown(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDown,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
-    }
-
-    public static func leftClickUp(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseUp,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
-    }
-
     public static func leftDragged(to: CGPoint, from: CGPoint) {
         leftClickDown(position: from)
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -91,5 +81,19 @@ public class SwiftAutoGUI {
                             mouseCursorPosition: to, mouseButton: CGMouseButton.left)
         event?.post(tap: CGEventTapLocation.cghidEventTap)
         leftClickUp(position: to)
+    }
+
+    private static func leftClickDown(position: CGPoint) {
+        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDown,
+                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
+        event?.post(tap: CGEventTapLocation.cghidEventTap)
+    }
+
+    private static func leftClickUp(position: CGPoint) {
+        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseUp,
+                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
+        event?.post(tap: CGEventTapLocation.cghidEventTap)
     }
 }
