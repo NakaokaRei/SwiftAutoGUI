@@ -10,7 +10,10 @@ import SwiftAutoGUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
+        ScrollView {
+            ForEach(0..<10) {
+                Text("\($0)").font(.title)
+            }
             Button("key event") {
                 SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
             }
@@ -23,6 +26,22 @@ struct ContentView: View {
             }
             Button("click") {
                 SwiftAutoGUI.leftClick()
+            }
+            Button("vscroll") {
+                SwiftAutoGUI.vscroll(clicks: 10)
+            }
+            ForEach(0..<10) {
+                Text("\($0)").font(.title)
+            }
+            ScrollView(.horizontal) {
+                HStack {
+                    ForEach(0..<10) {
+                        Text("\($0)").font(.title)
+                    }
+                    Button("hscroll") {
+                        SwiftAutoGUI.hscroll(clicks: 10)
+                    }
+                }
             }
         }
         .padding()

@@ -83,6 +83,54 @@ public class SwiftAutoGUI {
         leftClickUp(position: to)
     }
 
+    public static func vscroll(clicks: Int) {
+        for _ in 0...Int(abs(clicks) / 10) {
+            let scrollEvent = CGEvent(
+                scrollWheelEvent2Source: nil,
+                units: .line,
+                wheelCount: 1,
+                wheel1: clicks >= 10 ? 10 : -10,
+                wheel2: 0,
+                wheel3: 0
+            )
+            scrollEvent?.post(tap: .cghidEventTap)
+        }
+
+        let scrollEvent = CGEvent(
+            scrollWheelEvent2Source: nil,
+            units: .line,
+            wheelCount: 1,
+            wheel1: Int32(clicks >= 10 ? clicks % 10 : -1 * (-clicks % 10)),
+            wheel2: 0,
+            wheel3: 0
+        )
+        scrollEvent?.post(tap: .cghidEventTap)
+    }
+
+    public static func hscroll(clicks: Int) {
+        for _ in 0...Int(abs(clicks) / 10) {
+            let scrollEvent = CGEvent(
+                scrollWheelEvent2Source: nil,
+                units: .line,
+                wheelCount: 2,
+                wheel1: 0,
+                wheel2: clicks >= 10 ? 10 : -10,
+                wheel3: 0
+            )
+            scrollEvent?.post(tap: .cghidEventTap)
+        }
+
+        let scrollEvent = CGEvent(
+            scrollWheelEvent2Source: nil,
+            units: .line,
+            wheelCount: 2,
+            wheel1: 0,
+            wheel2: Int32(clicks >= 10 ? clicks % 10 : -1 * (-clicks % 10)),
+            wheel3: 0
+        )
+        scrollEvent?.post(tap: .cghidEventTap)
+    }
+
     private static func leftClickDown(position: CGPoint) {
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
         let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDown,
