@@ -89,7 +89,7 @@ public class SwiftAutoGUI {
                 scrollWheelEvent2Source: nil,
                 units: .line,
                 wheelCount: 1,
-                wheel1: clicks >= 10 ? 10 : -10,
+                wheel1: clicks >= 0 ? 10 : -10,
                 wheel2: 0,
                 wheel3: 0
             )
@@ -100,7 +100,7 @@ public class SwiftAutoGUI {
             scrollWheelEvent2Source: nil,
             units: .line,
             wheelCount: 1,
-            wheel1: Int32(clicks >= 10 ? clicks % 10 : -1 * (-clicks % 10)),
+            wheel1: Int32(clicks >= 0 ? clicks % 10 : -1 * (-clicks % 10)),
             wheel2: 0,
             wheel3: 0
         )
@@ -114,7 +114,7 @@ public class SwiftAutoGUI {
                 units: .line,
                 wheelCount: 2,
                 wheel1: 0,
-                wheel2: clicks >= 10 ? 10 : -10,
+                wheel2: clicks >= 0 ? 10 : -10,
                 wheel3: 0
             )
             scrollEvent?.post(tap: .cghidEventTap)
@@ -125,7 +125,7 @@ public class SwiftAutoGUI {
             units: .line,
             wheelCount: 2,
             wheel1: 0,
-            wheel2: Int32(clicks >= 10 ? clicks % 10 : -1 * (-clicks % 10)),
+            wheel2: Int32(clicks >= 0 ? clicks % 10 : -1 * (-clicks % 10)),
             wheel3: 0
         )
         scrollEvent?.post(tap: .cghidEventTap)

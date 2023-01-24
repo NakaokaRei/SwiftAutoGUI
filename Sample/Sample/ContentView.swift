@@ -27,8 +27,11 @@ struct ContentView: View {
             Button("click") {
                 SwiftAutoGUI.leftClick()
             }
-            Button("vscroll") {
-                SwiftAutoGUI.vscroll(clicks: 10)
+            Button("vscroll -") {
+                SwiftAutoGUI.vscroll(clicks: -1)
+            }
+            Button("vscroll +") {
+                SwiftAutoGUI.vscroll(clicks: 1)
             }
             ForEach(0..<10) {
                 Text("\($0)").font(.title)
@@ -38,8 +41,14 @@ struct ContentView: View {
                     ForEach(0..<10) {
                         Text("\($0)").font(.title)
                     }
-                    Button("hscroll") {
-                        SwiftAutoGUI.hscroll(clicks: 10)
+                    Button("hscroll -") {
+                        SwiftAutoGUI.hscroll(clicks: -1)
+                    }
+                    Button("hscroll +") {
+                        SwiftAutoGUI.hscroll(clicks: 1)
+                    }
+                    ForEach(0..<10) {
+                        Text("\($0)").font(.title)
                     }
                 }
             }
