@@ -67,6 +67,8 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
+    /// Move the mouse to a specific position
+    /// - Parameter to: This parameter is the `CGWindow` coordinate.
     public static func move(to: CGPoint) {
         CGDisplayMoveCursorToPoint(0, to)
         Thread.sleep(forTimeInterval: 0.01)
