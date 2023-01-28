@@ -74,6 +74,13 @@ public class SwiftAutoGUI {
         leftClickUp(position: mouseLoc)
     }
 
+    public static func rightClick() {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
+        rightClickDown(position: mouseLoc)
+        rightClickUp(position: mouseLoc)
+    }
+
     public static func leftDragged(to: CGPoint, from: CGPoint) {
         leftClickDown(position: from)
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -142,6 +149,20 @@ public class SwiftAutoGUI {
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
         let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseUp,
                             mouseCursorPosition: position, mouseButton: CGMouseButton.left)
+        event?.post(tap: CGEventTapLocation.cghidEventTap)
+    }
+
+    private static func rightClickDown(position: CGPoint) {
+        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.rightMouseDown,
+                            mouseCursorPosition: position, mouseButton: CGMouseButton.right)
+        event?.post(tap: CGEventTapLocation.cghidEventTap)
+    }
+
+    private static func rightClickUp(position: CGPoint) {
+        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
+        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.rightMouseUp,
+                            mouseCursorPosition: position, mouseButton: CGMouseButton.right)
         event?.post(tap: CGEventTapLocation.cghidEventTap)
     }
 }
