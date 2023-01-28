@@ -67,6 +67,11 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
+    public static func move(to: CGPoint) {
+        CGDisplayMoveCursorToPoint(0, to)
+        Thread.sleep(forTimeInterval: 0.01)
+    }
+
     public static func leftClick() {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
