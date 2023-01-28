@@ -53,8 +53,13 @@ SwiftAutoGUI.keyUp(.soundUp)
 // Move mouse by dx, dy from the current location
 SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
 
+// Move the mouse to a specific position
+// This parameter is the `CGWindow` coordinate.
+SwiftAutoGUI.move(to: CGPointMake(0, 0))
+
 // Click where the mouse is located
-SwiftAutoGUI.leftClick()
+SwiftAutoGUI.leftClick() // left
+SwiftAutoGUI.rightClick() // right
 
 // Scroll
 SwiftAutoGUI.vscroll(clicks: 10) // up
