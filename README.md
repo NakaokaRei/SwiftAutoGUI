@@ -41,6 +41,8 @@ By calling a method of the SwiftAutoGUI class as shown below, you can send key i
 
 As shown in the sample below, you can also input shortcuts, such as moving the virtual desktop by sending the command `ctrl + ←`.
 
+Currently ***only US keyboards*** are supported. Otherwise, it may not work properly.
+
 ```swift
 import SwiftAutoGUI
 
