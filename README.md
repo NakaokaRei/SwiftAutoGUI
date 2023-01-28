@@ -50,6 +50,13 @@ SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
 // Send sound up
 SwiftAutoGUI.keyDown(.soundUp)
 SwiftAutoGUI.keyUp(.soundUp)
+```
+
+## Mouse
+Similarly, mouse operations can generate basic commands such as mouse movement, clicking, and scrolling by invoking methods of the SwiftAutoGUI class.
+
+```swift
+import SwiftAutoGUI
 
 // Move mouse by dx, dy from the current location
 SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
@@ -68,8 +75,6 @@ SwiftAutoGUI.vscroll(clicks: -10) // down
 SwiftAutoGUI.hscroll(clicks: 10) // left
 SwiftAutoGUI.hscroll(clicks: -10) // right
 ```
-
-## Mouse
 
 # Contributors
 
