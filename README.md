@@ -35,10 +35,11 @@ targets: [
 ```
 
 # Example Usage
-## Keyboard and Mouse Control
+## Keyboard
 
-See [Keycode.swift](/Sources/SwiftAutoGUI/Keycode.swift) for supported keys.
-If it is not a US keyboard, This may not work properly.
+By calling a method of the SwiftAutoGUI class as shown below, you can send key input commands to macOS. Supported keys are written in [Keycode.swift](/Sources/SwiftAutoGUI/Keycode.swift).
+
+As shown in the sample below, you can also input shortcuts, such as moving the virtual desktop by sending the command `ctrl + ←`.
 
 ```swift
 import SwiftAutoGUI
@@ -67,6 +68,8 @@ SwiftAutoGUI.vscroll(clicks: -10) // down
 SwiftAutoGUI.hscroll(clicks: 10) // left
 SwiftAutoGUI.hscroll(clicks: -10) // right
 ```
+
+## Mouse
 
 # Contributors
 
