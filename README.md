@@ -16,6 +16,8 @@ A library for manipulating macOS with Swift.
 This repository is implemented with reference to [pyautogui](https://github.com/asweigart/pyautogui).
 
 # Installation
+
+## Swift Package Manager
 SwiftAutoGUI is available through [Swift Package Manager](https://www.swift.org/package-manager/).
 
 in `Package.swift` add the following:
@@ -32,6 +34,15 @@ targets: [
     )
     ...
 ]
+```
+
+## CocoaPods
+SwiftAutoGUI is available through [CocoaPods](https://cocoapods.org/).
+
+in `Podfile` add the following:
+
+```ruby
+pod 'SwiftAutoGUI'
 ```
 
 # Example Usage
