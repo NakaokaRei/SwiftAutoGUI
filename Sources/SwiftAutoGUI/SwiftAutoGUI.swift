@@ -3,8 +3,6 @@ import AppKit
 
 public class SwiftAutoGUI {
 
-    public init() {}
-
     // MARK: Key Event
 
     public static func sendKeyShortcut(_ keys: [Key]) {
