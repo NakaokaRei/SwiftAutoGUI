@@ -1,0 +1,39 @@
+name: Deploy DocC
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v3
+      - name: build docc
+        run: |
+          swift package --allow-writing-to-directory ./docs generate-documentation \
+          --target SwiftAutoGUI \
+          --disable-indexing \
+          --output-path ./docs \
+          --transform-for-static-hosting \
+          --hosting-base-path SwiftAutoGUI
+      - uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: macos-14
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
