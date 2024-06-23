@@ -5,6 +5,10 @@ public class SwiftAutoGUI {
 
     // MARK: Key Event
 
+    /// Send a key shortcut
+    ///
+    /// - Parameter keys: The keys to be pressed. The order of the keys is the order of pressing.
+    /// For example, if you want to press `command + c`, you should call `sendKeyShortcut([.command, .c])`. The details of Key is in ``Key``
     public static func sendKeyShortcut(_ keys: [Key]) {
         for key in keys {
             keyDown(key)
@@ -14,6 +18,9 @@ public class SwiftAutoGUI {
         }
     }
 
+    /// Press a key
+    ///
+    /// - Parameter key: The key to be pressed. The details of Key is in ``Key``
     public static func keyDown(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: true)
@@ -22,6 +29,9 @@ public class SwiftAutoGUI {
         }
     }
 
+    /// Release a key
+    ///
+    /// - Parameter key: The key to be released.
     public static func keyUp(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: false)
@@ -30,6 +40,9 @@ public class SwiftAutoGUI {
         }
     }
 
+    /// Press a key and release it
+    ///
+    /// - Parameter key: The key to be pressed and released. The details of Key is in  `normalKeycode` of ``Key``
     private static func normalKeyEvent(_ key: CGKeyCode, down: Bool) {
         let source = CGEventSource(stateID: .hidSystemState)
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
@@ -37,6 +50,9 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
+    /// Press a special key and release it
+    ///
+    /// - Parameter key: The key to be pressed and released. The details of Key is in  `specialKeycode` of ``Key``
     private static func specialKeyEvent(_ key: Int32, down: Bool) {
         let modifierFlags = NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00)
         let nsEvent = NSEvent.otherEvent(
@@ -57,6 +73,11 @@ public class SwiftAutoGUI {
 
     // MARK: Mouse Event
 
+    /// Move mouse by dx, dy from the current location
+    ///
+    /// - Parameters:
+    ///     - dx: The distance to move in the x-axis
+    ///     - dy: The distance to move in the y-axis
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
@@ -72,6 +93,7 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
+    /// Press the left mouse button at a current position
     public static func leftClick() {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
@@ -79,6 +101,7 @@ public class SwiftAutoGUI {
         leftClickUp(position: mouseLoc)
     }
 
+    /// Press the left mouse button at a current position
     public static func rightClick() {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
@@ -86,6 +109,11 @@ public class SwiftAutoGUI {
         rightClickUp(position: mouseLoc)
     }
 
+    /// Dragg the left mouse button from a position to another position
+    ///
+    /// - Parameters:
+    ///    - to: The position to drag to
+    ///    - from: The position to drag from
     public static func leftDragged(to: CGPoint, from: CGPoint) {
         leftClickDown(position: from)
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -95,6 +123,9 @@ public class SwiftAutoGUI {
         leftClickUp(position: to)
     }
 
+    /// Scroll the mouse wheel vertically
+    ///
+    /// - Parameter clicks: The number of clicks to scroll. Positive value means scroll up, negative value means scroll down.
     public static func vscroll(clicks: Int) {
         for _ in 0...Int(abs(clicks) / 10) {
             let scrollEvent = CGEvent(
@@ -119,6 +150,9 @@ public class SwiftAutoGUI {
         scrollEvent?.post(tap: .cghidEventTap)
     }
 
+    /// Scroll the mouse wheel horizontally
+    ///
+    /// - Parameter clicks: The number of clicks to scroll. Positive value means scroll left, negative value means scroll right.
     public static func hscroll(clicks: Int) {
         for _ in 0...Int(abs(clicks) / 10) {
             let scrollEvent = CGEvent(
