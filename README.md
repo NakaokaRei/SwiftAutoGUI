@@ -46,6 +46,9 @@ pod 'SwiftAutoGUI'
 ```
 
 # Example Usage
+
+If you would like to know more details, please refer to the [DocC Style Document](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautogui/).
+
 ## Keyboard
 
 By calling a method of the SwiftAutoGUI class as shown below, you can send key input commands to macOS. Supported keys are written in [Keycode.swift](/Sources/SwiftAutoGUI/Keycode.swift).
