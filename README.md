@@ -46,7 +46,7 @@ pod 'SwiftAutoGUI'
 
 # Example Usage
 
-If you would like to know more details, please refer to the [DocC Style Document](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautogui/).
+If you would like to know more details, please refer to the [DocC Style Document](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautogui/swiftautogui).
 
 ## Keyboard
 
