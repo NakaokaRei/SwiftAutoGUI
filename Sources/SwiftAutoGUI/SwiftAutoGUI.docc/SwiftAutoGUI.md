@@ -1,4 +1,4 @@
-# ``SwiftAutoGUI``
+# [SwiftAutoGUI](https://github.com/NakaokaRei/SwiftAutoGUI)
 
 A library for manipulating macOS with Swift, which is used to programmatically control the mouse & keyboard.
 
