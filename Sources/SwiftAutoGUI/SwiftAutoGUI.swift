@@ -9,6 +9,17 @@ public class SwiftAutoGUI {
     ///
     /// - Parameter keys: The keys to be pressed. The order of the keys is the order of pressing.
     /// For example, if you want to press `command + c`, you should call `sendKeyShortcut([.command, .c])`. The details of Key is in ``Key``
+    ///
+    /// Example
+    /// ```swift
+    /// // Send ctrl + ←
+    /// import SwiftAutoGUI
+    /// SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+    ///
+    /// // Send sound up
+    /// SwiftAutoGUI.keyDown(.soundUp)
+    /// SwiftAutoGUI.keyUp(.soundUp)
+    /// ```
     public static func sendKeyShortcut(_ keys: [Key]) {
         for key in keys {
             keyDown(key)

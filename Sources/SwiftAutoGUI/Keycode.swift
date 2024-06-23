@@ -1,5 +1,17 @@
 import CoreGraphics
 
+/// Keycode for keyboard input
+///
+/// Example
+/// ```swift
+/// // Send ctrl + ←
+/// import SwiftAutoGUI
+/// SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+///
+/// // Send sound up
+/// SwiftAutoGUI.keyDown(.soundUp)
+/// SwiftAutoGUI.keyUp(.soundUp)
+/// ```
 public enum Key {
 
     // normal keycode
@@ -130,6 +142,7 @@ public enum Key {
     case numLock
 
 
+    /// Normal keycode of the key.
     public var normalKeycode: CGKeyCode? {
         switch self {
         case .returnKey      : return 0x24
@@ -253,6 +266,7 @@ public enum Key {
         }
     }
 
+    /// Special keycodes for media keys and other special keys
     public var specialKeycode: Int32? {
         switch self {
         case .soundUp        : return NX_KEYTYPE_SOUND_UP
