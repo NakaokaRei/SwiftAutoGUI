@@ -21,6 +21,7 @@
 		5C3CE0252973398400D9CE50 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5C3CE02A2973398400D9CE50 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
+		5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftAutoGUI; path = ../..; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +56,7 @@
 		5C3CE0202973398300D9CE50 /* Sample */ = {
 			isa = PBXGroup;
 			children = (
+				5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */,
 				5C3CE0212973398300D9CE50 /* SampleApp.swift */,
 				5C3CE0232973398300D9CE50 /* ContentView.swift */,
 				5C3CE0252973398400D9CE50 /* Assets.xcassets */,
