@@ -12,7 +12,7 @@ import CoreGraphics
 /// SwiftAutoGUI.keyDown(.soundUp)
 /// SwiftAutoGUI.keyUp(.soundUp)
 /// ```
-public enum Key {
+public enum Key: String {
 
     // normal keycode
     case returnKey
