@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:pyautogui.readthedocs.io)",
+      "WebFetch(domain:github.com)"
+    ],
+    "deny": []
+  }
+}

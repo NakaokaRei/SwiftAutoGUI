@@ -91,6 +91,39 @@ SwiftAutoGUI.hscroll(clicks: 10) // left
 SwiftAutoGUI.hscroll(clicks: -10) // right
 ```
 
+## Screenshot
+SwiftAutoGUI can take screenshots of the entire screen or specific regions, save them to files, and get pixel colors.
+
+```swift
+import SwiftAutoGUI
+
+// Take a screenshot of the entire screen
+if let screenshot = SwiftAutoGUI.screenshot() {
+    // Use the NSImage object
+}
+
+// Take a screenshot of a specific region
+let region = CGRect(x: 100, y: 100, width: 200, height: 200)
+if let regionScreenshot = SwiftAutoGUI.screenshot(region: region) {
+    // Use the NSImage object
+}
+
+// Save a screenshot directly to a file
+SwiftAutoGUI.screenshot(imageFilename: "screenshot.png")
+
+// Save a region screenshot to a file
+SwiftAutoGUI.screenshot(imageFilename: "region.jpg", region: region)
+
+// Get screen size
+let (width, height) = SwiftAutoGUI.size()
+print("Screen size: \(width)x\(height)")
+
+// Get the color of a specific pixel
+if let color = SwiftAutoGUI.pixel(x: 100, y: 200) {
+    print("Pixel color: \(color)")
+}
+```
+
 # Contributors
 
 - [NakaokaRei](https://github.com/NakaokaRei)
