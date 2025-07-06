@@ -11,7 +11,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_15.4.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: build docc
         run: |
           swift package --allow-writing-to-directory ./docs generate-documentation \
@@ -20,7 +20,7 @@ jobs:
           --output-path ./docs \
           --transform-for-static-hosting \
           --hosting-base-path SwiftAutoGUI
-      - uses: actions/upload-pages-artifact@v1
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
@@ -36,4 +36,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
