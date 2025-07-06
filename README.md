@@ -156,6 +156,20 @@ let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
 if let location = SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion) {
     // Found within the specified region
 }
+
+// Locate and get the center point directly
+if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
+    // buttonCenter is a CGPoint with x,y coordinates of the center
+    SwiftAutoGUI.move(to: buttonCenter)
+    SwiftAutoGUI.leftClick()
+}
+
+// locateCenterOnScreen also supports confidence and region parameters
+if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8, region: searchRegion) {
+    // Click at the center of the found image
+    SwiftAutoGUI.move(to: center)
+    SwiftAutoGUI.leftClick()
+}
 ```
 
 # Contributors

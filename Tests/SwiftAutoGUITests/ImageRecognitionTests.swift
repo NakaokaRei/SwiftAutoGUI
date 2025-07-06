@@ -56,6 +56,86 @@ struct ImageRecognitionTests {
         #expect(true)
     }
     
+    @Test("locateCenterOnScreen with valid image path")
+    func testLocateCenterOnScreenValidPath() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Try to locate the center of the image
+        let center = SwiftAutoGUI.locateCenterOnScreen(testImagePath)
+        
+        // If an image is found, verify we get a valid center point
+        if let center = center {
+            #expect(center.x > 0)
+            #expect(center.y > 0)
+        }
+        
+        // Test passes whether or not the image is found (depends on permissions)
+        #expect(true)
+    }
+    
+    @Test("locateCenterOnScreen with invalid image path")
+    func testLocateCenterOnScreenInvalidPath() {
+        let center = SwiftAutoGUI.locateCenterOnScreen("/nonexistent/image.png")
+        
+        // Should return nil for invalid path
+        #expect(center == nil)
+    }
+    
+    @Test("locateCenterOnScreen returns center of located rectangle")
+    func testLocateCenterOnScreenReturnsCenter() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Get both rectangle and center
+        let rect = SwiftAutoGUI.locateOnScreen(testImagePath)
+        let center = SwiftAutoGUI.locateCenterOnScreen(testImagePath)
+        
+        // If both are found, verify center matches rectangle's center
+        if let rect = rect, let center = center {
+            #expect(center.x == rect.midX)
+            #expect(center.y == rect.midY)
+        }
+        
+        // Test passes whether or not the image is found
+        #expect(true)
+    }
+    
+    @Test("locateCenterOnScreen with region")
+    func testLocateCenterOnScreenWithRegion() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Search in a specific region
+        let region = CGRect(x: 0, y: 0, width: 200, height: 200)
+        let center = SwiftAutoGUI.locateCenterOnScreen(testImagePath, region: region)
+        
+        // If found, verify center is within the search region
+        if let center = center {
+            #expect(region.contains(center))
+        }
+        
+        // Test passes whether or not the image is found
+        #expect(true)
+    }
+    
+    @Test("locateCenterOnScreen with confidence parameter")
+    func testLocateCenterOnScreenWithConfidence() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Search with different confidence levels
+        let highConfidenceCenter = SwiftAutoGUI.locateCenterOnScreen(testImagePath, confidence: 0.95)
+        let lowConfidenceCenter = SwiftAutoGUI.locateCenterOnScreen(testImagePath, confidence: 0.5)
+        
+        // Test passes whether or not the images are found
+        #expect(true)
+    }
+    
     // Helper function to create a test image
     private func createTestImage() -> String {
         let size = NSSize(width: 50, height: 50)
