@@ -1,6 +1,5 @@
 import Foundation
 import AppKit
-import Vision
 import CoreGraphics
 
 extension SwiftAutoGUI {
@@ -68,61 +67,14 @@ extension SwiftAutoGUI {
             return nil
         }
         
-        // Create CIImages for Vision framework
-        let needleCIImage = CIImage(cgImage: needleCGImage)
-        let haystackCIImage = CIImage(cgImage: haystackCGImage)
+        // Note: VNTranslationalImageRegistrationRequest is not suitable for finding images within screenshots
+        // It's designed for aligning two similar images, not for template matching
+        // So we'll use our custom template matching implementation
         
-        var foundRect: CGRect?
+        let foundRect = templateMatch(needle: needleCGImage, haystack: haystackCGImage, confidence: confidence, searchRegion: searchRegion)
         
-        // Create Vision request
-        let request = VNTranslationalImageRegistrationRequest(targetedCIImage: needleCIImage) { request, error in
-            if let error = error {
-                print("SwiftAutoGUI: Vision request error: \(error)")
-                return
-            }
-            
-            guard let observation = request.results?.first as? VNImageTranslationAlignmentObservation else {
-                return
-            }
-            
-            // Check confidence if specified
-            if let requiredConfidence = confidence {
-                if observation.confidence < Float(requiredConfidence) {
-                    return
-                }
-            }
-            
-            // Calculate the found rectangle
-            let transform = observation.alignmentTransform
-            let needleSize = needleCIImage.extent.size
-            
-            // Apply transform to find the location
-            var rect = CGRect(origin: .zero, size: needleSize)
-            rect = rect.applying(transform)
-            
-            // Adjust coordinates if we were searching in a region
-            if let region = searchRegion {
-                rect.origin.x += region.origin.x
-                rect.origin.y += region.origin.y
-            }
-            
-            foundRect = rect
-        }
-        
-        // Perform the image recognition
-        let handler = VNImageRequestHandler(ciImage: haystackCIImage, options: [:])
-        do {
-            try handler.perform([request])
-        } catch {
-            print("SwiftAutoGUI: Failed to perform image recognition: \(error)")
-            return nil
-        }
-        
-        // If basic Vision approach didn't work, try template matching
-        if foundRect == nil {
-            foundRect = templateMatch(needle: needleCGImage, haystack: haystackCGImage, confidence: confidence, searchRegion: searchRegion)
-        }
-        
+        // No coordinate conversion needed - CGWindowListCreateImage already uses the same coordinate system
+        // as CGDisplayMoveCursorToPoint (origin at top-left)
         return foundRect
     }
     
@@ -185,8 +137,13 @@ extension SwiftAutoGUI {
         
         // Check if match meets confidence threshold
         let threshold = confidence ?? 0.95  // Default to 95% match
+        
+        print("SwiftAutoGUI: Template matching - best score: \(bestMatch.score) at (\(bestMatch.x), \(bestMatch.y)), threshold: \(threshold)")
+        
         if bestMatch.score >= threshold {
-            return CGRect(x: bestMatch.x, y: bestMatch.y, width: needleWidth, height: needleHeight)
+            let rect = CGRect(x: bestMatch.x, y: bestMatch.y, width: needleWidth, height: needleHeight)
+            print("SwiftAutoGUI: Template matching found image at: \(rect)")
+            return rect
         }
         
         return nil
