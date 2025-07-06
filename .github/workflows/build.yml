@@ -1,0 +1,44 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build and Test on macOS
+    runs-on: macos-15
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Show Swift version
+        run: swift --version
+      
+      - name: Build library
+        run: swift build -v
+      
+      - name: Build release mode
+        run: swift build -c release -v
+      
+      - name: Run tests
+        run: swift test -v
+      
+      - name: Build documentation
+        run: |
+          swift package --allow-writing-to-directory ./docs generate-documentation \
+            --target SwiftAutoGUI \
+            --disable-indexing \
+            --output-path ./docs
+      
+      - name: Build sample app
+        run: |
+          cd Sample
+          xcodebuild -project Sample.xcodeproj \
+            -scheme Sample \
+            -destination 'platform=macOS' \
+            build
