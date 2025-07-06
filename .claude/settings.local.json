@@ -5,7 +5,9 @@
       "WebFetch(domain:github.com)",
       "Bash(swift test)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(gh issue create:*)"
+      "Bash(gh issue create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
