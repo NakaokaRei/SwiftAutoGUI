@@ -71,6 +71,55 @@ extension SwiftAutoGUI {
         return findImageInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
     }
     
+    /// Locate an image on the screen and return its center point
+    ///
+    /// - Parameters:
+    ///   - imagePath: Path to the image file to search for
+    ///   - grayscale: Convert to grayscale for faster matching (currently ignored, for future implementation)
+    ///   - confidence: Matching confidence threshold (0.0-1.0). If nil, uses exact matching (0.95 by default)
+    ///   - region: Limit search to specific screen region. If nil, searches entire screen
+    /// - Returns: CGPoint with center coordinates if found, nil otherwise
+    ///
+    /// This is a convenience wrapper around `locateOnScreen()` that returns the center point of the found image
+    /// instead of the full rectangle. This is particularly useful when you want to click on the center of
+    /// an image.
+    ///
+    /// Example:
+    /// ```swift
+    /// // Basic usage - click on the center of a button
+    /// if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
+    ///     SwiftAutoGUI.move(to: buttonCenter)
+    ///     SwiftAutoGUI.leftClick()
+    /// }
+    ///
+    /// // With confidence threshold
+    /// if let center = SwiftAutoGUI.locateCenterOnScreen("button.png", confidence: 0.9) {
+    ///     // Found with 90% confidence
+    ///     SwiftAutoGUI.move(to: center)
+    /// }
+    ///
+    /// // Search in specific region for better performance
+    /// let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
+    /// if let center = SwiftAutoGUI.locateCenterOnScreen("button.png", region: searchRegion) {
+    ///     // Found within the specified region
+    ///     SwiftAutoGUI.leftClick()
+    /// }
+    /// ```
+    public static func locateCenterOnScreen(
+        _ imagePath: String,
+        grayscale: Bool = false,
+        confidence: Double? = nil,
+        region: CGRect? = nil
+    ) -> CGPoint? {
+        // Use locateOnScreen to find the image
+        guard let rect = locateOnScreen(imagePath, grayscale: grayscale, confidence: confidence, region: region) else {
+            return nil
+        }
+        
+        // Return the center point of the found rectangle
+        return CGPoint(x: rect.midX, y: rect.midY)
+    }
+    
     // MARK: Private Helper Methods
     
     /// Find needle image within haystack image using OpenCV template matching

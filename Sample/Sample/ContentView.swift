@@ -266,15 +266,12 @@ struct ContentView: View {
         
         imageRecognitionResult = "Searching for test image to click..."
         
-        // Try to locate and click the image
-        if let foundRect = SwiftAutoGUI.locateOnScreen(testImagePath) {
-            let centerX = foundRect.midX
-            let centerY = foundRect.midY
-            
-            imageRecognitionResult = "Found and clicking test image at: x=\(Int(centerX)), y=\(Int(centerY))"
+        // Use the new locateCenterOnScreen function
+        if let center = SwiftAutoGUI.locateCenterOnScreen(testImagePath) {
+            imageRecognitionResult = "Found and clicking test image at: x=\(Int(center.x)), y=\(Int(center.y))"
             
             // Move to center and click
-            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
+            SwiftAutoGUI.move(to: center)
             Thread.sleep(forTimeInterval: 0.5)
             SwiftAutoGUI.leftClick()
             
