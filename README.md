@@ -14,6 +14,11 @@ A library for manipulating macOS with Swift, which is used to programmatically c
 
 This repository is inspired by [pyautogui](https://github.com/asweigart/pyautogui).
 
+# Requirements
+
+- macOS 12.0+
+- Swift 5.7+
+
 # Installation
 
 ## Swift Package Manager
@@ -121,6 +126,35 @@ print("Screen size: \(width)x\(height)")
 // Get the color of a specific pixel
 if let color = SwiftAutoGUI.pixel(x: 100, y: 200) {
     print("Pixel color: \(color)")
+}
+```
+
+## Image Recognition
+SwiftAutoGUI can locate images on the screen using OpenCV template matching, similar to PyAutoGUI.
+
+```swift
+import SwiftAutoGUI
+
+// Locate an image on the screen
+if let location = SwiftAutoGUI.locateOnScreen("button.png") {
+    print("Found at: \(location)")
+    // location is a CGRect with the position and size
+    
+    // Click at the center of the found image
+    let center = CGPoint(x: location.midX, y: location.midY)
+    SwiftAutoGUI.move(to: center)
+    SwiftAutoGUI.leftClick()
+}
+
+// Search with confidence threshold (0.0-1.0)
+if let location = SwiftAutoGUI.locateOnScreen("button.png", confidence: 0.9) {
+    // Found with 90% confidence
+}
+
+// Search in a specific region for better performance
+let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
+if let location = SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion) {
+    // Found within the specified region
 }
 ```
 
