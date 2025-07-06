@@ -239,20 +239,20 @@ struct ContentView: View {
             let centerY = foundRect.midY
             
             // Move mouse to center of found image
-            SwiftAutoGUI.moveTo(x: centerX, y: centerY)
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
             
             // Draw a rectangle with the mouse
-            SwiftAutoGUI.moveTo(x: foundRect.origin.x, y: foundRect.origin.y)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y))
             Thread.sleep(forTimeInterval: 0.2)
-            SwiftAutoGUI.moveTo(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y))
             Thread.sleep(forTimeInterval: 0.2)
-            SwiftAutoGUI.moveTo(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y + foundRect.height)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y + foundRect.height))
             Thread.sleep(forTimeInterval: 0.2)
-            SwiftAutoGUI.moveTo(x: foundRect.origin.x, y: foundRect.origin.y + foundRect.height)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y + foundRect.height))
             Thread.sleep(forTimeInterval: 0.2)
-            SwiftAutoGUI.moveTo(x: foundRect.origin.x, y: foundRect.origin.y)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y))
             Thread.sleep(forTimeInterval: 0.2)
-            SwiftAutoGUI.moveTo(x: centerX, y: centerY)
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
         } else {
             imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
         }
@@ -274,7 +274,7 @@ struct ContentView: View {
             imageRecognitionResult = "Found and clicking test image at: x=\(Int(centerX)), y=\(Int(centerY))"
             
             // Move to center and click
-            SwiftAutoGUI.moveTo(x: centerX, y: centerY)
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
             Thread.sleep(forTimeInterval: 0.5)
             SwiftAutoGUI.leftClick()
             
