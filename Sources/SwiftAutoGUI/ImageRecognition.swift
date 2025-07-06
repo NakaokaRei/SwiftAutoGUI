@@ -106,15 +106,18 @@ extension SwiftAutoGUI {
             print("SwiftAutoGUI: Haystack size: \(haystackSize)")
             
             // VNTranslationalImageRegistrationRequest returns the translation in pixels
-            // Vision framework appears to return negative y values when matching images
-            // We need to convert this to proper screen coordinates
+            // After testing, it appears that:
+            // - tx is the x coordinate (left to right)
+            // - ty is the y coordinate from top when positive
+            // - When ty is negative, it needs to be converted from bottom-origin
             rect.origin.x = transform.tx
             
-            // If ty is negative, it means the distance from the bottom of the screen
             if transform.ty < 0 {
-                rect.origin.y = haystackSize.height + transform.ty - needleSize.height
+                // Negative ty means distance from bottom, convert to top-origin
+                rect.origin.y = haystackSize.height + transform.ty
             } else {
-                rect.origin.y = haystackSize.height - transform.ty - needleSize.height
+                // Positive ty is already from top
+                rect.origin.y = transform.ty
             }
             rect.size = needleSize
             
