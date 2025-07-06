@@ -103,11 +103,19 @@ extension SwiftAutoGUI {
             
             print("SwiftAutoGUI: Vision raw transform: \(transform)")
             print("SwiftAutoGUI: Vision raw rect after transform: \(rect)")
+            print("SwiftAutoGUI: Haystack size: \(haystackSize)")
             
             // VNTranslationalImageRegistrationRequest returns the translation in pixels
-            // The transform gives us the displacement, not normalized coordinates
+            // Vision framework appears to return negative y values when matching images
+            // We need to convert this to proper screen coordinates
             rect.origin.x = transform.tx
-            rect.origin.y = transform.ty
+            
+            // If ty is negative, it means the distance from the bottom of the screen
+            if transform.ty < 0 {
+                rect.origin.y = haystackSize.height + transform.ty - needleSize.height
+            } else {
+                rect.origin.y = haystackSize.height - transform.ty - needleSize.height
+            }
             rect.size = needleSize
             
             print("SwiftAutoGUI: Vision adjusted rect: \(rect)")
