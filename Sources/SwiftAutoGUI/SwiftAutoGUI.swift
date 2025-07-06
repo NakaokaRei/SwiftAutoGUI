@@ -1,24 +1,73 @@
 import Foundation
 import AppKit
 
+/// A Swift library for programmatically controlling the mouse and keyboard on macOS.
+///
+/// SwiftAutoGUI provides a simple, high-level interface for GUI automation tasks including:
+/// - Keyboard input simulation
+/// - Mouse movement and clicking
+/// - Screenshot capture
+/// - Image recognition on screen
+///
+/// This library is inspired by PyAutoGUI and provides similar functionality for macOS applications.
+///
+/// ## Topics
+///
+/// ### Getting Started
+/// - ``sendKeyShortcut(_:)``
+/// - ``leftClick()``
+/// - ``move(to:)``
+///
+/// ### Keyboard Control
+/// - ``keyDown(_:)``
+/// - ``keyUp(_:)``
+/// - ``Key``
+///
+/// ### Mouse Control
+/// - ``moveMouse(dx:dy:)``
+/// - ``rightClick()``
+/// - ``leftDragged(to:from:)``
+/// - ``vscroll(clicks:)``
+/// - ``hscroll(clicks:)``
+///
+/// ### Screenshots
+/// - ``screenshot()``
+/// - ``screenshot(region:)``
+/// - ``screenshot(imageFilename:region:)``
+/// - ``size()``
+/// - ``pixel(x:y:)``
+///
+/// ### Image Recognition
+/// - ``locateOnScreen(_:grayscale:confidence:region:)``
+/// - ``locateCenterOnScreen(_:grayscale:confidence:region:)``
+/// - ``locateAllOnScreen(_:grayscale:confidence:region:)``
 public class SwiftAutoGUI {
 
     // MARK: Key Event
 
-    /// Send a key shortcut
+    /// Sends a keyboard shortcut by pressing and releasing multiple keys in sequence.
     ///
-    /// - Parameter keys: The keys to be pressed. The order of the keys is the order of pressing.
-    /// For example, if you want to press `command + c`, you should call `sendKeyShortcut([.command, .c])`. The details of Key is in ``Key``
+    /// This method simulates pressing multiple keys simultaneously, commonly used for keyboard shortcuts.
+    /// Keys are pressed in the order provided and released in reverse order.
     ///
-    /// Example
+    /// - Parameter keys: An array of keys to be pressed together. The order matters for the sequence of key presses.
+    ///
+    /// - Note: The system may require accessibility permissions for this method to work.
+    ///
+    /// ## Example
+    ///
     /// ```swift
-    /// // Send ctrl + ←
-    /// import SwiftAutoGUI
+    /// // Copy text (Command+C)
+    /// SwiftAutoGUI.sendKeyShortcut([.command, .c])
+    ///
+    /// // Switch virtual desktop (Control+Left Arrow)
     /// SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
     ///
-    /// // Send sound up
-    /// SwiftAutoGUI.keyDown(.soundUp)
-    /// SwiftAutoGUI.keyUp(.soundUp)
+    /// // Take screenshot (Command+Shift+3)
+    /// SwiftAutoGUI.sendKeyShortcut([.command, .shift, .three])
+    ///
+    /// // Open Spotlight (Command+Space)
+    /// SwiftAutoGUI.sendKeyShortcut([.command, .space])
     /// ```
     public static func sendKeyShortcut(_ keys: [Key]) {
         for key in keys {
@@ -29,9 +78,30 @@ public class SwiftAutoGUI {
         }
     }
 
-    /// Press a key
+    /// Simulates pressing down a key without releasing it.
     ///
-    /// - Parameter key: The key to be pressed. The details of Key is in ``Key``
+    /// Use this method for holding down a key, useful for gaming, continuous scrolling,
+    /// or creating custom key combinations. Remember to call ``keyUp(_:)`` to release the key.
+    ///
+    /// - Parameter key: The key to press down. See ``Key`` for available options.
+    ///
+    /// - Important: Always pair with ``keyUp(_:)`` to avoid stuck keys.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Hold down shift for multiple capital letters
+    /// SwiftAutoGUI.keyDown(.shift)
+    /// SwiftAutoGUI.keyDown(.h)
+    /// SwiftAutoGUI.keyUp(.h)
+    /// SwiftAutoGUI.keyDown(.i)
+    /// SwiftAutoGUI.keyUp(.i)
+    /// SwiftAutoGUI.keyUp(.shift)
+    ///
+    /// // Trigger media key
+    /// SwiftAutoGUI.keyDown(.soundUp)
+    /// SwiftAutoGUI.keyUp(.soundUp)
+    /// ```
     public static func keyDown(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: true)
@@ -40,9 +110,27 @@ public class SwiftAutoGUI {
         }
     }
 
-    /// Release a key
+    /// Simulates releasing a previously pressed key.
     ///
-    /// - Parameter key: The key to be released.
+    /// This method releases a key that was pressed using ``keyDown(_:)``.
+    /// It's essential to release keys to prevent them from being stuck in a pressed state.
+    ///
+    /// - Parameter key: The key to release. Must match a previously pressed key.
+    ///
+    /// - Important: Every ``keyDown(_:)`` should have a corresponding ``keyUp(_:)``.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Type a single character
+    /// SwiftAutoGUI.keyDown(.a)
+    /// SwiftAutoGUI.keyUp(.a)
+    ///
+    /// // Release modifier key
+    /// SwiftAutoGUI.keyDown(.command)
+    /// // ... perform other actions ...
+    /// SwiftAutoGUI.keyUp(.command)
+    /// ```
     public static func keyUp(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: false)
@@ -84,11 +172,29 @@ public class SwiftAutoGUI {
 
     // MARK: Mouse Event
 
-    /// Move mouse by dx, dy from the current location
+    /// Moves the mouse cursor relative to its current position.
+    ///
+    /// This method moves the mouse by the specified distances from wherever it currently is.
+    /// Positive values move right/down, negative values move left/up.
     ///
     /// - Parameters:
-    ///     - dx: The distance to move in the x-axis
-    ///     - dy: The distance to move in the y-axis
+    ///   - dx: Horizontal distance to move (positive = right, negative = left)
+    ///   - dy: Vertical distance to move (positive = down, negative = up)
+    ///
+    /// - Note: The movement is in logical points, not pixels, so it works correctly on Retina displays.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Move mouse 100 points right and 50 points down
+    /// SwiftAutoGUI.moveMouse(dx: 100, dy: 50)
+    ///
+    /// // Move mouse 50 points left and 25 points up
+    /// SwiftAutoGUI.moveMouse(dx: -50, dy: -25)
+    ///
+    /// // Small adjustment for precision
+    /// SwiftAutoGUI.moveMouse(dx: 1, dy: 1)
+    /// ```
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
@@ -97,14 +203,55 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    /// Move the mouse to a specific position
-    /// - Parameter to: This parameter is the `CGWindow` coordinate.
+    /// Moves the mouse cursor to an absolute position on the screen.
+    ///
+    /// This method instantly moves the mouse to the specified coordinates using the CGWindow
+    /// coordinate system where (0,0) is the top-left corner of the main screen.
+    ///
+    /// - Parameter to: The target position in CGWindow coordinates (origin at top-left).
+    ///
+    /// - Note: CGWindow coordinates differ from NSView coordinates which have origin at bottom-left.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Move to top-left corner of screen
+    /// SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0))
+    ///
+    /// // Move to center of a 1920x1080 screen
+    /// SwiftAutoGUI.move(to: CGPoint(x: 960, y: 540))
+    ///
+    /// // Move to specific button location
+    /// let buttonLocation = CGPoint(x: 150, y: 300)
+    /// SwiftAutoGUI.move(to: buttonLocation)
+    /// ```
     public static func move(to: CGPoint) {
         CGDisplayMoveCursorToPoint(0, to)
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    /// Press the left mouse button at a current position
+    /// Performs a left mouse button click at the current cursor position.
+    ///
+    /// This method simulates a complete mouse click (press and release) at wherever
+    /// the cursor is currently located. It's the most common mouse interaction.
+    ///
+    /// - Note: The click happens immediately at the current position without moving the cursor.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Click at current position
+    /// SwiftAutoGUI.leftClick()
+    ///
+    /// // Move and click pattern
+    /// SwiftAutoGUI.move(to: CGPoint(x: 100, y: 200))
+    /// SwiftAutoGUI.leftClick()
+    ///
+    /// // Double-click
+    /// SwiftAutoGUI.leftClick()
+    /// Thread.sleep(forTimeInterval: 0.1)
+    /// SwiftAutoGUI.leftClick()
+    /// ```
     public static func leftClick() {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
@@ -112,7 +259,26 @@ public class SwiftAutoGUI {
         leftClickUp(position: mouseLoc)
     }
 
-    /// Press the left mouse button at a current position
+    /// Performs a right mouse button click at the current cursor position.
+    ///
+    /// This method simulates a right-click (press and release) commonly used for
+    /// context menus and secondary actions.
+    ///
+    /// - Note: The click happens immediately at the current position without moving the cursor.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Right-click for context menu
+    /// SwiftAutoGUI.rightClick()
+    ///
+    /// // Right-click on specific element
+    /// SwiftAutoGUI.move(to: fileLocation)
+    /// SwiftAutoGUI.rightClick()
+    ///
+    /// // Wait for menu to appear
+    /// Thread.sleep(forTimeInterval: 0.5)
+    /// ```
     public static func rightClick() {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
@@ -120,11 +286,33 @@ public class SwiftAutoGUI {
         rightClickUp(position: mouseLoc)
     }
 
-    /// Dragg the left mouse button from a position to another position
+    /// Performs a drag operation by holding the left mouse button from one position to another.
+    ///
+    /// This method simulates clicking and holding at the start position, dragging to the end position,
+    /// and then releasing. Useful for moving files, selecting text, or drawing.
     ///
     /// - Parameters:
-    ///    - to: The position to drag to
-    ///    - from: The position to drag from
+    ///   - to: The ending position of the drag operation
+    ///   - from: The starting position of the drag operation
+    ///
+    /// - Note: Both positions use CGWindow coordinates (origin at top-left).
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Drag a file from one location to another
+    /// let filePos = CGPoint(x: 100, y: 200)
+    /// let folderPos = CGPoint(x: 500, y: 200)
+    /// SwiftAutoGUI.leftDragged(to: folderPos, from: filePos)
+    ///
+    /// // Select text by dragging
+    /// let textStart = CGPoint(x: 50, y: 100)
+    /// let textEnd = CGPoint(x: 300, y: 100)
+    /// SwiftAutoGUI.leftDragged(to: textEnd, from: textStart)
+    ///
+    /// // Draw a line in a graphics application
+    /// SwiftAutoGUI.leftDragged(to: CGPoint(x: 200, y: 300), from: CGPoint(x: 100, y: 100))
+    /// ```
     public static func leftDragged(to: CGPoint, from: CGPoint) {
         leftClickDown(position: from)
         let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
@@ -134,9 +322,31 @@ public class SwiftAutoGUI {
         leftClickUp(position: to)
     }
 
-    /// Scroll the mouse wheel vertically
+    /// Scrolls the mouse wheel vertically by the specified number of clicks.
     ///
-    /// - Parameter clicks: The number of clicks to scroll. Positive value means scroll up, negative value means scroll down.
+    /// This method simulates mouse wheel scrolling, useful for navigating documents,
+    /// web pages, or any scrollable content. The method handles large scroll amounts
+    /// by breaking them into smaller chunks for smoother scrolling.
+    ///
+    /// - Parameter clicks: Number of scroll clicks. Positive scrolls up, negative scrolls down.
+    ///
+    /// - Note: One "click" typically scrolls about 3 lines of text, but this varies by application.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Scroll up 5 clicks
+    /// SwiftAutoGUI.vscroll(clicks: 5)
+    ///
+    /// // Scroll down 10 clicks
+    /// SwiftAutoGUI.vscroll(clicks: -10)
+    ///
+    /// // Smooth scroll to top of page
+    /// for _ in 0..<20 {
+    ///     SwiftAutoGUI.vscroll(clicks: 5)
+    ///     Thread.sleep(forTimeInterval: 0.05)
+    /// }
+    /// ```
     public static func vscroll(clicks: Int) {
         for _ in 0...Int(abs(clicks) / 10) {
             let scrollEvent = CGEvent(
@@ -161,9 +371,30 @@ public class SwiftAutoGUI {
         scrollEvent?.post(tap: .cghidEventTap)
     }
 
-    /// Scroll the mouse wheel horizontally
+    /// Scrolls the mouse wheel horizontally by the specified number of clicks.
     ///
-    /// - Parameter clicks: The number of clicks to scroll. Positive value means scroll left, negative value means scroll right.
+    /// This method simulates horizontal mouse wheel scrolling, useful for navigating
+    /// wide content like spreadsheets, timelines, or horizontal galleries.
+    /// Not all applications support horizontal scrolling.
+    ///
+    /// - Parameter clicks: Number of scroll clicks. Positive scrolls left, negative scrolls right.
+    ///
+    /// - Note: Horizontal scrolling requires application support and may not work everywhere.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Scroll left 5 clicks
+    /// SwiftAutoGUI.hscroll(clicks: 5)
+    ///
+    /// // Scroll right 10 clicks
+    /// SwiftAutoGUI.hscroll(clicks: -10)
+    ///
+    /// // Navigate through horizontal tabs
+    /// SwiftAutoGUI.hscroll(clicks: -3)
+    /// Thread.sleep(forTimeInterval: 0.5)
+    /// SwiftAutoGUI.leftClick()
+    /// ```
     public static func hscroll(clicks: Int) {
         for _ in 0...Int(abs(clicks) / 10) {
             let scrollEvent = CGEvent(

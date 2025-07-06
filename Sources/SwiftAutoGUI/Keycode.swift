@@ -266,7 +266,13 @@ public enum Key: String {
         }
     }
 
-    /// Special keycodes for media keys and other special keys
+    /// Returns the special key code for media and system keys.
+    ///
+    /// This property maps Key enum cases to their corresponding special key codes
+    /// used by macOS for media keys and other special system functions that require
+    /// NX_KEYTYPE constants instead of regular CGKeyCodes.
+    ///
+    /// - Returns: The special key code for media keys, or `nil` for regular keys.
     public var specialKeycode: Int32? {
         switch self {
         case .soundUp        : return NX_KEYTYPE_SOUND_UP
