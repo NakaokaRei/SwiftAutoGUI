@@ -61,20 +61,24 @@ struct ContentView: View {
                     }
                     
                     HStack {
-                        Button("Save Screenshot to Desktop") {
-                            let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-                            let path = desktop.appendingPathComponent("swiftautogui_screenshot.png").path
+                        Button("Save Screenshot to Documents") {
+                            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                            let path = documents.appendingPathComponent("swiftautogui_screenshot.png").path
                             if SwiftAutoGUI.screenshot(imageFilename: path) {
                                 print("Screenshot saved to: \(path)")
+                                // Open Finder to show the file
+                                NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: documents.path)
                             }
                         }
                         
-                        Button("Save Region to Desktop") {
-                            let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-                            let path = desktop.appendingPathComponent("swiftautogui_region.png").path
+                        Button("Save Region to Documents") {
+                            let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                            let path = documents.appendingPathComponent("swiftautogui_region.png").path
                             let region = CGRect(x: 0, y: 0, width: 300, height: 300)
                             if SwiftAutoGUI.screenshot(imageFilename: path, region: region) {
                                 print("Region screenshot saved to: \(path)")
+                                // Open Finder to show the file
+                                NSWorkspace.shared.selectFile(path, inFileViewerRootedAtPath: documents.path)
                             }
                         }
                     }
