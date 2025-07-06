@@ -29,7 +29,14 @@ extension SwiftAutoGUI {
             return nil
         }
         
-        let size = NSSize(width: cgImage.width, height: cgImage.height)
+        // CGWindowListCreateImage returns image in actual pixels
+        // NSImage size should be in points (logical pixels)
+        let scaleFactor = screen.backingScaleFactor
+        let size = NSSize(
+            width: CGFloat(cgImage.width) / scaleFactor,
+            height: CGFloat(cgImage.height) / scaleFactor
+        )
+        print("SwiftAutoGUI: Screenshot - CGImage size: \(cgImage.width)x\(cgImage.height), NSImage size: \(size), scale: \(scaleFactor)")
         return NSImage(cgImage: cgImage, size: size)
     }
     
@@ -55,7 +62,13 @@ extension SwiftAutoGUI {
             return nil
         }
         
-        let size = NSSize(width: cgImage.width, height: cgImage.height)
+        // Get screen scale factor
+        let screen = NSScreen.main ?? NSScreen.screens[0]
+        let scaleFactor = screen.backingScaleFactor
+        let size = NSSize(
+            width: CGFloat(cgImage.width) / scaleFactor,
+            height: CGFloat(cgImage.height) / scaleFactor
+        )
         return NSImage(cgImage: cgImage, size: size)
     }
     

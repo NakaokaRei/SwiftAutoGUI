@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var screenshotImage: NSImage?
     @State private var pixelColor: NSColor?
     @State private var screenSize: String = ""
+    @State private var imageRecognitionResult: String = ""
+    @State private var testImagePath: String = ""
     
     var body: some View {
         ScrollView {
@@ -125,6 +127,32 @@ struct ContentView: View {
                 
                 Divider()
                 
+                // Image Recognition features
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Image Recognition Features")
+                        .font(.headline)
+                    
+                    Button("Create Test Image") {
+                        createTestImageForRecognition()
+                    }
+                    
+                    Button("Locate Test Image on Screen") {
+                        locateTestImage()
+                    }
+                    
+                    Button("Locate and Click Test Image") {
+                        locateAndClickTestImage()
+                    }
+                    
+                    if !imageRecognitionResult.isEmpty {
+                        Text(imageRecognitionResult)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Divider()
+                
                 ForEach(0..<10) {
                     Text("\($0)").font(.title)
                 }
@@ -147,6 +175,113 @@ struct ContentView: View {
             }
         }
         .padding()
+    }
+    
+    // MARK: - Image Recognition Helper Functions
+    
+    private func createTestImageForRecognition() {
+        // Create a distinctive test image
+        let size = NSSize(width: 100, height: 100)
+        let image = NSImage(size: size)
+        
+        image.lockFocus()
+        
+        // Create a distinctive pattern
+        NSColor.systemBlue.setFill()
+        NSRect(origin: .zero, size: size).fill()
+        
+        NSColor.white.setFill()
+        NSRect(x: 20, y: 20, width: 60, height: 60).fill()
+        
+        NSColor.systemRed.setFill()
+        NSRect(x: 30, y: 30, width: 40, height: 40).fill()
+        
+        NSColor.systemYellow.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 40, y: 40, width: 20, height: 20)).fill()
+        
+        image.unlockFocus()
+        
+        // Save to Documents directory
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let path = documents.appendingPathComponent("test_recognition_image.png").path
+        
+        if let tiffData = image.tiffRepresentation,
+           let bitmapImage = NSBitmapImageRep(data: tiffData),
+           let pngData = bitmapImage.representation(using: .png, properties: [:]) {
+            do {
+                try pngData.write(to: URL(fileURLWithPath: path))
+                testImagePath = path
+                imageRecognitionResult = "Test image created at: \(path)\nPlease open this image in Preview or another app, then try to locate it."
+            } catch {
+                imageRecognitionResult = "Failed to create test image: \(error)"
+            }
+        }
+    }
+    
+    private func locateTestImage() {
+        guard !testImagePath.isEmpty else {
+            imageRecognitionResult = "Please create a test image first"
+            return
+        }
+        
+        imageRecognitionResult = "Searching for test image on screen..."
+        
+        // Try to locate the image
+        if let foundRect = SwiftAutoGUI.locateOnScreen(testImagePath) {
+            imageRecognitionResult = """
+                Found test image!
+                Location: x=\(Int(foundRect.origin.x)), y=\(Int(foundRect.origin.y))
+                Size: \(Int(foundRect.width))x\(Int(foundRect.height))
+                """
+            
+            // Highlight the found area by moving mouse around it
+            let centerX = foundRect.midX
+            let centerY = foundRect.midY
+            
+            // Move mouse to center of found image
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
+            
+            // Draw a rectangle with the mouse
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y))
+            Thread.sleep(forTimeInterval: 0.2)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y))
+            Thread.sleep(forTimeInterval: 0.2)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y + foundRect.height))
+            Thread.sleep(forTimeInterval: 0.2)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y + foundRect.height))
+            Thread.sleep(forTimeInterval: 0.2)
+            SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y))
+            Thread.sleep(forTimeInterval: 0.2)
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
+        } else {
+            imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
+        }
+    }
+    
+    private func locateAndClickTestImage() {
+        guard !testImagePath.isEmpty else {
+            imageRecognitionResult = "Please create a test image first"
+            return
+        }
+        
+        imageRecognitionResult = "Searching for test image to click..."
+        
+        // Try to locate and click the image
+        if let foundRect = SwiftAutoGUI.locateOnScreen(testImagePath) {
+            let centerX = foundRect.midX
+            let centerY = foundRect.midY
+            
+            imageRecognitionResult = "Found and clicking test image at: x=\(Int(centerX)), y=\(Int(centerY))"
+            
+            // Move to center and click
+            SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY))
+            Thread.sleep(forTimeInterval: 0.5)
+            SwiftAutoGUI.leftClick()
+            
+            imageRecognitionResult += "\nClicked on the test image!"
+        } else {
+            imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
+        }
     }
 }
 
