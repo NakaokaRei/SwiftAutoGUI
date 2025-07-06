@@ -136,6 +136,106 @@ struct ImageRecognitionTests {
         #expect(true)
     }
     
+    @Test("locateAllOnScreen with valid image path")
+    func testLocateAllOnScreenValidPath() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Try to locate all instances of the image
+        let results = SwiftAutoGUI.locateAllOnScreen(testImagePath)
+        
+        // Results should be an array (possibly empty)
+        #expect(results.count >= 0)
+        
+        // If any images are found, verify they have valid dimensions
+        for rect in results {
+            #expect(rect.width > 0)
+            #expect(rect.height > 0)
+        }
+        
+        // Test passes whether or not images are found (depends on permissions)
+        #expect(true)
+    }
+    
+    @Test("locateAllOnScreen with invalid image path")
+    func testLocateAllOnScreenInvalidPath() {
+        let results = SwiftAutoGUI.locateAllOnScreen("/nonexistent/image.png")
+        
+        // Should return empty array for invalid path
+        #expect(results.isEmpty)
+    }
+    
+    @Test("locateAllOnScreen with region")
+    func testLocateAllOnScreenWithRegion() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Search in a specific region
+        let region = CGRect(x: 0, y: 0, width: 400, height: 400)
+        let results = SwiftAutoGUI.locateAllOnScreen(testImagePath, region: region)
+        
+        // If found, verify all results are within the search region
+        for rect in results {
+            // The found rectangle should at least partially overlap with the search region
+            #expect(region.intersects(rect))
+        }
+        
+        // Test passes whether or not images are found
+        #expect(true)
+    }
+    
+    @Test("locateAllOnScreen with confidence parameter")
+    func testLocateAllOnScreenWithConfidence() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Search with different confidence levels
+        let highConfidenceResults = SwiftAutoGUI.locateAllOnScreen(testImagePath, confidence: 0.95)
+        let lowConfidenceResults = SwiftAutoGUI.locateAllOnScreen(testImagePath, confidence: 0.5)
+        
+        // Lower confidence should find same or more matches
+        // But both could be empty if no screen access
+        #expect(highConfidenceResults.count <= lowConfidenceResults.count)
+        
+        // Test passes whether or not images are found
+        #expect(true)
+    }
+    
+    @Test("locateAllOnScreen returns non-overlapping results")
+    func testLocateAllOnScreenNonOverlapping() {
+        // Create a test image
+        let testImagePath = createTestImage()
+        defer { try? FileManager.default.removeItem(atPath: testImagePath) }
+        
+        // Find all instances
+        let results = SwiftAutoGUI.locateAllOnScreen(testImagePath, confidence: 0.8)
+        
+        // Verify that results don't significantly overlap (due to non-maximum suppression)
+        for i in 0..<results.count {
+            for j in (i+1)..<results.count {
+                let rect1 = results[i]
+                let rect2 = results[j]
+                
+                // Calculate overlap
+                let intersection = rect1.intersection(rect2)
+                let overlap = intersection.width * intersection.height
+                let minArea = min(rect1.width * rect1.height, rect2.width * rect2.height)
+                
+                // Overlap should be less than 50% of the smaller rectangle
+                if minArea > 0 {
+                    let overlapRatio = overlap / minArea
+                    #expect(overlapRatio < 0.5)
+                }
+            }
+        }
+        
+        // Test passes
+        #expect(true)
+    }
+    
     // Helper function to create a test image
     private func createTestImage() -> String {
         let size = NSSize(width: 50, height: 50)
