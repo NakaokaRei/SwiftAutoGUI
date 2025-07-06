@@ -146,15 +146,33 @@ extension SwiftAutoGUI {
         print("SwiftAutoGUI: OpenCV template matching - best score: \(maxVal) at (\(maxLoc.x), \(maxLoc.y)), threshold: \(threshold)")
         
         if maxVal >= threshold {
+            // Get screen scale factor
+            let screen = NSScreen.main ?? NSScreen.screens[0]
+            let scaleFactor = screen.backingScaleFactor
+            
+            print("SwiftAutoGUI: Screen scale factor: \(scaleFactor)")
+            print("SwiftAutoGUI: Needle size: \(needleMat.cols())x\(needleMat.rows())")
+            print("SwiftAutoGUI: Haystack size: \(haystackMat.cols())x\(haystackMat.rows())")
+            
             // Convert OpenCV coordinates to CGRect
-            let rect = CGRect(
+            // OpenCV works with actual pixels, we need to convert to points for macOS
+            let pixelRect = CGRect(
                 x: CGFloat(maxLoc.x) + regionOffset.x,
                 y: CGFloat(maxLoc.y) + regionOffset.y,
                 width: CGFloat(needleMat.cols()),
                 height: CGFloat(needleMat.rows())
             )
-            print("SwiftAutoGUI: OpenCV found image at: \(rect)")
-            return rect
+            
+            // Convert from pixels to points (logical coordinates)
+            let pointRect = CGRect(
+                x: pixelRect.origin.x / scaleFactor,
+                y: pixelRect.origin.y / scaleFactor,
+                width: pixelRect.width / scaleFactor,
+                height: pixelRect.height / scaleFactor
+            )
+            
+            print("SwiftAutoGUI: OpenCV found image at pixels: \(pixelRect), points: \(pointRect)")
+            return pointRect
         }
         
         return nil
