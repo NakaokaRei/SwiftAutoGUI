@@ -3,7 +3,9 @@
     "allow": [
       "WebFetch(domain:pyautogui.readthedocs.io)",
       "WebFetch(domain:github.com)",
-      "Bash(swift test)"
+      "Bash(swift test)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh issue create:*)"
     ],
     "deny": []
   }
