@@ -3,48 +3,6 @@ import AppKit
 import CoreGraphics
 import opencv2
 
-// MARK: - NSImage to OpenCV Mat conversion
-extension NSImage {
-    func toMat() -> Mat? {
-        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return nil
-        }
-        
-        let width = cgImage.width
-        let height = cgImage.height
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let bytesPerPixel = 4
-        let bytesPerRow = bytesPerPixel * width
-        let bitsPerComponent = 8
-        
-        var rawData = [UInt8](repeating: 0, count: height * bytesPerRow)
-        
-        guard let context = CGContext(
-            data: &rawData,
-            width: width,
-            height: height,
-            bitsPerComponent: bitsPerComponent,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            return nil
-        }
-        
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        
-        // Create OpenCV Mat from the raw pixel data
-        let mat = Mat(rows: Int32(height), cols: Int32(width), type: CvType.CV_8UC4)
-        _ = try? mat.put(row: 0, col: 0, data: rawData)
-        
-        // Convert RGBA to BGR (OpenCV's default color format)
-        let bgrMat = Mat()
-        Imgproc.cvtColor(src: mat, dst: bgrMat, code: ColorConversionCodes.COLOR_RGBA2BGR)
-        
-        return bgrMat
-    }
-}
-
 extension SwiftAutoGUI {
     
     // MARK: Image Recognition
@@ -54,15 +12,34 @@ extension SwiftAutoGUI {
     /// - Parameters:
     ///   - imagePath: Path to the image file to search for
     ///   - grayscale: Convert to grayscale for faster matching (currently ignored, for future implementation)
-    ///   - confidence: Matching confidence threshold (0.0-1.0). If nil, uses exact matching
+    ///   - confidence: Matching confidence threshold (0.0-1.0). If nil, uses exact matching (0.95 by default)
     ///   - region: Limit search to specific screen region. If nil, searches entire screen
     /// - Returns: CGRect with location (x, y, width, height) if found, nil otherwise
     ///
+    /// This method uses OpenCV's template matching algorithm to find images on the screen with high accuracy,
+    /// similar to PyAutoGUI. The confidence parameter allows for fuzzy matching where 1.0 means exact match
+    /// and lower values allow for slight differences.
+    ///
+    /// The method properly handles Retina displays by converting pixel coordinates to points.
+    ///
     /// Example:
     /// ```swift
+    /// // Basic usage
     /// if let buttonRect = SwiftAutoGUI.locateOnScreen("button.png") {
     ///     print("Found at: \(buttonRect)")
-    ///     SwiftAutoGUI.click(x: buttonRect.midX, y: buttonRect.midY)
+    ///     SwiftAutoGUI.move(to: CGPoint(x: buttonRect.midX, y: buttonRect.midY))
+    ///     SwiftAutoGUI.leftClick()
+    /// }
+    ///
+    /// // With confidence threshold
+    /// if let location = SwiftAutoGUI.locateOnScreen("button.png", confidence: 0.9) {
+    ///     // Found with 90% confidence
+    /// }
+    ///
+    /// // Search in specific region for better performance
+    /// let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
+    /// if let location = SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion) {
+    ///     // Found within the specified region
     /// }
     /// ```
     public static func locateOnScreen(
@@ -103,6 +80,7 @@ extension SwiftAutoGUI {
         confidence: Double?,
         searchRegion: CGRect?
     ) -> CGRect? {
+        // Use OpenCV for template matching
         // Convert NSImages to OpenCV Mat format
         guard let needleMat = needle.toMat(),
               let haystackMat = haystack.toMat() else {
@@ -176,5 +154,47 @@ extension SwiftAutoGUI {
         }
         
         return nil
+    }
+}
+
+// MARK: - NSImage to OpenCV Mat conversion
+extension NSImage {
+    func toMat() -> Mat? {
+        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return nil
+        }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bytesPerPixel = 4
+        let bytesPerRow = bytesPerPixel * width
+        let bitsPerComponent = 8
+        
+        var rawData = [UInt8](repeating: 0, count: height * bytesPerRow)
+        
+        guard let context = CGContext(
+            data: &rawData,
+            width: width,
+            height: height,
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            return nil
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        
+        // Create OpenCV Mat from the raw pixel data
+        let mat = Mat(rows: Int32(height), cols: Int32(width), type: CvType.CV_8UC4)
+        _ = try? mat.put(row: 0, col: 0, data: rawData)
+        
+        // Convert RGBA to BGR (OpenCV's default color format)
+        let bgrMat = Mat()
+        Imgproc.cvtColor(src: mat, dst: bgrMat, code: ColorConversionCodes.COLOR_RGBA2BGR)
+        
+        return bgrMat
     }
 }
