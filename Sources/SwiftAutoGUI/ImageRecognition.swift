@@ -120,6 +120,66 @@ extension SwiftAutoGUI {
         return CGPoint(x: rect.midX, y: rect.midY)
     }
     
+    /// Locate all instances of an image on the screen and return their positions
+    ///
+    /// - Parameters:
+    ///   - imagePath: Path to the image file to search for
+    ///   - grayscale: Convert to grayscale for faster matching (currently ignored, for future implementation)
+    ///   - confidence: Matching confidence threshold (0.0-1.0). If nil, uses exact matching (0.95 by default)
+    ///   - region: Limit search to specific screen region. If nil, searches entire screen
+    /// - Returns: Array of CGRect with locations (x, y, width, height) of all found instances, empty array if none found
+    ///
+    /// This method uses OpenCV's template matching algorithm to find all instances of an image on the screen.
+    /// It applies non-maximum suppression to avoid duplicate detections of the same object.
+    ///
+    /// Example:
+    /// ```swift
+    /// // Find all buttons on screen
+    /// let buttons = SwiftAutoGUI.locateAllOnScreen("button.png")
+    /// for (index, button) in buttons.enumerated() {
+    ///     print("Button \(index) found at: \(button)")
+    ///     SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY))
+    ///     SwiftAutoGUI.leftClick()
+    ///     Thread.sleep(forTimeInterval: 0.5)
+    /// }
+    ///
+    /// // Find all matches with confidence threshold
+    /// let closeButtons = SwiftAutoGUI.locateAllOnScreen("close_button.png", confidence: 0.85)
+    /// print("Found \(closeButtons.count) close buttons")
+    ///
+    /// // Search in specific region for better performance
+    /// let searchRegion = CGRect(x: 0, y: 0, width: 800, height: 600)
+    /// let icons = SwiftAutoGUI.locateAllOnScreen("icon.png", region: searchRegion)
+    /// ```
+    public static func locateAllOnScreen(
+        _ imagePath: String,
+        grayscale: Bool = false,
+        confidence: Double? = nil,
+        region: CGRect? = nil
+    ) -> [CGRect] {
+        // Load the needle image
+        guard let needleImage = NSImage(contentsOfFile: imagePath) else {
+            print("SwiftAutoGUI: Could not load image from path: \(imagePath)")
+            return []
+        }
+        
+        // Take screenshot of the region or entire screen
+        let screenshot: NSImage?
+        if let region = region {
+            screenshot = self.screenshot(region: region)
+        } else {
+            screenshot = self.screenshot()
+        }
+        
+        guard let haystackImage = screenshot else {
+            print("SwiftAutoGUI: Could not capture screenshot")
+            return []
+        }
+        
+        // Perform image matching to find all instances
+        return findAllImagesInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
+    }
+    
     // MARK: Private Helper Methods
     
     /// Find needle image within haystack image using OpenCV template matching
@@ -203,6 +263,124 @@ extension SwiftAutoGUI {
         }
         
         return nil
+    }
+    
+    /// Find all instances of needle image within haystack image using OpenCV template matching
+    private static func findAllImagesInImage(
+        needle: NSImage,
+        haystack: NSImage,
+        confidence: Double?,
+        searchRegion: CGRect?
+    ) -> [CGRect] {
+        // Convert NSImages to OpenCV Mat format
+        guard let needleMat = needle.toMat(),
+              let haystackMat = haystack.toMat() else {
+            print("SwiftAutoGUI: Could not convert images to OpenCV Mat")
+            return []
+        }
+        
+        // Apply search region if specified
+        let searchMat: Mat
+        let regionOffset: CGPoint
+        
+        if let region = searchRegion {
+            let rect = Rect2i(
+                x: Int32(region.origin.x),
+                y: Int32(region.origin.y),
+                width: Int32(region.width),
+                height: Int32(region.height)
+            )
+            searchMat = Mat(mat: haystackMat, rect: rect)
+            regionOffset = region.origin
+        } else {
+            searchMat = haystackMat
+            regionOffset = .zero
+        }
+        
+        // Perform template matching using OpenCV
+        let result = Mat()
+        Imgproc.matchTemplate(
+            image: searchMat,
+            templ: needleMat,
+            result: result,
+            method: TemplateMatchModes.TM_CCOEFF_NORMED  // Normalized correlation coefficient
+        )
+        
+        let threshold = confidence ?? 0.95
+        var matches: [CGRect] = []
+        
+        // Get screen scale factor
+        let screen = NSScreen.main ?? NSScreen.screens[0]
+        let scaleFactor = screen.backingScaleFactor
+        
+        // Find all matches above threshold
+        var resultData = [Float](repeating: 0, count: Int(result.rows() * result.cols()))
+        _ = try? result.get(row: 0, col: 0, data: &resultData)
+        
+        let templateWidth = needleMat.cols()
+        let templateHeight = needleMat.rows()
+        
+        // Create a copy of result to track which areas we've already processed
+        var processedMask = Array(repeating: false, count: resultData.count)
+        
+        while true {
+            // Find the maximum value and its location
+            var maxVal: Float = -1
+            var maxIdx = -1
+            
+            for i in 0..<resultData.count {
+                if !processedMask[i] && resultData[i] > maxVal {
+                    maxVal = resultData[i]
+                    maxIdx = i
+                }
+            }
+            
+            // If no more matches above threshold, break
+            if maxVal < Float(threshold) || maxIdx == -1 {
+                break
+            }
+            
+            // Calculate coordinates from the index
+            let y = maxIdx / Int(result.cols())
+            let x = maxIdx % Int(result.cols())
+            
+            // Convert OpenCV coordinates to CGRect
+            let pixelRect = CGRect(
+                x: CGFloat(x) + regionOffset.x,
+                y: CGFloat(y) + regionOffset.y,
+                width: CGFloat(templateWidth),
+                height: CGFloat(templateHeight)
+            )
+            
+            // Convert from pixels to points (logical coordinates)
+            let pointRect = CGRect(
+                x: pixelRect.origin.x / scaleFactor,
+                y: pixelRect.origin.y / scaleFactor,
+                width: pixelRect.width / scaleFactor,
+                height: pixelRect.height / scaleFactor
+            )
+            
+            matches.append(pointRect)
+            
+            // Apply non-maximum suppression: mark nearby pixels as processed
+            // to avoid detecting the same object multiple times
+            let suppressionRadius = min(templateWidth, templateHeight) / 2
+            
+            for dy in -suppressionRadius...suppressionRadius {
+                for dx in -suppressionRadius...suppressionRadius {
+                    let ny = y + Int(dy)
+                    let nx = x + Int(dx)
+                    
+                    if ny >= 0 && ny < Int(result.rows()) && nx >= 0 && nx < Int(result.cols()) {
+                        let idx = ny * Int(result.cols()) + nx
+                        processedMask[idx] = true
+                    }
+                }
+            }
+        }
+        
+        print("SwiftAutoGUI: Found \(matches.count) matches with confidence >= \(threshold)")
+        return matches
     }
 }
 

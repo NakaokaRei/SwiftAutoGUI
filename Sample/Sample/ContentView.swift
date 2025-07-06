@@ -144,6 +144,10 @@ struct ContentView: View {
                         locateAndClickTestImage()
                     }
                     
+                    Button("Find All Test Images") {
+                        findAllTestImages()
+                    }
+                    
                     if !imageRecognitionResult.isEmpty {
                         Text(imageRecognitionResult)
                             .font(.caption)
@@ -278,6 +282,52 @@ struct ContentView: View {
             imageRecognitionResult += "\nClicked on the test image!"
         } else {
             imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
+        }
+    }
+    
+    private func findAllTestImages() {
+        guard !testImagePath.isEmpty else {
+            imageRecognitionResult = "Please create a test image first"
+            return
+        }
+        
+        imageRecognitionResult = "Searching for all test images..."
+        
+        // Find all instances of the test image
+        let allMatches = SwiftAutoGUI.locateAllOnScreen(testImagePath, confidence: 0.8)
+        
+        if !allMatches.isEmpty {
+            imageRecognitionResult = "Found \(allMatches.count) instances of the test image:\n"
+            
+            // Show details of each match and highlight them
+            for (index, rect) in allMatches.enumerated() {
+                imageRecognitionResult += "\n[\(index + 1)] at x=\(Int(rect.origin.x)), y=\(Int(rect.origin.y)), size=\(Int(rect.width))x\(Int(rect.height))"
+                
+                // Draw a box around each found instance
+                let corners = [
+                    CGPoint(x: rect.origin.x, y: rect.origin.y),
+                    CGPoint(x: rect.origin.x + rect.width, y: rect.origin.y),
+                    CGPoint(x: rect.origin.x + rect.width, y: rect.origin.y + rect.height),
+                    CGPoint(x: rect.origin.x, y: rect.origin.y + rect.height),
+                    CGPoint(x: rect.origin.x, y: rect.origin.y)
+                ]
+                
+                for i in 0..<corners.count - 1 {
+                    SwiftAutoGUI.move(to: corners[i])
+                    Thread.sleep(forTimeInterval: 0.1)
+                    SwiftAutoGUI.move(to: corners[i + 1])
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+            }
+            
+            // Move to center of the first match
+            if let firstMatch = allMatches.first {
+                SwiftAutoGUI.move(to: CGPoint(x: firstMatch.midX, y: firstMatch.midY))
+            }
+            
+            imageRecognitionResult += "\n\nHighlighted all \(allMatches.count) matches!"
+        } else {
+            imageRecognitionResult = "No test images found on screen. Try opening multiple windows with the test image visible."
         }
     }
 }

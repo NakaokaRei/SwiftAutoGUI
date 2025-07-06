@@ -170,6 +170,27 @@ if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8,
     SwiftAutoGUI.move(to: center)
     SwiftAutoGUI.leftClick()
 }
+
+// Find all occurrences of an image on screen
+let buttons = SwiftAutoGUI.locateAllOnScreen("button.png")
+print("Found \(buttons.count) buttons")
+for (index, button) in buttons.enumerated() {
+    print("Button \(index): \(button)")
+    SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY))
+    SwiftAutoGUI.leftClick()
+    Thread.sleep(forTimeInterval: 0.5)
+}
+
+// locateAllOnScreen with confidence threshold for flexible matching
+let icons = SwiftAutoGUI.locateAllOnScreen("app_icon.png", confidence: 0.85)
+for icon in icons {
+    // Process each found icon
+    print("Found icon at: \(icon)")
+}
+
+// Search for multiple matches in a specific region
+let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
+let menuItems = SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
 ```
 
 # Contributors
