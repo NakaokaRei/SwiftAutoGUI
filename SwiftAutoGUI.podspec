@@ -9,7 +9,7 @@
 Pod::Spec.new do |spec|
 
   spec.name         = "SwiftAutoGUI"
-  spec.version      = "0.3.1"
+  spec.version      = "0.4.0"
   spec.summary      = "Used to programmatically control the mouse & keyboard."
   spec.homepage     = "https://github.com/NakaokaRei/SwiftAutoGUI"
   spec.license      = { :type => "MIT", :file => "LICENSE" }
