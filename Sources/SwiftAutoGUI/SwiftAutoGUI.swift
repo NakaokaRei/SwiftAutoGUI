@@ -24,6 +24,7 @@ import AppKit
 /// - ``Key``
 ///
 /// ### Mouse Control
+/// - ``position()``
 /// - ``moveMouse(dx:dy:)``
 /// - ``rightClick()``
 /// - ``leftDragged(to:from:)``
@@ -171,6 +172,42 @@ public class SwiftAutoGUI {
     }
 
     // MARK: Mouse Event
+
+    /// Returns the current position of the mouse cursor.
+    ///
+    /// This method returns the current mouse cursor coordinates in the CGWindow coordinate system
+    /// where (0,0) is the top-left corner of the main screen.
+    ///
+    /// - Returns: A `CGPoint` containing the current x and y coordinates of the mouse cursor.
+    ///
+    /// - Note: The returned coordinates use the CGWindow coordinate system (origin at top-left),
+    ///         not the NSView coordinate system (origin at bottom-left).
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Get current mouse position
+    /// let currentPos = SwiftAutoGUI.position()
+    /// print("Mouse is at: \(currentPos.x), \(currentPos.y)")
+    ///
+    /// // Save position, move, then return
+    /// let savedPos = SwiftAutoGUI.position()
+    /// SwiftAutoGUI.move(to: CGPoint(x: 100, y: 200))
+    /// // ... perform actions ...
+    /// SwiftAutoGUI.move(to: savedPos)
+    ///
+    /// // Check if mouse is in specific region
+    /// let pos = SwiftAutoGUI.position()
+    /// if pos.x < 100 && pos.y < 100 {
+    ///     print("Mouse is in top-left corner")
+    /// }
+    /// ```
+    public static func position() -> CGPoint {
+        var mouseLoc = NSEvent.mouseLocation
+        // Convert from NSView coordinates (origin bottom-left) to CGWindow coordinates (origin top-left)
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
+        return mouseLoc
+    }
 
     /// Moves the mouse cursor relative to its current position.
     ///

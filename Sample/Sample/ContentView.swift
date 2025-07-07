@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var screenSize: String = ""
     @State private var imageRecognitionResult: String = ""
     @State private var testImagePath: String = ""
+    @State private var mousePosition: String = ""
     
     var body: some View {
         ScrollView {
@@ -32,6 +33,15 @@ struct ContentView: View {
                     }
                     Button("move mouse") {
                         SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+                    }
+                    Button("get mouse position") {
+                        let pos = SwiftAutoGUI.position()
+                        mousePosition = "Mouse at: x=\(Int(pos.x)), y=\(Int(pos.y))"
+                    }
+                    if !mousePosition.isEmpty {
+                        Text(mousePosition)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     Button("click") {
                         SwiftAutoGUI.leftClick()

@@ -1,9 +1,61 @@
 import Testing
 import CoreGraphics
+import Foundation
 @testable import SwiftAutoGUI
 
-@Suite("Mouse Tests")
+@Suite("Mouse Tests", .serialized)
 struct MouseTests {
+    
+    @Test("Mouse position function")
+    func testMousePositionFunction() async throws {
+        // First, move to a known position to start from a consistent state
+        let startPosition = CGPoint(x: 500, y: 500)
+        SwiftAutoGUI.move(to: startPosition)
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        // Get current mouse position
+        let position1 = SwiftAutoGUI.position()
+        
+        // Verify the mouse is at the expected position (with small tolerance)
+        #expect(abs(position1.x - startPosition.x) <= 1.0)
+        #expect(abs(position1.y - startPosition.y) <= 1.0)
+        
+        // Test relative movement with positive values
+        SwiftAutoGUI.moveMouse(dx: 10, dy: 15)
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
+        let position2 = SwiftAutoGUI.position()
+        
+        // Verify the mouse moved exactly by the specified amount
+        // Note: moveMouse uses dx with negative sign for x coordinate
+        #expect(abs(position2.x - (position1.x - 10)) <= 1.0)
+        #expect(abs(position2.y - (position1.y + 15)) <= 1.0)
+        
+        // Test relative movement with negative values
+        SwiftAutoGUI.moveMouse(dx: -20, dy: -10)
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
+        let position3 = SwiftAutoGUI.position()
+        
+        // Verify the mouse moved by the negative amounts
+        #expect(abs(position3.x - (position2.x + 20)) <= 1.0)
+        #expect(abs(position3.y - (position2.y - 10)) <= 1.0)
+        
+        // Test absolute movement
+        let targetPosition = CGPoint(x: 300, y: 400)
+        SwiftAutoGUI.move(to: targetPosition)
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
+        let position4 = SwiftAutoGUI.position()
+        
+        // Verify the mouse is at the target position
+        #expect(abs(position4.x - targetPosition.x) <= 1.0)
+        #expect(abs(position4.y - targetPosition.y) <= 1.0)
+        
+        // Test movement to screen edges
+        SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0))
+        try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
+        let position5 = SwiftAutoGUI.position()
+        #expect(abs(position5.x - 0) <= 1.0)
+        #expect(abs(position5.y - 0) <= 1.0)
+    }
     
     @Test("Mouse movement functions")
     func testMouseMovementFunctions() {
