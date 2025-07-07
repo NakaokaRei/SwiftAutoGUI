@@ -44,6 +44,32 @@ swift package update
 swift package resolve
 ```
 
+### Demo Application
+
+The project includes a sample macOS app demonstrating SwiftAutoGUI features:
+- **Location**: `/Sample/Sample.xcodeproj`
+- **Main Files**: 
+  - `Sample/Sample/ContentView.swift` - Main UI with all feature demos
+  - `Sample/Sample/SampleApp.swift` - App entry point
+
+To run the demo app:
+```bash
+# Open in Xcode
+open Sample/Sample.xcodeproj
+
+# Then build and run from Xcode (⌘+R)
+```
+
+The demo app showcases:
+- Keyboard shortcuts and special keys
+- Mouse movement and clicks  
+- Mouse position tracking
+- Scrolling (vertical/horizontal)
+- Screenshot capture and saving
+- Pixel color detection
+- Screen size detection
+- Image recognition and clicking
+
 ## Architecture
 
 The library consists of two main components:
