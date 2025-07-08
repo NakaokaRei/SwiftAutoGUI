@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var imageRecognitionResult: String = ""
     @State private var testImagePath: String = ""
     @State private var mousePosition: String = ""
+    @State private var textToWrite: String = "Hello, SwiftAutoGUI!"
+    @State private var writeStatus: String = ""
     
     var body: some View {
         ScrollView {
@@ -51,6 +53,41 @@ struct ContentView: View {
                     }
                     Button("vscroll +") {
                         SwiftAutoGUI.vscroll(clicks: 1)
+                    }
+                }
+                
+                Divider()
+                
+                // Text Writing Features
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Text Writing Features")
+                        .font(.headline)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Enter text to write:")
+                            .font(.caption)
+                        TextField("Text to write", text: $textToWrite)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    HStack {
+                        Button("Write Text (Fast)") {
+                            writeText(interval: 0.0)
+                        }
+                        
+                        Button("Write Text (Normal)") {
+                            writeText(interval: 0.05)
+                        }
+                        
+                        Button("Write Text (Slow)") {
+                            writeText(interval: 0.2)
+                        }
+                    }
+                    
+                    if !writeStatus.isEmpty {
+                        Text(writeStatus)
+                            .font(.caption)
+                            .foregroundColor(writeStatus.contains("Error") ? .red : .green)
                     }
                 }
                 
@@ -189,6 +226,42 @@ struct ContentView: View {
             }
         }
         .padding()
+    }
+    
+    // MARK: - Text Writing Helper Functions
+    
+    private func writeText(interval: TimeInterval) {
+        guard !textToWrite.isEmpty else {
+            writeStatus = "Error: Please enter some text to write"
+            return
+        }
+        
+        writeStatus = "Writing text with \(interval == 0.0 ? "no" : "\(interval)s") interval..."
+        
+        // Add a delay to give user time to position cursor
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            do {
+                SwiftAutoGUI.write(textToWrite, interval: interval)
+                writeStatus = "✓ Successfully wrote: \"\(textToWrite)\""
+            } catch {
+                writeStatus = "Error: Failed to write text - \(error.localizedDescription)"
+            }
+        }
+        
+        // Update status to show countdown
+        updateWriteCountdown()
+    }
+    
+    private func updateWriteCountdown() {
+        var countdown = 2
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            if countdown > 0 {
+                writeStatus = "Starting in \(countdown) seconds... Position your cursor!"
+                countdown -= 1
+            } else {
+                timer.invalidate()
+            }
+        }
     }
     
     // MARK: - Image Recognition Helper Functions
