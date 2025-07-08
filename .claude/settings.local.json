@@ -9,6 +9,40 @@
       "Bash(git add:*)",
       "Bash(git commit:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm:*)",
+      "Bash(rm -rf:*)",
+      "Bash(git push:*)",
+      "Read(.env.*)",
+      "Read(id_rsa)",
+      "Read(id_ed25519)",
+      "Read(**/*token*)",
+      "Read(**/*key*)",
+      "Write(.env*)",
+      "Write(**/secrets/**)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(nc:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm remove:*)",
+      "Bash(psql:*)",
+      "Bash(mysql:*)",
+      "Bash(mongod:*)",
+      "mcp__supabase__execute_sql",
+      "Bash(aws:*)",
+      "Bash(security:*)",
+      "Bash(osascript:*)",
+      "Bash(open:*)",
+      "Read(~/Library/**)",
+      "Write(~/Library/**)",
+      "Read(**/.idea/**)",
+      "Write(**/.idea/**)",
+      "Read(**/.vscode/**)",
+      "Write(**/.vscode/**)",
+      "Read(**/credentials.json)",
+      "Read(**/credentials.example.json)",
+      "Read(**/*.csv)"
+    ]
   }
 }
