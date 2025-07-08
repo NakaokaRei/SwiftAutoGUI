@@ -15,6 +15,12 @@ struct ContentView: View {
     @State private var imageRecognitionResult: String = ""
     @State private var testImagePath: String = ""
     @State private var mousePosition: String = ""
+    @State private var textToType: String = ""
+    @State private var typingSpeed: Double = 0.0
+    @State private var typingStatus: String = ""
+    @State private var targetTextField: String = ""
+    @State private var isTextFieldFocused: Bool = false
+    @FocusState private var isTargetFieldFocused: Bool
     
     var body: some View {
         ScrollView {
@@ -51,6 +57,85 @@ struct ContentView: View {
                     }
                     Button("vscroll +") {
                         SwiftAutoGUI.vscroll(clicks: 1)
+                    }
+                }
+                
+                Divider()
+                
+                // Text Typing Demo Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Text Typing Demo")
+                        .font(.headline)
+                    
+                    // Text input field
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Enter text to type:")
+                            .font(.caption)
+                        TextField("Type your message here...", text: $textToType)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                    }
+                    
+                    // Target text field for typing verification
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Target Text Field (click button to auto-focus and type here):")
+                            .font(.caption)
+                        TextField("Text will appear here...", text: $targetTextField, onEditingChanged: { focused in
+                            isTextFieldFocused = focused
+                        })
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .background(isTargetFieldFocused ? Color.blue.opacity(0.1) : Color.clear)
+                        .focused($isTargetFieldFocused)
+                    }
+                    
+                    // Typing speed control
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Typing Speed: \(String(format: "%.1f", typingSpeed))s interval")
+                            .font(.caption)
+                        Slider(value: $typingSpeed, in: 0.0...1.0, step: 0.1)
+                            .frame(maxWidth: 200)
+                    }
+                    
+                    // Type custom text button
+                    Button("Type Custom Text") {
+                        typeText(textToType)
+                    }
+                    .disabled(textToType.isEmpty)
+                    
+                    // Auto-focus and type button
+                    Button("Focus Target Field & Type") {
+                        focusAndTypeInTargetField()
+                    }
+                    .disabled(textToType.isEmpty)
+                    .foregroundColor(.white)
+                    .background(Color.blue)
+                    .cornerRadius(8)
+                    
+                    // Quick test buttons
+                    HStack {
+                        Button("\"Hello, World!\"") {
+                            typeText("Hello, World!")
+                        }
+                        
+                        Button("\"Test123!@#\"") {
+                            typeText("Test123!@#")
+                        }
+                    }
+                    
+                    HStack {
+                        Button("\"The quick brown fox...\"") {
+                            typeText("The quick brown fox jumps over the lazy dog")
+                        }
+                        
+                        Button("Multi-line Text") {
+                            typeText("Line 1\nLine 2\nLine 3")
+                        }
+                    }
+                    
+                    // Status display
+                    if !typingStatus.isEmpty {
+                        Text(typingStatus)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
@@ -339,6 +424,71 @@ struct ContentView: View {
         } else {
             imageRecognitionResult = "No test images found on screen. Try opening multiple windows with the test image visible."
         }
+    }
+    
+    // MARK: - Text Typing Helper Function
+    
+    private func typeText(_ text: String) {
+        guard !text.isEmpty else {
+            typingStatus = "Please enter some text to type"
+            return
+        }
+        
+        typingStatus = "Typing: \"\(text)\" (speed: \(String(format: "%.1f", typingSpeed))s interval)"
+        
+        // Use async/await pattern for delay and typing
+        Task {
+            await performTyping(text: text)
+        }
+    }
+    
+    @MainActor
+    private func performTyping(text: String) async {
+        // Add a small delay to give user time to switch to target application
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        
+        await SwiftAutoGUI.write(text, interval: typingSpeed)
+        
+        typingStatus = "✅ Completed typing: \"\(text)\""
+    }
+    
+    // MARK: - Focus and Type Helper Function
+    
+    private func focusAndTypeInTargetField() {
+        guard !textToType.isEmpty else {
+            typingStatus = "Please enter some text to type"
+            return
+        }
+        
+        // Clear the target field first
+        targetTextField = ""
+        
+        // Set focus to the target field
+        isTargetFieldFocused = true
+        
+        typingStatus = "Focusing target field and typing..."
+        
+        Task {
+            await performFocusAndType()
+        }
+    }
+    
+    @MainActor
+    private func performFocusAndType() async {
+        // Wait a bit for focus to be set
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Clear any existing text (select all and delete)
+        SwiftAutoGUI.sendKeyShortcut([.command, .a])
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        SwiftAutoGUI.keyDown(.delete)
+        SwiftAutoGUI.keyUp(.delete)
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        // Type the text
+        await SwiftAutoGUI.write(textToType, interval: typingSpeed)
+        
+        typingStatus = "✅ Focused and typed in target field: \"\(textToType)\""
     }
 }
 

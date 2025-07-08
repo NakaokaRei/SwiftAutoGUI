@@ -21,6 +21,7 @@ import AppKit
 /// ### Keyboard Control
 /// - ``keyDown(_:)``
 /// - ``keyUp(_:)``
+/// - ``write(_:interval:)``
 /// - ``Key``
 ///
 /// ### Mouse Control
@@ -170,6 +171,63 @@ public class SwiftAutoGUI {
         cgEvent?.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
     }
+
+    /// Types a text string with optional delay between keystrokes.
+    ///
+    /// This async method types each character of the provided string sequentially,
+    /// automatically handling uppercase letters and special characters by using
+    /// the shift key when necessary. Uses `Task.sleep` for non-blocking delays.
+    ///
+    /// - Parameters:
+    ///   - text: The string to type
+    ///   - interval: Delay between each keystroke in seconds (default: 0)
+    ///
+    /// - Note: This method only supports basic ASCII characters and may not work
+    ///         correctly with complex Unicode characters or emoji.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Type text instantly
+    /// await SwiftAutoGUI.write("Hello, World!")
+    ///
+    /// // Type with 0.1 second delay between characters
+    /// await SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
+    ///
+    /// // Type in a text field
+    /// SwiftAutoGUI.click(x: 100, y: 200)  // Click on text field
+    /// await SwiftAutoGUI.write("user@example.com")
+    /// ```
+    public static func write(_ text: String, interval: TimeInterval = 0) async {
+        for char in text {
+            if let key = Key.from(character: char) {
+                let isUppercase = char.isUppercase
+                let needsShift = isUppercase || shiftCharacters.contains(char)
+                
+                if needsShift {
+                    keyDown(.shift)
+                }
+                
+                keyDown(key)
+                keyUp(key)
+                
+                if needsShift {
+                    keyUp(.shift)
+                }
+                
+                if interval > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                }
+            }
+        }
+    }
+    
+    
+    /// Set of characters that require the shift key to be pressed.
+    private static let shiftCharacters: Set<Character> = [
+        "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+        "_", "+", "{", "}", "|", ":", "\"", "<", ">", "?", "~"
+    ]
 
     // MARK: Mouse Event
 

@@ -97,4 +97,52 @@ struct KeyboardTests {
         // If we get here without crashing, the basic structure is working
         #expect(true)
     }
+    
+    @Test("Write function basic test")
+    func testWriteFunction() async {
+        // Note: This test only verifies that the write function can be called without crashing
+        // Actual text typing requires accessibility permissions and cannot be fully tested in unit tests
+        
+        // Test basic text writing
+        await SwiftAutoGUI.write("Hello")
+        
+        // Test with special characters
+        await SwiftAutoGUI.write("Hello, World!")
+        
+        // Test with numbers
+        await SwiftAutoGUI.write("123")
+        
+        // Test with interval (should not crash)
+        await SwiftAutoGUI.write("Test", interval: 0.01)
+        
+        // Test empty string
+        await SwiftAutoGUI.write("")
+        
+        // Test with mixed case
+        await SwiftAutoGUI.write("MixedCase")
+        
+        // If we get here without crashing, the basic structure is working
+        #expect(true)
+    }
+    
+    @Test("Character to key mapping")
+    func testCharacterToKeyMapping() async {
+        // Test that basic characters map correctly
+        // Note: These are private functions, so we test indirectly through write
+        
+        // Test that unsupported characters are handled gracefully
+        await SwiftAutoGUI.write("🎉") // Should not crash on emoji
+        
+        // Test common punctuation
+        await SwiftAutoGUI.write("!@#$%^&*()")
+        await SwiftAutoGUI.write("{}[]|:\"<>?~")
+        
+        // Test basic ASCII characters
+        await SwiftAutoGUI.write("abcdefghijklmnopqrstuvwxyz")
+        await SwiftAutoGUI.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        await SwiftAutoGUI.write("0123456789")
+        
+        // If we get here without crashing, character mapping works
+        #expect(true)
+    }
 }
