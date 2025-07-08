@@ -40,14 +40,18 @@ targets: [
 ]
 ```
 
-## CocoaPods
-SwiftAutoGUI is available through [CocoaPods](https://cocoapods.org/).
+## Migration from CocoaPods
+If you were previously using CocoaPods, please migrate to Swift Package Manager. CocoaPods support has been discontinued due to OpenCV dependency incompatibility.
 
-in `Podfile` add the following:
+### Migration Steps:
+1. Remove `pod 'SwiftAutoGUI'` from your `Podfile`
+2. Run `pod install` to remove the pod
+3. Add SwiftAutoGUI via Swift Package Manager using the instructions above
 
-```ruby
-pod 'SwiftAutoGUI'
-```
+In Xcode:
+1. File → Add Package Dependencies
+2. Enter: `https://github.com/NakaokaRei/SwiftAutoGUI.git`
+3. Select branch: `master`
 
 # Example Usage
 
