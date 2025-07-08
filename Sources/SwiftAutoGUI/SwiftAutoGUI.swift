@@ -200,7 +200,7 @@ public class SwiftAutoGUI {
     /// ```
     public static func write(_ text: String, interval: TimeInterval = 0) {
         for char in text {
-            if let key = characterToKey(char) {
+            if let key = Key.from(character: char) {
                 let isUppercase = char.isUppercase
                 let needsShift = isUppercase || shiftCharacters.contains(char)
                 
@@ -222,87 +222,6 @@ public class SwiftAutoGUI {
         }
     }
     
-    /// Maps a character to its corresponding Key enum case.
-    ///
-    /// - Parameter char: The character to map
-    /// - Returns: The corresponding Key enum case, or nil if not supported
-    private static func characterToKey(_ char: Character) -> Key? {
-        switch char.lowercased().first {
-        case "a": return .a
-        case "b": return .b
-        case "c": return .c
-        case "d": return .d
-        case "e": return .e
-        case "f": return .f
-        case "g": return .g
-        case "h": return .h
-        case "i": return .i
-        case "j": return .j
-        case "k": return .k
-        case "l": return .l
-        case "m": return .m
-        case "n": return .n
-        case "o": return .o
-        case "p": return .p
-        case "q": return .q
-        case "r": return .r
-        case "s": return .s
-        case "t": return .t
-        case "u": return .u
-        case "v": return .v
-        case "w": return .w
-        case "x": return .x
-        case "y": return .y
-        case "z": return .z
-        case "0": return .zero
-        case "1": return .one
-        case "2": return .two
-        case "3": return .three
-        case "4": return .four
-        case "5": return .five
-        case "6": return .six
-        case "7": return .seven
-        case "8": return .eight
-        case "9": return .nine
-        case " ": return .space
-        case "\t": return .tab
-        case "\n": return .returnKey
-        case "\r": return .returnKey
-        case "=": return .equals
-        case "-": return .minus
-        case ";": return .semicolon
-        case "'": return .apostrophe
-        case ",": return .comma
-        case ".": return .period
-        case "/": return .forwardSlash
-        case "\\": return .backslash
-        case "`": return .grave
-        case "[": return .leftBracket
-        case "]": return .rightBracket
-        case "!": return .one      // Shift+1
-        case "@": return .two      // Shift+2
-        case "#": return .three    // Shift+3
-        case "$": return .four     // Shift+4
-        case "%": return .five     // Shift+5
-        case "^": return .six      // Shift+6
-        case "&": return .seven    // Shift+7
-        case "*": return .eight    // Shift+8
-        case "(": return .nine     // Shift+9
-        case ")": return .zero     // Shift+0
-        case "_": return .minus    // Shift+-
-        case "+": return .equals   // Shift+=
-        case "{": return .leftBracket  // Shift+[
-        case "}": return .rightBracket // Shift+]
-        case "|": return .backslash    // Shift+\
-        case ":": return .semicolon    // Shift+;
-        case "\"": return .apostrophe  // Shift+'
-        case "<": return .comma        // Shift+,
-        case ">": return .period       // Shift+.
-        case "?": return .forwardSlash // Shift+/
-        case "~": return .grave        // Shift+`
-        default: return nil
-        }
-    }
     
     /// Set of characters that require the shift key to be pressed.
     private static let shiftCharacters: Set<Character> = [
