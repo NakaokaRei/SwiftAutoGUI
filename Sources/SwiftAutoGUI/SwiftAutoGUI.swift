@@ -21,6 +21,7 @@ import AppKit
 /// ### Keyboard Control
 /// - ``keyDown(_:)``
 /// - ``keyUp(_:)``
+/// - ``write(_:interval:)``
 /// - ``Key``
 ///
 /// ### Mouse Control
@@ -170,6 +171,144 @@ public class SwiftAutoGUI {
         cgEvent?.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
     }
+
+    /// Types a text string with optional delay between keystrokes.
+    ///
+    /// This method types each character of the provided string sequentially,
+    /// automatically handling uppercase letters and special characters by using
+    /// the shift key when necessary.
+    ///
+    /// - Parameters:
+    ///   - text: The string to type
+    ///   - interval: Delay between each keystroke in seconds (default: 0)
+    ///
+    /// - Note: This method only supports basic ASCII characters and may not work
+    ///         correctly with complex Unicode characters or emoji.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Type text instantly
+    /// SwiftAutoGUI.write("Hello, World!")
+    ///
+    /// // Type with 0.1 second delay between characters
+    /// SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
+    ///
+    /// // Type in a text field
+    /// SwiftAutoGUI.click(x: 100, y: 200)  // Click on text field
+    /// SwiftAutoGUI.write("user@example.com")
+    /// ```
+    public static func write(_ text: String, interval: TimeInterval = 0) {
+        for char in text {
+            if let key = characterToKey(char) {
+                let isUppercase = char.isUppercase
+                let needsShift = isUppercase || shiftCharacters.contains(char)
+                
+                if needsShift {
+                    keyDown(.shift)
+                }
+                
+                keyDown(key)
+                keyUp(key)
+                
+                if needsShift {
+                    keyUp(.shift)
+                }
+                
+                if interval > 0 {
+                    Thread.sleep(forTimeInterval: interval)
+                }
+            }
+        }
+    }
+    
+    /// Maps a character to its corresponding Key enum case.
+    ///
+    /// - Parameter char: The character to map
+    /// - Returns: The corresponding Key enum case, or nil if not supported
+    private static func characterToKey(_ char: Character) -> Key? {
+        switch char.lowercased().first {
+        case "a": return .a
+        case "b": return .b
+        case "c": return .c
+        case "d": return .d
+        case "e": return .e
+        case "f": return .f
+        case "g": return .g
+        case "h": return .h
+        case "i": return .i
+        case "j": return .j
+        case "k": return .k
+        case "l": return .l
+        case "m": return .m
+        case "n": return .n
+        case "o": return .o
+        case "p": return .p
+        case "q": return .q
+        case "r": return .r
+        case "s": return .s
+        case "t": return .t
+        case "u": return .u
+        case "v": return .v
+        case "w": return .w
+        case "x": return .x
+        case "y": return .y
+        case "z": return .z
+        case "0": return .zero
+        case "1": return .one
+        case "2": return .two
+        case "3": return .three
+        case "4": return .four
+        case "5": return .five
+        case "6": return .six
+        case "7": return .seven
+        case "8": return .eight
+        case "9": return .nine
+        case " ": return .space
+        case "\t": return .tab
+        case "\n": return .returnKey
+        case "\r": return .returnKey
+        case "=": return .equals
+        case "-": return .minus
+        case ";": return .semicolon
+        case "'": return .apostrophe
+        case ",": return .comma
+        case ".": return .period
+        case "/": return .forwardSlash
+        case "\\": return .backslash
+        case "`": return .grave
+        case "[": return .leftBracket
+        case "]": return .rightBracket
+        case "!": return .one      // Shift+1
+        case "@": return .two      // Shift+2
+        case "#": return .three    // Shift+3
+        case "$": return .four     // Shift+4
+        case "%": return .five     // Shift+5
+        case "^": return .six      // Shift+6
+        case "&": return .seven    // Shift+7
+        case "*": return .eight    // Shift+8
+        case "(": return .nine     // Shift+9
+        case ")": return .zero     // Shift+0
+        case "_": return .minus    // Shift+-
+        case "+": return .equals   // Shift+=
+        case "{": return .leftBracket  // Shift+[
+        case "}": return .rightBracket // Shift+]
+        case "|": return .backslash    // Shift+\
+        case ":": return .semicolon    // Shift+;
+        case "\"": return .apostrophe  // Shift+'
+        case "<": return .comma        // Shift+,
+        case ">": return .period       // Shift+.
+        case "?": return .forwardSlash // Shift+/
+        case "~": return .grave        // Shift+`
+        default: return nil
+        }
+    }
+    
+    /// Set of characters that require the shift key to be pressed.
+    private static let shiftCharacters: Set<Character> = [
+        "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+        "_", "+", "{", "}", "|", ":", "\"", "<", ">", "?", "~"
+    ]
 
     // MARK: Mouse Event
 
