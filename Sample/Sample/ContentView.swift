@@ -18,6 +18,9 @@ struct ContentView: View {
     @State private var textToType: String = ""
     @State private var typingSpeed: Double = 0.0
     @State private var typingStatus: String = ""
+    @State private var targetTextField: String = ""
+    @State private var isTextFieldFocused: Bool = false
+    @FocusState private var isTargetFieldFocused: Bool
     
     var body: some View {
         ScrollView {
@@ -72,6 +75,18 @@ struct ContentView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
                     
+                    // Target text field for typing verification
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Target Text Field (click button to auto-focus and type here):")
+                            .font(.caption)
+                        TextField("Text will appear here...", text: $targetTextField, onEditingChanged: { focused in
+                            isTextFieldFocused = focused
+                        })
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .background(isTargetFieldFocused ? Color.blue.opacity(0.1) : Color.clear)
+                        .focused($isTargetFieldFocused)
+                    }
+                    
                     // Typing speed control
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Typing Speed: \(String(format: "%.1f", typingSpeed))s interval")
@@ -85,6 +100,15 @@ struct ContentView: View {
                         typeText(textToType)
                     }
                     .disabled(textToType.isEmpty)
+                    
+                    // Auto-focus and type button
+                    Button("Focus Target Field & Type") {
+                        focusAndTypeInTargetField()
+                    }
+                    .disabled(textToType.isEmpty)
+                    .foregroundColor(.white)
+                    .background(Color.blue)
+                    .cornerRadius(8)
                     
                     // Quick test buttons
                     HStack {
@@ -423,9 +447,48 @@ struct ContentView: View {
         // Add a small delay to give user time to switch to target application
         try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
         
-        SwiftAutoGUI.write(text, interval: typingSpeed)
+        await SwiftAutoGUI.write(text, interval: typingSpeed)
         
         typingStatus = "✅ Completed typing: \"\(text)\""
+    }
+    
+    // MARK: - Focus and Type Helper Function
+    
+    private func focusAndTypeInTargetField() {
+        guard !textToType.isEmpty else {
+            typingStatus = "Please enter some text to type"
+            return
+        }
+        
+        // Clear the target field first
+        targetTextField = ""
+        
+        // Set focus to the target field
+        isTargetFieldFocused = true
+        
+        typingStatus = "Focusing target field and typing..."
+        
+        Task {
+            await performFocusAndType()
+        }
+    }
+    
+    @MainActor
+    private func performFocusAndType() async {
+        // Wait a bit for focus to be set
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        
+        // Clear any existing text (select all and delete)
+        SwiftAutoGUI.sendKeyShortcut([.command, .a])
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        SwiftAutoGUI.keyDown(.delete)
+        SwiftAutoGUI.keyUp(.delete)
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        // Type the text
+        await SwiftAutoGUI.write(textToType, interval: typingSpeed)
+        
+        typingStatus = "✅ Focused and typed in target field: \"\(textToType)\""
     }
 }
 

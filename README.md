@@ -16,7 +16,7 @@ This repository is inspired by [pyautogui](https://github.com/asweigart/pyautogu
 
 # Requirements
 
-- macOS 12.0+
+- macOS 13.0+
 - Swift 5.7+
 
 # Installation
@@ -70,6 +70,15 @@ SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
 // Send sound up
 SwiftAutoGUI.keyDown(.soundUp)
 SwiftAutoGUI.keyUp(.soundUp)
+
+// Type text using the async write method
+Task {
+    // Type text instantly
+    await SwiftAutoGUI.write("Hello, World!")
+    
+    // Type with 0.1 second delay between characters
+    await SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
+}
 ```
 
 ## Mouse

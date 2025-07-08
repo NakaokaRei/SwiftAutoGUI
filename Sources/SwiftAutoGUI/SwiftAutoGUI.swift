@@ -174,9 +174,9 @@ public class SwiftAutoGUI {
 
     /// Types a text string with optional delay between keystrokes.
     ///
-    /// This method types each character of the provided string sequentially,
+    /// This async method types each character of the provided string sequentially,
     /// automatically handling uppercase letters and special characters by using
-    /// the shift key when necessary.
+    /// the shift key when necessary. Uses `Task.sleep` for non-blocking delays.
     ///
     /// - Parameters:
     ///   - text: The string to type
@@ -189,16 +189,16 @@ public class SwiftAutoGUI {
     ///
     /// ```swift
     /// // Type text instantly
-    /// SwiftAutoGUI.write("Hello, World!")
+    /// await SwiftAutoGUI.write("Hello, World!")
     ///
     /// // Type with 0.1 second delay between characters
-    /// SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
+    /// await SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
     ///
     /// // Type in a text field
     /// SwiftAutoGUI.click(x: 100, y: 200)  // Click on text field
-    /// SwiftAutoGUI.write("user@example.com")
+    /// await SwiftAutoGUI.write("user@example.com")
     /// ```
-    public static func write(_ text: String, interval: TimeInterval = 0) {
+    public static func write(_ text: String, interval: TimeInterval = 0) async {
         for char in text {
             if let key = Key.from(character: char) {
                 let isUppercase = char.isUppercase
@@ -216,7 +216,7 @@ public class SwiftAutoGUI {
                 }
                 
                 if interval > 0 {
-                    Thread.sleep(forTimeInterval: interval)
+                    try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
                 }
             }
         }
