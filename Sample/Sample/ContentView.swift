@@ -412,14 +412,20 @@ struct ContentView: View {
         
         typingStatus = "Typing: \"\(text)\" (speed: \(String(format: "%.1f", typingSpeed))s interval)"
         
-        // Add a small delay to give user time to switch to target application
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            SwiftAutoGUI.write(text, interval: typingSpeed)
-            
-            DispatchQueue.main.async {
-                typingStatus = "✅ Completed typing: \"\(text)\""
-            }
+        // Use async/await pattern for delay and typing
+        Task {
+            await performTyping(text: text)
         }
+    }
+    
+    @MainActor
+    private func performTyping(text: String) async {
+        // Add a small delay to give user time to switch to target application
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        
+        SwiftAutoGUI.write(text, interval: typingSpeed)
+        
+        typingStatus = "✅ Completed typing: \"\(text)\""
     }
 }
 
