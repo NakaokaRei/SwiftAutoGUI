@@ -15,8 +15,9 @@ struct ContentView: View {
     @State private var imageRecognitionResult: String = ""
     @State private var testImagePath: String = ""
     @State private var mousePosition: String = ""
-    @State private var textToWrite: String = "Hello, SwiftAutoGUI!"
-    @State private var writeStatus: String = ""
+    @State private var textToType: String = ""
+    @State private var typingSpeed: Double = 0.0
+    @State private var typingStatus: String = ""
     
     var body: some View {
         ScrollView {
@@ -58,36 +59,59 @@ struct ContentView: View {
                 
                 Divider()
                 
-                // Text Writing Features
+                // Text Typing Demo Section
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Text Writing Features")
+                    Text("Text Typing Demo")
                         .font(.headline)
                     
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Enter text to write:")
+                    // Text input field
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Enter text to type:")
                             .font(.caption)
-                        TextField("Text to write", text: $textToWrite)
+                        TextField("Type your message here...", text: $textToType)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
                     
+                    // Typing speed control
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Typing Speed: \(String(format: "%.1f", typingSpeed))s interval")
+                            .font(.caption)
+                        Slider(value: $typingSpeed, in: 0.0...1.0, step: 0.1)
+                            .frame(maxWidth: 200)
+                    }
+                    
+                    // Type custom text button
+                    Button("Type Custom Text") {
+                        typeText(textToType)
+                    }
+                    .disabled(textToType.isEmpty)
+                    
+                    // Quick test buttons
                     HStack {
-                        Button("Write Text (Fast)") {
-                            writeText(interval: 0.0)
+                        Button("\"Hello, World!\"") {
+                            typeText("Hello, World!")
                         }
                         
-                        Button("Write Text (Normal)") {
-                            writeText(interval: 0.05)
-                        }
-                        
-                        Button("Write Text (Slow)") {
-                            writeText(interval: 0.2)
+                        Button("\"Test123!@#\"") {
+                            typeText("Test123!@#")
                         }
                     }
                     
-                    if !writeStatus.isEmpty {
-                        Text(writeStatus)
+                    HStack {
+                        Button("\"The quick brown fox...\"") {
+                            typeText("The quick brown fox jumps over the lazy dog")
+                        }
+                        
+                        Button("Multi-line Text") {
+                            typeText("Line 1\nLine 2\nLine 3")
+                        }
+                    }
+                    
+                    // Status display
+                    if !typingStatus.isEmpty {
+                        Text(typingStatus)
                             .font(.caption)
-                            .foregroundColor(writeStatus.contains("Error") ? .red : .green)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
@@ -226,42 +250,6 @@ struct ContentView: View {
             }
         }
         .padding()
-    }
-    
-    // MARK: - Text Writing Helper Functions
-    
-    private func writeText(interval: TimeInterval) {
-        guard !textToWrite.isEmpty else {
-            writeStatus = "Error: Please enter some text to write"
-            return
-        }
-        
-        writeStatus = "Writing text with \(interval == 0.0 ? "no" : "\(interval)s") interval..."
-        
-        // Add a delay to give user time to position cursor
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            do {
-                SwiftAutoGUI.write(textToWrite, interval: interval)
-                writeStatus = "✓ Successfully wrote: \"\(textToWrite)\""
-            } catch {
-                writeStatus = "Error: Failed to write text - \(error.localizedDescription)"
-            }
-        }
-        
-        // Update status to show countdown
-        updateWriteCountdown()
-    }
-    
-    private func updateWriteCountdown() {
-        var countdown = 2
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            if countdown > 0 {
-                writeStatus = "Starting in \(countdown) seconds... Position your cursor!"
-                countdown -= 1
-            } else {
-                timer.invalidate()
-            }
-        }
     }
     
     // MARK: - Image Recognition Helper Functions
@@ -411,6 +399,26 @@ struct ContentView: View {
             imageRecognitionResult += "\n\nHighlighted all \(allMatches.count) matches!"
         } else {
             imageRecognitionResult = "No test images found on screen. Try opening multiple windows with the test image visible."
+        }
+    }
+    
+    // MARK: - Text Typing Helper Function
+    
+    private func typeText(_ text: String) {
+        guard !text.isEmpty else {
+            typingStatus = "Please enter some text to type"
+            return
+        }
+        
+        typingStatus = "Typing: \"\(text)\" (speed: \(String(format: "%.1f", typingSpeed))s interval)"
+        
+        // Add a small delay to give user time to switch to target application
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            SwiftAutoGUI.write(text, interval: typingSpeed)
+            
+            DispatchQueue.main.async {
+                typingStatus = "✅ Completed typing: \"\(text)\""
+            }
         }
     }
 }
