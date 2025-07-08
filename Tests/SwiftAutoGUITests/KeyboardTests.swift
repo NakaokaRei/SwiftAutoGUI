@@ -99,48 +99,48 @@ struct KeyboardTests {
     }
     
     @Test("Write function basic test")
-    func testWriteFunction() {
+    func testWriteFunction() async {
         // Note: This test only verifies that the write function can be called without crashing
         // Actual text typing requires accessibility permissions and cannot be fully tested in unit tests
         
         // Test basic text writing
-        SwiftAutoGUI.write("Hello")
+        await SwiftAutoGUI.write("Hello")
         
         // Test with special characters
-        SwiftAutoGUI.write("Hello, World!")
+        await SwiftAutoGUI.write("Hello, World!")
         
         // Test with numbers
-        SwiftAutoGUI.write("123")
+        await SwiftAutoGUI.write("123")
         
         // Test with interval (should not crash)
-        SwiftAutoGUI.write("Test", interval: 0.01)
+        await SwiftAutoGUI.write("Test", interval: 0.01)
         
         // Test empty string
-        SwiftAutoGUI.write("")
+        await SwiftAutoGUI.write("")
         
         // Test with mixed case
-        SwiftAutoGUI.write("MixedCase")
+        await SwiftAutoGUI.write("MixedCase")
         
         // If we get here without crashing, the basic structure is working
         #expect(true)
     }
     
     @Test("Character to key mapping")
-    func testCharacterToKeyMapping() {
+    func testCharacterToKeyMapping() async {
         // Test that basic characters map correctly
         // Note: These are private functions, so we test indirectly through write
         
         // Test that unsupported characters are handled gracefully
-        SwiftAutoGUI.write("🎉") // Should not crash on emoji
+        await SwiftAutoGUI.write("🎉") // Should not crash on emoji
         
         // Test common punctuation
-        SwiftAutoGUI.write("!@#$%^&*()")
-        SwiftAutoGUI.write("{}[]|:\"<>?~")
+        await SwiftAutoGUI.write("!@#$%^&*()")
+        await SwiftAutoGUI.write("{}[]|:\"<>?~")
         
         // Test basic ASCII characters
-        SwiftAutoGUI.write("abcdefghijklmnopqrstuvwxyz")
-        SwiftAutoGUI.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-        SwiftAutoGUI.write("0123456789")
+        await SwiftAutoGUI.write("abcdefghijklmnopqrstuvwxyz")
+        await SwiftAutoGUI.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        await SwiftAutoGUI.write("0123456789")
         
         // If we get here without crashing, character mapping works
         #expect(true)
