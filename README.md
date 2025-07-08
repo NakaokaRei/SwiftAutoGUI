@@ -40,14 +40,6 @@ targets: [
 ]
 ```
 
-## CocoaPods
-SwiftAutoGUI is available through [CocoaPods](https://cocoapods.org/).
-
-in `Podfile` add the following:
-
-```ruby
-pod 'SwiftAutoGUI'
-```
 
 # Example Usage
 
