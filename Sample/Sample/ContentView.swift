@@ -9,52 +9,107 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = DemoTab.keyboard
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
-            // Tab selector
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 20) {
-                    ForEach(DemoTab.allCases, id: \.self) { tab in
-                        TabButton(
-                            title: tab.title,
-                            icon: tab.icon,
-                            isSelected: selectedTab == tab
-                        ) {
-                            selectedTab = tab
+            // Header
+            VStack(spacing: 16) {
+                HStack {
+                    Image(systemName: "command.square.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.linearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("SwiftAutoGUI")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        Text("Automation Demo")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                
+                // Tab selector
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(DemoTab.allCases, id: \.self) { tab in
+                            TabButton(
+                                title: tab.title,
+                                icon: tab.icon,
+                                isSelected: selectedTab == tab
+                            ) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedTab = tab
+                                }
+                            }
                         }
                     }
+                    .padding(.horizontal, 24)
                 }
-                .padding()
             }
-            .background(Color.gray.opacity(0.1))
-            
-            Divider()
+            .padding(.bottom, 16)
+            .background(
+                ZStack {
+                    if colorScheme == .dark {
+                        Color.black.opacity(0.3)
+                    } else {
+                        Color.white
+                    }
+                    
+                    LinearGradient(
+                        colors: [
+                            Color.blue.opacity(0.05),
+                            Color.purple.opacity(0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            )
+            .shadow(color: Color.black.opacity(0.1), radius: 10, y: 5)
             
             // Content area
             ScrollView {
-                Group {
-                    switch selectedTab {
-                    case .keyboard:
-                        KeyboardDemoView()
-                    case .mouse:
-                        MouseControlView()
-                    case .textTyping:
-                        TextTypingView()
-                    case .screenshot:
-                        ScreenshotView()
-                    case .imageRecognition:
-                        ImageRecognitionView()
-                    case .pixelDetection:
-                        PixelDetectionView()
-                    case .scrolling:
-                        ScrollingDemoView()
+                VStack {
+                    Group {
+                        switch selectedTab {
+                        case .keyboard:
+                            KeyboardDemoView()
+                        case .mouse:
+                            MouseControlView()
+                        case .textTyping:
+                            TextTypingView()
+                        case .screenshot:
+                            ScreenshotView()
+                        case .imageRecognition:
+                            ImageRecognitionView()
+                        case .pixelDetection:
+                            PixelDetectionView()
+                        case .scrolling:
+                            ScrollingDemoView()
+                        }
                     }
+                    .padding(24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10)
+                    )
+                    .padding(24)
                 }
-                .padding()
-                .animation(.easeInOut, value: selectedTab)
             }
+            .background(colorScheme == .dark ? Color.black : Color.gray.opacity(0.05))
         }
+        .frame(minWidth: 800, minHeight: 600)
     }
 }
 
