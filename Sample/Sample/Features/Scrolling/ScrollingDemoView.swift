@@ -19,22 +19,31 @@ struct ScrollingDemoView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             
-            VStack(spacing: 20) {
-                ForEach(0..<10) { index in
-                    Text("Vertical Content \(index)")
-                        .font(.title)
+            ScrollView {
+                VStack(spacing: 20) {
+                    ForEach(0..<10) { index in
+                        Text("Vertical Content \(index)")
+                            .font(.title)
+                    }
+                    
+                    HStack {
+                        Button("Vertical Scroll Down") {
+                            viewModel.verticalScrollDown()
+                        }
+                        
+                        Button("Vertical Scroll Up") {
+                            viewModel.verticalScrollUp()
+                        }
+                    }
+                    .padding(.vertical, 40)
+                    
+                    ForEach(10..<20) { index in
+                        Text("Vertical Content \(index)")
+                            .font(.title)
+                    }
                 }
             }
-            
-            HStack {
-                Button("Vertical Scroll Down") {
-                    viewModel.verticalScrollDown()
-                }
-                
-                Button("Vertical Scroll Up") {
-                    viewModel.verticalScrollUp()
-                }
-            }
+            .frame(height: 300)
             
             Text("Horizontal Scrolling")
                 .font(.subheadline)
