@@ -12,6 +12,22 @@
 		5C3CE0262973398400D9CE50 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0252973398400D9CE50 /* Assets.xcassets */; };
 		5C3CE0292973398400D9CE50 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */; };
 		5C3CE032297339AA00D9CE50 /* SwiftAutoGUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */; };
+		5CBA7CF62E1E607800CBB992 /* TabButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CF42E1E607800CBB992 /* TabButton.swift */; };
+		5CBA7CF72E1E607800CBB992 /* DemoTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CF32E1E607800CBB992 /* DemoTab.swift */; };
+		5CBA7D0E2E1E608D00CBB992 /* KeyboardDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CFB2E1E608D00CBB992 /* KeyboardDemoView.swift */; };
+		5CBA7D0F2E1E608D00CBB992 /* KeyboardDemoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CFC2E1E608D00CBB992 /* KeyboardDemoViewModel.swift */; };
+		5CBA7D102E1E608D00CBB992 /* TextTypingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D0A2E1E608D00CBB992 /* TextTypingView.swift */; };
+		5CBA7D112E1E608D00CBB992 /* PixelDetectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D022E1E608D00CBB992 /* PixelDetectionViewModel.swift */; };
+		5CBA7D122E1E608D00CBB992 /* PixelDetectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D012E1E608D00CBB992 /* PixelDetectionView.swift */; };
+		5CBA7D132E1E608D00CBB992 /* ScreenshotViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D052E1E608D00CBB992 /* ScreenshotViewModel.swift */; };
+		5CBA7D142E1E608D00CBB992 /* ImageRecognitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CF82E1E608D00CBB992 /* ImageRecognitionView.swift */; };
+		5CBA7D152E1E608D00CBB992 /* MouseControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CFE2E1E608D00CBB992 /* MouseControlView.swift */; };
+		5CBA7D162E1E608D00CBB992 /* TextTypingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D0B2E1E608D00CBB992 /* TextTypingViewModel.swift */; };
+		5CBA7D172E1E608D00CBB992 /* ScreenshotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D042E1E608D00CBB992 /* ScreenshotView.swift */; };
+		5CBA7D182E1E608D00CBB992 /* ScrollingDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D072E1E608D00CBB992 /* ScrollingDemoView.swift */; };
+		5CBA7D192E1E608D00CBB992 /* ImageRecognitionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CF92E1E608D00CBB992 /* ImageRecognitionViewModel.swift */; };
+		5CBA7D1A2E1E608D00CBB992 /* ScrollingDemoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7D082E1E608D00CBB992 /* ScrollingDemoViewModel.swift */; };
+		5CBA7D1B2E1E608D00CBB992 /* MouseControlViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CBA7CFF2E1E608D00CBB992 /* MouseControlViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +38,22 @@
 		5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5C3CE02A2973398400D9CE50 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
 		5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftAutoGUI; path = ../..; sourceTree = "<group>"; };
+		5CBA7CF32E1E607800CBB992 /* DemoTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoTab.swift; sourceTree = "<group>"; };
+		5CBA7CF42E1E607800CBB992 /* TabButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabButton.swift; sourceTree = "<group>"; };
+		5CBA7CF82E1E608D00CBB992 /* ImageRecognitionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRecognitionView.swift; sourceTree = "<group>"; };
+		5CBA7CF92E1E608D00CBB992 /* ImageRecognitionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRecognitionViewModel.swift; sourceTree = "<group>"; };
+		5CBA7CFB2E1E608D00CBB992 /* KeyboardDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDemoView.swift; sourceTree = "<group>"; };
+		5CBA7CFC2E1E608D00CBB992 /* KeyboardDemoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDemoViewModel.swift; sourceTree = "<group>"; };
+		5CBA7CFE2E1E608D00CBB992 /* MouseControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseControlView.swift; sourceTree = "<group>"; };
+		5CBA7CFF2E1E608D00CBB992 /* MouseControlViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseControlViewModel.swift; sourceTree = "<group>"; };
+		5CBA7D012E1E608D00CBB992 /* PixelDetectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelDetectionView.swift; sourceTree = "<group>"; };
+		5CBA7D022E1E608D00CBB992 /* PixelDetectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelDetectionViewModel.swift; sourceTree = "<group>"; };
+		5CBA7D042E1E608D00CBB992 /* ScreenshotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotView.swift; sourceTree = "<group>"; };
+		5CBA7D052E1E608D00CBB992 /* ScreenshotViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotViewModel.swift; sourceTree = "<group>"; };
+		5CBA7D072E1E608D00CBB992 /* ScrollingDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingDemoView.swift; sourceTree = "<group>"; };
+		5CBA7D082E1E608D00CBB992 /* ScrollingDemoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollingDemoViewModel.swift; sourceTree = "<group>"; };
+		5CBA7D0A2E1E608D00CBB992 /* TextTypingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTypingView.swift; sourceTree = "<group>"; };
+		5CBA7D0B2E1E608D00CBB992 /* TextTypingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTypingViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +91,8 @@
 				5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */,
 				5C3CE0212973398300D9CE50 /* SampleApp.swift */,
 				5C3CE0232973398300D9CE50 /* ContentView.swift */,
+				5CBA7CF52E1E607800CBB992 /* Common */,
+				5CBA7D0D2E1E608D00CBB992 /* Features */,
 				5C3CE0252973398400D9CE50 /* Assets.xcassets */,
 				5C3CE02A2973398400D9CE50 /* Sample.entitlements */,
 				5C3CE0272973398400D9CE50 /* Preview Content */,
@@ -79,6 +113,92 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5CBA7CF52E1E607800CBB992 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7CF32E1E607800CBB992 /* DemoTab.swift */,
+				5CBA7CF42E1E607800CBB992 /* TabButton.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		5CBA7CFA2E1E608D00CBB992 /* ImageRecognition */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7CF82E1E608D00CBB992 /* ImageRecognitionView.swift */,
+				5CBA7CF92E1E608D00CBB992 /* ImageRecognitionViewModel.swift */,
+			);
+			path = ImageRecognition;
+			sourceTree = "<group>";
+		};
+		5CBA7CFD2E1E608D00CBB992 /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7CFB2E1E608D00CBB992 /* KeyboardDemoView.swift */,
+				5CBA7CFC2E1E608D00CBB992 /* KeyboardDemoViewModel.swift */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
+		5CBA7D002E1E608D00CBB992 /* Mouse */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7CFE2E1E608D00CBB992 /* MouseControlView.swift */,
+				5CBA7CFF2E1E608D00CBB992 /* MouseControlViewModel.swift */,
+			);
+			path = Mouse;
+			sourceTree = "<group>";
+		};
+		5CBA7D032E1E608D00CBB992 /* PixelDetection */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7D012E1E608D00CBB992 /* PixelDetectionView.swift */,
+				5CBA7D022E1E608D00CBB992 /* PixelDetectionViewModel.swift */,
+			);
+			path = PixelDetection;
+			sourceTree = "<group>";
+		};
+		5CBA7D062E1E608D00CBB992 /* Screenshot */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7D042E1E608D00CBB992 /* ScreenshotView.swift */,
+				5CBA7D052E1E608D00CBB992 /* ScreenshotViewModel.swift */,
+			);
+			path = Screenshot;
+			sourceTree = "<group>";
+		};
+		5CBA7D092E1E608D00CBB992 /* Scrolling */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7D072E1E608D00CBB992 /* ScrollingDemoView.swift */,
+				5CBA7D082E1E608D00CBB992 /* ScrollingDemoViewModel.swift */,
+			);
+			path = Scrolling;
+			sourceTree = "<group>";
+		};
+		5CBA7D0C2E1E608D00CBB992 /* TextTyping */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7D0A2E1E608D00CBB992 /* TextTypingView.swift */,
+				5CBA7D0B2E1E608D00CBB992 /* TextTypingViewModel.swift */,
+			);
+			path = TextTyping;
+			sourceTree = "<group>";
+		};
+		5CBA7D0D2E1E608D00CBB992 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				5CBA7CFA2E1E608D00CBB992 /* ImageRecognition */,
+				5CBA7CFD2E1E608D00CBB992 /* Keyboard */,
+				5CBA7D002E1E608D00CBB992 /* Mouse */,
+				5CBA7D032E1E608D00CBB992 /* PixelDetection */,
+				5CBA7D062E1E608D00CBB992 /* Screenshot */,
+				5CBA7D092E1E608D00CBB992 /* Scrolling */,
+				5CBA7D0C2E1E608D00CBB992 /* TextTyping */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -154,7 +274,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5CBA7D0E2E1E608D00CBB992 /* KeyboardDemoView.swift in Sources */,
+				5CBA7D0F2E1E608D00CBB992 /* KeyboardDemoViewModel.swift in Sources */,
+				5CBA7D102E1E608D00CBB992 /* TextTypingView.swift in Sources */,
+				5CBA7D112E1E608D00CBB992 /* PixelDetectionViewModel.swift in Sources */,
+				5CBA7D122E1E608D00CBB992 /* PixelDetectionView.swift in Sources */,
+				5CBA7D132E1E608D00CBB992 /* ScreenshotViewModel.swift in Sources */,
+				5CBA7D142E1E608D00CBB992 /* ImageRecognitionView.swift in Sources */,
+				5CBA7D152E1E608D00CBB992 /* MouseControlView.swift in Sources */,
+				5CBA7D162E1E608D00CBB992 /* TextTypingViewModel.swift in Sources */,
+				5CBA7D172E1E608D00CBB992 /* ScreenshotView.swift in Sources */,
+				5CBA7D182E1E608D00CBB992 /* ScrollingDemoView.swift in Sources */,
+				5CBA7D192E1E608D00CBB992 /* ImageRecognitionViewModel.swift in Sources */,
+				5CBA7D1A2E1E608D00CBB992 /* ScrollingDemoViewModel.swift in Sources */,
+				5CBA7D1B2E1E608D00CBB992 /* MouseControlViewModel.swift in Sources */,
 				5C3CE0242973398300D9CE50 /* ContentView.swift in Sources */,
+				5CBA7CF62E1E607800CBB992 /* TabButton.swift in Sources */,
+				5CBA7CF72E1E607800CBB992 /* DemoTab.swift in Sources */,
 				5C3CE0222973398300D9CE50 /* SampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
