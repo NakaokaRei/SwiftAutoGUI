@@ -99,17 +99,18 @@ struct ContentView: View {
                         }
                     }
                     .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.white)
-                            .shadow(color: Color.black.opacity(0.05), radius: 10)
+                            .fill(colorScheme == .dark ? Color.gray.opacity(0.2) : Color.white)
+                            .shadow(color: Color.black.opacity(0.1), radius: 5)
                     )
-                    .padding(24)
+                    .padding(20)
                 }
             }
-            .background(colorScheme == .dark ? Color.black : Color.gray.opacity(0.05))
+            .background(colorScheme == .dark ? Color.black.opacity(0.5) : Color.gray.opacity(0.1))
         }
-        .frame(minWidth: 800, minHeight: 600)
+        .frame(width: 900, height: 700)
     }
 }
 
