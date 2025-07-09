@@ -13,5 +13,8 @@ struct SampleApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: 900, height: 700)
     }
 }
