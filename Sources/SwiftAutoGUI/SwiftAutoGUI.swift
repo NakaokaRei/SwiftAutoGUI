@@ -44,6 +44,22 @@ import AppKit
 /// - ``locateCenterOnScreen(_:grayscale:confidence:region:)``
 /// - ``locateAllOnScreen(_:grayscale:confidence:region:)``
 public class SwiftAutoGUI {
+    
+    /// Represents mouse buttons that can be clicked.
+    public enum MouseButton {
+        case left
+        case right
+        
+        /// Maps to the corresponding CGMouseButton value
+        var cgMouseButton: CGMouseButton {
+            switch self {
+            case .left:
+                return .left
+            case .right:
+                return .right
+            }
+        }
+    }
 
     // MARK: Key Event
 
@@ -512,6 +528,174 @@ public class SwiftAutoGUI {
             wheel3: 0
         )
         scrollEvent?.post(tap: .cghidEventTap)
+    }
+    
+    /// Performs a double-click with the specified mouse button at the current cursor position.
+    ///
+    /// This method simulates a double-click operation, commonly used to open files,
+    /// select words in text, or activate items.
+    ///
+    /// - Parameter button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system double-click speed.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Double-click at current position
+    /// SwiftAutoGUI.doubleClick()
+    ///
+    /// // Double-click with right button
+    /// SwiftAutoGUI.doubleClick(button: .right)
+    /// ```
+    public static func doubleClick(button: MouseButton = .left) {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
+        doubleClick(at: mouseLoc, button: button)
+    }
+    
+    /// Performs a double-click with the specified mouse button at a given position.
+    ///
+    /// This method simulates a double-click operation at the specified coordinates,
+    /// commonly used to open files, select words in text, or activate items.
+    ///
+    /// - Parameters:
+    ///   - at: The position to click in CGWindow coordinates (origin at top-left)
+    ///   - button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system double-click speed.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Double-click at specific position
+    /// SwiftAutoGUI.doubleClick(at: CGPoint(x: 100, y: 200))
+    ///
+    /// // Double-click at button location
+    /// let buttonPos = CGPoint(x: 150, y: 300)
+    /// SwiftAutoGUI.doubleClick(at: buttonPos)
+    ///
+    /// // Select a word in text editor
+    /// SwiftAutoGUI.move(to: wordPosition)
+    /// SwiftAutoGUI.doubleClick()
+    /// ```
+    public static func doubleClick(at position: CGPoint, button: MouseButton = .left) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        
+        // Create mouse down and up events with click count set to 2
+        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
+        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
+        
+        // First click
+        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstDown?.post(tap: .cghidEventTap)
+        
+        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstUp?.post(tap: .cghidEventTap)
+        
+        // Second click with click count = 2
+        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondDown?.post(tap: .cghidEventTap)
+        
+        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondUp?.post(tap: .cghidEventTap)
+        
+        Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Performs a triple-click with the specified mouse button at the current cursor position.
+    ///
+    /// This method simulates a triple-click operation, commonly used to select entire
+    /// lines or paragraphs of text.
+    ///
+    /// - Parameter button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system settings.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Triple-click at current position
+    /// SwiftAutoGUI.tripleClick()
+    ///
+    /// // Triple-click with right button
+    /// SwiftAutoGUI.tripleClick(button: .right)
+    /// ```
+    public static func tripleClick(button: MouseButton = .left) {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
+        tripleClick(at: mouseLoc, button: button)
+    }
+    
+    /// Performs a triple-click with the specified mouse button at a given position.
+    ///
+    /// This method simulates a triple-click operation at the specified coordinates,
+    /// commonly used to select entire lines or paragraphs of text.
+    ///
+    /// - Parameters:
+    ///   - at: The position to click in CGWindow coordinates (origin at top-left)
+    ///   - button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system settings.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Triple-click at specific position
+    /// SwiftAutoGUI.tripleClick(at: CGPoint(x: 150, y: 300))
+    ///
+    /// // Select entire paragraph
+    /// let paragraphPos = CGPoint(x: 200, y: 400)
+    /// SwiftAutoGUI.tripleClick(at: paragraphPos)
+    ///
+    /// // Triple-click with right button
+    /// SwiftAutoGUI.tripleClick(at: CGPoint(x: 100, y: 200), button: .right)
+    /// ```
+    public static func tripleClick(at position: CGPoint, button: MouseButton = .left) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        
+        // Create mouse down and up events
+        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
+        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
+        
+        // First click
+        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstDown?.post(tap: .cghidEventTap)
+        
+        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstUp?.post(tap: .cghidEventTap)
+        
+        // Second click with click count = 2
+        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondDown?.post(tap: .cghidEventTap)
+        
+        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondUp?.post(tap: .cghidEventTap)
+        
+        // Third click with click count = 3
+        let thirdDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        thirdDown?.setIntegerValueField(.mouseEventClickState, value: 3)
+        thirdDown?.post(tap: .cghidEventTap)
+        
+        let thirdUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        thirdUp?.setIntegerValueField(.mouseEventClickState, value: 3)
+        thirdUp?.post(tap: .cghidEventTap)
+        
+        Thread.sleep(forTimeInterval: 0.01)
     }
 
     private static func leftClickDown(position: CGPoint) {

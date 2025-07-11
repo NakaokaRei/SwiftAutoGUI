@@ -32,6 +32,14 @@ struct MouseControlView: View {
             Button("Left Click") {
                 viewModel.leftClick()
             }
+            
+            Button("Double Click") {
+                viewModel.doubleClick()
+            }
+            
+            Button("Triple Click") {
+                viewModel.tripleClick()
+            }
         }
     }
 }

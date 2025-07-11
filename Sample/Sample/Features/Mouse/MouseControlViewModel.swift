@@ -23,4 +23,12 @@ class MouseControlViewModel: ObservableObject {
     func leftClick() {
         SwiftAutoGUI.leftClick()
     }
+    
+    func doubleClick() {
+        SwiftAutoGUI.doubleClick()
+    }
+    
+    func tripleClick() {
+        SwiftAutoGUI.tripleClick()
+    }
 }
