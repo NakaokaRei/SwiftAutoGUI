@@ -173,13 +173,15 @@ if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8,
 }
 
 // Find all occurrences of an image on screen
-let buttons = SwiftAutoGUI.locateAllOnScreen("button.png")
-print("Found \(buttons.count) buttons")
-for (index, button) in buttons.enumerated() {
-    print("Button \(index): \(button)")
-    SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY))
-    SwiftAutoGUI.leftClick()
-    Thread.sleep(forTimeInterval: 0.5)
+Task {
+    let buttons = SwiftAutoGUI.locateAllOnScreen("button.png")
+    print("Found \(buttons.count) buttons")
+    for (index, button) in buttons.enumerated() {
+        print("Button \(index): \(button)")
+        SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY))
+        SwiftAutoGUI.leftClick()
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+    }
 }
 
 // locateAllOnScreen with confidence threshold for flexible matching
