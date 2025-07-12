@@ -96,6 +96,8 @@ struct ContentView: View {
                             PixelDetectionView()
                         case .scrolling:
                             ScrollingDemoView()
+                        case .dialog:
+                            DialogDemoView()
                         }
                     }
                     .padding(24)

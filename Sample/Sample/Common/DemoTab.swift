@@ -15,6 +15,7 @@ enum DemoTab: String, CaseIterable {
     case imageRecognition
     case pixelDetection
     case scrolling
+    case dialog
     
     var title: String {
         switch self {
@@ -25,6 +26,7 @@ enum DemoTab: String, CaseIterable {
         case .imageRecognition: return "Image Recognition"
         case .pixelDetection: return "Pixel Detection"
         case .scrolling: return "Scrolling"
+        case .dialog: return "Dialog"
         }
     }
     
@@ -37,6 +39,7 @@ enum DemoTab: String, CaseIterable {
         case .imageRecognition: return "eye"
         case .pixelDetection: return "eyedropper"
         case .scrolling: return "arrow.up.and.down"
+        case .dialog: return "message"
         }
     }
 }
