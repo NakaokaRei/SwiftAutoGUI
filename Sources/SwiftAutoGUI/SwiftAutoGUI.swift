@@ -17,22 +17,37 @@ import AppKit
 /// - ``sendKeyShortcut(_:)``
 /// - ``leftClick()``
 /// - ``move(to:)``
+/// - ``write(_:interval:)``
 ///
 /// ### Keyboard Control
 /// - ``keyDown(_:)``
 /// - ``keyUp(_:)``
 /// - ``write(_:interval:)``
+/// - ``sendKeyShortcut(_:)``
 /// - ``Key``
 ///
-/// ### Mouse Control
+/// ### Mouse Movement
 /// - ``position()``
+/// - ``move(to:)``
 /// - ``moveMouse(dx:dy:)``
+///
+/// ### Mouse Clicks
+/// - ``leftClick()``
 /// - ``rightClick()``
+/// - ``doubleClick(button:)``
+/// - ``doubleClick(at:button:)``
+/// - ``tripleClick(button:)``
+/// - ``tripleClick(at:button:)``
+/// - ``MouseButton``
+///
+/// ### Mouse Dragging
 /// - ``leftDragged(to:from:)``
+///
+/// ### Mouse Scrolling
 /// - ``vscroll(clicks:)``
 /// - ``hscroll(clicks:)``
 ///
-/// ### Screenshots
+/// ### Screenshots and Screen Information
 /// - ``screenshot()``
 /// - ``screenshot(region:)``
 /// - ``screenshot(imageFilename:region:)``
@@ -43,6 +58,12 @@ import AppKit
 /// - ``locateOnScreen(_:grayscale:confidence:region:)``
 /// - ``locateCenterOnScreen(_:grayscale:confidence:region:)``
 /// - ``locateAllOnScreen(_:grayscale:confidence:region:)``
+///
+/// ### Dialogs
+/// - ``alert(_:title:button:)``
+/// - ``confirm(_:title:buttons:)``
+/// - ``prompt(_:title:defaultAnswer:button:)``
+/// - ``password(_:title:defaultAnswer:button:)``
 public class SwiftAutoGUI {
     
     /// Represents mouse buttons that can be clicked.
