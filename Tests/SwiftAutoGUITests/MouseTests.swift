@@ -75,6 +75,69 @@ struct MouseTests {
         #expect(true)
     }
     
+    @Test("Mouse movement with tweening")
+    func testMouseMovementWithTweening() async throws {
+        // Test instant movement (default behavior)
+        SwiftAutoGUI.move(to: CGPoint(x: 200, y: 200))
+        
+        // Test async movement with default linear tween
+        await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 300), duration: 0.1)
+        
+        // Test with various tweening functions
+        await SwiftAutoGUI.move(to: CGPoint(x: 400, y: 400), duration: 0.1, tween: .easeInQuad)
+        
+        await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 300), duration: 0.1, tween: .easeOutQuad)
+        
+        await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 500), duration: 0.1, tween: .easeInOutQuad)
+        
+        // Test with custom tweening function
+        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 400), duration: 0.1, tween: .custom({ t in
+            return t * t * (3 - 2 * t) // Smooth step
+        }))
+        
+        // Test instant movement still works
+        SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100))
+        
+        // If we get here without crashing, the tweening functions are working
+        #expect(true)
+    }
+    
+    @Test("Mouse movement tweening accuracy")
+    func testMouseMovementTweeningAccuracy() async throws {
+        // Start from a known position
+        let startPos = CGPoint(x: 100, y: 100)
+        SwiftAutoGUI.move(to: startPos)
+        try await Task.sleep(nanoseconds: 50_000_000)
+        
+        // Move with linear tweening using async function
+        let endPos = CGPoint(x: 300, y: 300)
+        await SwiftAutoGUI.move(to: endPos, duration: 0.2, tween: .linear)
+        
+        // Check that we reached the target position
+        let finalPos = SwiftAutoGUI.position()
+        #expect(abs(finalPos.x - endPos.x) <= 1.0)
+        #expect(abs(finalPos.y - endPos.y) <= 1.0)
+    }
+    
+    @Test("Mouse movement with different FPS")
+    func testMouseMovementWithDifferentFPS() async throws {
+        // Test with low FPS (24)
+        SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100))
+        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 200), duration: 0.1, fps: 24)
+        
+        // Test with standard FPS (60) 
+        await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 300), duration: 0.1, fps: 60)
+        
+        // Test with high FPS (120)
+        await SwiftAutoGUI.move(to: CGPoint(x: 400, y: 400), duration: 0.1, fps: 120)
+        
+        // Test with very low FPS (10)
+        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 300), duration: 0.1, fps: 10)
+        
+        // If we get here without crashing, FPS parameter works
+        #expect(true)
+    }
+    
     @Test("Mouse click functions")
     func testMouseClickFunctions() {
         // Note: These tests only verify that the functions can be called without crashing
