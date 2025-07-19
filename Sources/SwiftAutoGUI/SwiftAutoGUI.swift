@@ -29,7 +29,9 @@ import AppKit
 /// ### Mouse Movement
 /// - ``position()``
 /// - ``move(to:)``
+/// - ``move(to:duration:tweening:fps:)``
 /// - ``moveMouse(dx:dy:)``
+/// - ``TweeningFunction``
 ///
 /// ### Mouse Clicks
 /// - ``leftClick()``
