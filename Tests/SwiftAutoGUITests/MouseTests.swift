@@ -84,14 +84,14 @@ struct MouseTests {
         await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 300), duration: 0.1)
         
         // Test with various tweening functions
-        await SwiftAutoGUI.move(to: CGPoint(x: 400, y: 400), duration: 0.1, tween: .easeInQuad)
+        await SwiftAutoGUI.move(to: CGPoint(x: 400, y: 400), duration: 0.1, tweening: .easeInQuad)
         
-        await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 300), duration: 0.1, tween: .easeOutQuad)
+        await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 300), duration: 0.1, tweening: .easeOutQuad)
         
-        await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 500), duration: 0.1, tween: .easeInOutQuad)
+        await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 500), duration: 0.1, tweening: .easeInOutQuad)
         
         // Test with custom tweening function
-        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 400), duration: 0.1, tween: .custom({ t in
+        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 400), duration: 0.1, tweening: .custom({ t in
             return t * t * (3 - 2 * t) // Smooth step
         }))
         
@@ -111,7 +111,7 @@ struct MouseTests {
         
         // Move with linear tweening using async function
         let endPos = CGPoint(x: 300, y: 300)
-        await SwiftAutoGUI.move(to: endPos, duration: 0.2, tween: .linear)
+        await SwiftAutoGUI.move(to: endPos, duration: 0.2, tweening: .linear)
         
         // Check that we reached the target position
         let finalPos = SwiftAutoGUI.position()
