@@ -18,7 +18,6 @@
       "Read(id_rsa)",
       "Read(id_ed25519)",
       "Read(**/*token*)",
-      "Read(**/*key*)",
       "Write(.env*)",
       "Write(**/secrets/**)",
       "Bash(curl:*)",
