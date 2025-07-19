@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "193D5AFA-AA2E-4C31-BA1E-26A723072DA3",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:..",
+        "identifier" : "SwiftAutoGUITests",
+        "name" : "SwiftAutoGUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
