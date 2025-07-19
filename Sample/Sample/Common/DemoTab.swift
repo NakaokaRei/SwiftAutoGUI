@@ -16,6 +16,7 @@ enum DemoTab: String, CaseIterable {
     case pixelDetection
     case scrolling
     case dialog
+    case appleScript
     
     var title: String {
         switch self {
@@ -27,6 +28,7 @@ enum DemoTab: String, CaseIterable {
         case .pixelDetection: return "Pixel Detection"
         case .scrolling: return "Scrolling"
         case .dialog: return "Dialog"
+        case .appleScript: return "AppleScript"
         }
     }
     
@@ -40,6 +42,7 @@ enum DemoTab: String, CaseIterable {
         case .pixelDetection: return "eyedropper"
         case .scrolling: return "arrow.up.and.down"
         case .dialog: return "message"
+        case .appleScript: return "applescript"
         }
     }
 }
