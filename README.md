@@ -196,6 +196,69 @@ let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
 let menuItems = SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
 ```
 
+## AppleScript Execution
+SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
+
+```swift
+import SwiftAutoGUI
+
+// Execute AppleScript code
+let script = """
+tell application "Safari"
+    activate
+    make new document
+    set URL of current tab of front window to "https://github.com/NakaokaRei/SwiftAutoGUI"
+end tell
+"""
+try SwiftAutoGUI.executeAppleScript(script)
+
+// Execute and get return value
+let systemInfo = """
+tell application "System Events"
+    return system version of (system info)
+end tell
+"""
+if let version = try SwiftAutoGUI.executeAppleScript(systemInfo) {
+    print("macOS version: \(version)")
+}
+
+// Control system volume
+try SwiftAutoGUI.executeAppleScript("set volume output volume 50")
+
+// Display notification
+let notification = """
+display notification "Task completed!" with title "SwiftAutoGUI"
+"""
+try SwiftAutoGUI.executeAppleScript(notification)
+
+// Execute AppleScript from file
+try SwiftAutoGUI.executeAppleScriptFile("/path/to/script.applescript")
+```
+
+### Important Notes for AppleScript
+
+When using AppleScript functionality in macOS applications, you need to configure the following:
+
+1. **Disable App Sandbox**: In your app's `.entitlements` file, set:
+   ```xml
+   <key>com.apple.security.app-sandbox</key>
+   <false/>
+   ```
+   
+2. **Enable Automation Permission**: Add to your `.entitlements` file:
+   ```xml
+   <key>com.apple.security.automation.apple-events</key>
+   <true/>
+   ```
+
+3. **Add Usage Description**: In your app's `Info.plist`, add:
+   ```xml
+   <key>NSAppleEventsUsageDescription</key>
+   <string>Your app needs permission to control other applications.</string>
+   ```
+
+⚠️ **Note**: Disabling the sandbox reduces your app's security isolation. Only disable it if absolutely necessary for your app's functionality.
+
 # Contributors
 
 - [NakaokaRei](https://github.com/NakaokaRei)
