@@ -22,6 +22,7 @@
 		5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5C3CE02A2973398400D9CE50 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
 		5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftAutoGUI; path = ../..; sourceTree = "<group>"; };
+		5CBA7E592E2B7D3700CBB992 /* SwiftAutoGUITestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SwiftAutoGUITestPlan.xctestplan; path = Sample/SwiftAutoGUITestPlan.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -44,6 +45,7 @@
 		5C3CE0152973398300D9CE50 = {
 			isa = PBXGroup;
 			children = (
+				5CBA7E592E2B7D3700CBB992 /* SwiftAutoGUITestPlan.xctestplan */,
 				5C3CE0202973398300D9CE50 /* Sample */,
 				5C3CE01F2973398300D9CE50 /* Products */,
 				5C3CE030297339AA00D9CE50 /* Frameworks */,
@@ -300,6 +302,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Demo App Send AppleEvent";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -327,6 +330,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Demo App Send AppleEvent";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
