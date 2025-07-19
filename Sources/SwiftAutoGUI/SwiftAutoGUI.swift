@@ -180,9 +180,11 @@ public class SwiftAutoGUI {
         }
     }
 
-    /// Press a key and release it
+    /// Simulates a normal key event (press or release).
     ///
-    /// - Parameter key: The key to be pressed and released. The details of Key is in  `normalKeycode` of ``Key``
+    /// - Parameters:
+    ///   - key: The CGKeyCode value for the key
+    ///   - down: true for key press, false for key release
     private static func normalKeyEvent(_ key: CGKeyCode, down: Bool) {
         let source = CGEventSource(stateID: .hidSystemState)
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
@@ -190,9 +192,11 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    /// Press a special key and release it
+    /// Simulates a special key event (press or release) for media and function keys.
     ///
-    /// - Parameter key: The key to be pressed and released. The details of Key is in  `specialKeycode` of ``Key``
+    /// - Parameters:
+    ///   - key: The NX_KEYTYPE constant for the special key
+    ///   - down: true for key press, false for key release
     private static func specialKeyEvent(_ key: Int32, down: Bool) {
         let modifierFlags = NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00)
         let nsEvent = NSEvent.otherEvent(
@@ -373,7 +377,7 @@ public class SwiftAutoGUI {
     /// - Parameters:
     ///   - to: The target position in CGWindow coordinates (origin at top-left).
     ///   - duration: The time in seconds over which to animate the movement.
-    ///   - tween: The easing function to use for animation (default: .linear).
+    ///   - tweening: The easing function to use for animation (default: .linear).
     ///   - fps: The target frame rate for the animation (default: 60). Higher values create smoother movement but use more CPU.
     ///
     /// - Note: CGWindow coordinates differ from NSView coordinates which have origin at bottom-left.
@@ -385,17 +389,17 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.move(to: CGPoint(x: 960, y: 540), duration: 2.0)
     ///
     /// // Move with ease-in-out animation at 30 FPS
-    /// await SwiftAutoGUI.move(to: CGPoint(x: 150, y: 300), duration: 1.5, tween: .easeInOutQuad, fps: 30)
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 150, y: 300), duration: 1.5, tweening: .easeInOutQuad, fps: 30)
     ///
     /// // Move with elastic effect at high 120 FPS for extra smoothness
-    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 2.0, tween: .easeOutElastic, fps: 120)
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 2.0, tweening: .easeOutElastic, fps: 120)
     ///
     /// // Move with custom easing function at 24 FPS (cinematic)
-    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 1.0, tween: .custom({ t in
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 1.0, tweening: .custom({ t in
     ///     return t * t * (3 - 2 * t) // Smooth step
     /// }), fps: 24)
     /// ```
-    public static func move(to: CGPoint, duration: TimeInterval, tween: TweeningFunction = .linear, fps: Double = 60.0) async {
+    public static func move(to: CGPoint, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
         let startPosition = position()
         let deltaX = to.x - startPosition.x
         let deltaY = to.y - startPosition.y
@@ -405,7 +409,7 @@ public class SwiftAutoGUI {
         
         for frame in 0...totalFrames {
             let progress = Double(frame) / Double(totalFrames)
-            let easedProgress = tween.apply(progress)
+            let easedProgress = tweening.apply(progress)
             
             let currentX = startPosition.x + deltaX * easedProgress
             let currentY = startPosition.y + deltaY * easedProgress
