@@ -66,6 +66,11 @@ import AppKit
 /// - ``confirm(_:title:buttons:)``
 /// - ``prompt(_:title:defaultAnswer:button:)``
 /// - ``password(_:title:defaultAnswer:button:)``
+///
+/// ### AppleScript Execution
+/// - ``executeAppleScript(_:)``
+/// - ``executeAppleScriptFile(_:)``
+/// - ``AppleScriptError``
 public class SwiftAutoGUI {
     
     /// Represents mouse buttons that can be clicked.
