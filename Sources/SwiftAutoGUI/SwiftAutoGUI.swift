@@ -335,7 +335,7 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
 
-    /// Moves the mouse cursor to an absolute position on the screen.
+    /// Moves the mouse cursor to an absolute position on the screen instantly.
     ///
     /// This method instantly moves the mouse to the specified coordinates using the CGWindow
     /// coordinate system where (0,0) is the top-left corner of the main screen.
@@ -360,6 +360,60 @@ public class SwiftAutoGUI {
     public static func move(to: CGPoint) {
         CGDisplayMoveCursorToPoint(0, to)
         Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Moves the mouse cursor to an absolute position with animated movement.
+    ///
+    /// This async method moves the mouse to the specified coordinates over a given duration,
+    /// using the specified tweening function for smooth, human-like movement. The movement
+    /// is animated using non-blocking Task.sleep.
+    ///
+    /// - Parameters:
+    ///   - to: The target position in CGWindow coordinates (origin at top-left).
+    ///   - duration: The time in seconds over which to animate the movement.
+    ///   - tween: The easing function to use for animation (default: .linear).
+    ///   - fps: The target frame rate for the animation (default: 60). Higher values create smoother movement but use more CPU.
+    ///
+    /// - Note: CGWindow coordinates differ from NSView coordinates which have origin at bottom-left.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Move to center with 2-second linear animation at default 60 FPS
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 960, y: 540), duration: 2.0)
+    ///
+    /// // Move with ease-in-out animation at 30 FPS
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 150, y: 300), duration: 1.5, tween: .easeInOutQuad, fps: 30)
+    ///
+    /// // Move with elastic effect at high 120 FPS for extra smoothness
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 2.0, tween: .easeOutElastic, fps: 120)
+    ///
+    /// // Move with custom easing function at 24 FPS (cinematic)
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 500, y: 500), duration: 1.0, tween: .custom({ t in
+    ///     return t * t * (3 - 2 * t) // Smooth step
+    /// }), fps: 24)
+    /// ```
+    public static func move(to: CGPoint, duration: TimeInterval, tween: TweeningFunction = .linear, fps: Double = 60.0) async {
+        let startPosition = position()
+        let deltaX = to.x - startPosition.x
+        let deltaY = to.y - startPosition.y
+        
+        let frameInterval = 1.0 / fps
+        let totalFrames = Int(duration * fps)
+        
+        for frame in 0...totalFrames {
+            let progress = Double(frame) / Double(totalFrames)
+            let easedProgress = tween.apply(progress)
+            
+            let currentX = startPosition.x + deltaX * easedProgress
+            let currentY = startPosition.y + deltaY * easedProgress
+            
+            CGDisplayMoveCursorToPoint(0, CGPoint(x: currentX, y: currentY))
+            
+            if frame < totalFrames {
+                try? await Task.sleep(nanoseconds: UInt64(frameInterval * 1_000_000_000))
+            }
+        }
     }
 
     /// Performs a left mouse button click at the current cursor position.
