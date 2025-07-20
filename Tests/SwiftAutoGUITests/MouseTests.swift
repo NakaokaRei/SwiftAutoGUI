@@ -10,7 +10,7 @@ struct MouseTests {
     func testMousePositionFunction() async throws {
         // First, move to a known position to start from a consistent state
         let startPosition = CGPoint(x: 500, y: 500)
-        SwiftAutoGUI.move(to: startPosition)
+        await SwiftAutoGUI.move(to: startPosition, duration: 0)
         try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
         
         // Get current mouse position
@@ -21,7 +21,7 @@ struct MouseTests {
         #expect(abs(position1.y - startPosition.y) <= 1.0)
         
         // Test relative movement with positive values
-        SwiftAutoGUI.moveMouse(dx: 10, dy: 15)
+        await SwiftAutoGUI.moveMouse(dx: 10, dy: 15)
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let position2 = SwiftAutoGUI.position()
         
@@ -31,7 +31,7 @@ struct MouseTests {
         #expect(abs(position2.y - (position1.y + 15)) <= 1.0)
         
         // Test relative movement with negative values
-        SwiftAutoGUI.moveMouse(dx: -20, dy: -10)
+        await SwiftAutoGUI.moveMouse(dx: -20, dy: -10)
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let position3 = SwiftAutoGUI.position()
         
@@ -41,7 +41,7 @@ struct MouseTests {
         
         // Test absolute movement
         let targetPosition = CGPoint(x: 300, y: 400)
-        SwiftAutoGUI.move(to: targetPosition)
+        await SwiftAutoGUI.move(to: targetPosition, duration: 0)
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let position4 = SwiftAutoGUI.position()
         
@@ -50,7 +50,7 @@ struct MouseTests {
         #expect(abs(position4.y - targetPosition.y) <= 1.0)
         
         // Test movement to screen edges
-        SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0))
+        await SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0), duration: 0)
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
         let position5 = SwiftAutoGUI.position()
         #expect(abs(position5.x - 0) <= 1.0)
@@ -58,18 +58,18 @@ struct MouseTests {
     }
     
     @Test("Mouse movement functions")
-    func testMouseMovementFunctions() {
+    func testMouseMovementFunctions() async throws {
         // Note: These tests only verify that the functions can be called without crashing
         // Actual mouse movement requires accessibility permissions and cannot be
         // fully tested in unit tests without side effects
         
         // Test relative mouse movement
-        SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
-        SwiftAutoGUI.moveMouse(dx: -5, dy: -5)
+        await SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+        await SwiftAutoGUI.moveMouse(dx: -5, dy: -5)
         
         // Test absolute mouse movement
-        SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100))
-        SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0))
+        await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100), duration: 0)
+        await SwiftAutoGUI.move(to: CGPoint(x: 0, y: 0), duration: 0)
         
         // If we get here without crashing, the basic structure is working
         #expect(true)
@@ -77,8 +77,8 @@ struct MouseTests {
     
     @Test("Mouse movement with tweening")
     func testMouseMovementWithTweening() async throws {
-        // Test instant movement (default behavior)
-        SwiftAutoGUI.move(to: CGPoint(x: 200, y: 200))
+        // Test instant movement (duration: 0)
+        await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 200), duration: 0)
         
         // Test async movement with default linear tween
         await SwiftAutoGUI.move(to: CGPoint(x: 300, y: 300), duration: 0.1)
@@ -96,7 +96,7 @@ struct MouseTests {
         }))
         
         // Test instant movement still works
-        SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100))
+        await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100), duration: 0)
         
         // If we get here without crashing, the tweening functions are working
         #expect(true)
@@ -106,7 +106,7 @@ struct MouseTests {
     func testMouseMovementTweeningAccuracy() async throws {
         // Start from a known position
         let startPos = CGPoint(x: 100, y: 100)
-        SwiftAutoGUI.move(to: startPos)
+        await SwiftAutoGUI.move(to: startPos, duration: 0)
         try await Task.sleep(nanoseconds: 50_000_000)
         
         // Move with linear tweening using async function
@@ -122,7 +122,7 @@ struct MouseTests {
     @Test("Mouse movement with different FPS")
     func testMouseMovementWithDifferentFPS() async throws {
         // Test with low FPS (24)
-        SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100))
+        await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100), duration: 0)
         await SwiftAutoGUI.move(to: CGPoint(x: 200, y: 200), duration: 0.1, fps: 24)
         
         // Test with standard FPS (60) 

@@ -11,11 +11,15 @@ import SwiftAutoGUI
 class KeyboardDemoViewModel: ObservableObject {
     
     func sendKeyShortcut() {
-        SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+        Task {
+            await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+        }
     }
     
     func sendSpecialKeyEvent() {
-        SwiftAutoGUI.keyDown(.soundUp)
-        SwiftAutoGUI.keyUp(.soundUp)
+        Task {
+            await SwiftAutoGUI.keyDown(.soundUp)
+            await SwiftAutoGUI.keyUp(.soundUp)
+        }
     }
 }
