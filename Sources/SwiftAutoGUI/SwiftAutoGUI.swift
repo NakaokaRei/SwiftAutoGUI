@@ -616,38 +616,7 @@ public class SwiftAutoGUI {
     /// // Note: Use async methods with Task.sleep for delays
     /// SwiftAutoGUI.leftClick()
     /// ```
-    @available(*, deprecated, message: "Use the async version of leftClick instead")
     public static func leftClick() {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
-        leftClickDown(position: mouseLoc)
-        leftClickUp(position: mouseLoc)
-    }
-    
-    /// Performs a left mouse button click at the current cursor position with async delay.
-    ///
-    /// This async method simulates a complete mouse click (press and release) at wherever
-    /// the cursor is currently located. It's the most common mouse interaction.
-    /// Uses Task.sleep for non-blocking operation.
-    ///
-    /// - Note: The click happens immediately at the current position without moving the cursor.
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// // Click at current position
-    /// await SwiftAutoGUI.leftClick()
-    ///
-    /// // Move and click pattern
-    /// await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 200))
-    /// await SwiftAutoGUI.leftClick()
-    ///
-    /// // Double-click
-    /// await SwiftAutoGUI.leftClick()
-    /// try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-    /// await SwiftAutoGUI.leftClick()
-    /// ```
-    public static func leftClick() async {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
         leftClickDown(position: mouseLoc)
@@ -674,35 +643,7 @@ public class SwiftAutoGUI {
     /// // Wait for menu to appear
     /// Thread.sleep(forTimeInterval: 0.5)
     /// ```
-    @available(*, deprecated, message: "Use the async version of rightClick instead")
     public static func rightClick() {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
-        rightClickDown(position: mouseLoc)
-        rightClickUp(position: mouseLoc)
-    }
-    
-    /// Performs a right mouse button click at the current cursor position with async delay.
-    ///
-    /// This async method simulates a right-click (press and release) commonly used for
-    /// context menus and secondary actions. Uses Task.sleep for non-blocking operation.
-    ///
-    /// - Note: The click happens immediately at the current position without moving the cursor.
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// // Right-click for context menu
-    /// await SwiftAutoGUI.rightClick()
-    ///
-    /// // Right-click on specific element
-    /// await SwiftAutoGUI.move(to: fileLocation)
-    /// await SwiftAutoGUI.rightClick()
-    ///
-    /// // Wait for menu to appear
-    /// try await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
-    /// ```
-    public static func rightClick() async {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
         rightClickDown(position: mouseLoc)

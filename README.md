@@ -94,14 +94,14 @@ Task {
     // Move with animation over 2 seconds
     await SwiftAutoGUI.move(to: CGPointMake(500, 500), duration: 2.0, tweening: .easeInOutQuad)
     
-    // Click where the mouse is located
-    await SwiftAutoGUI.leftClick() // left
-    await SwiftAutoGUI.rightClick() // right
-    
-    // Double and triple clicks
+    // Double and triple clicks (async)
     await SwiftAutoGUI.doubleClick()
     await SwiftAutoGUI.tripleClick()
 }
+
+// Click where the mouse is located (no async needed)
+SwiftAutoGUI.leftClick() // left
+SwiftAutoGUI.rightClick() // right
 
 // Scroll (no async needed - doesn't use Thread.sleep)
 SwiftAutoGUI.vscroll(clicks: 10) // up
@@ -161,8 +161,8 @@ if let location = SwiftAutoGUI.locateOnScreen("button.png") {
     let center = CGPoint(x: location.midX, y: location.midY)
     Task {
         await SwiftAutoGUI.move(to: center, duration: 0)
-        await SwiftAutoGUI.leftClick()
     }
+    SwiftAutoGUI.leftClick()
 }
 
 // Search with confidence threshold (0.0-1.0)
@@ -181,8 +181,8 @@ if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
     // buttonCenter is a CGPoint with x,y coordinates of the center
     Task {
         await SwiftAutoGUI.move(to: buttonCenter, duration: 0)
-        await SwiftAutoGUI.leftClick()
     }
+    SwiftAutoGUI.leftClick()
 }
 
 // locateCenterOnScreen also supports confidence and region parameters
@@ -190,8 +190,8 @@ if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8,
     // Click at the center of the found image
     Task {
         await SwiftAutoGUI.move(to: center, duration: 0)
-        await SwiftAutoGUI.leftClick()
     }
+    SwiftAutoGUI.leftClick()
 }
 
 // Find all occurrences of an image on screen
@@ -201,7 +201,7 @@ Task {
     for (index, button) in buttons.enumerated() {
         print("Button \(index): \(button)")
         await SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY), duration: 0)
-        await SwiftAutoGUI.leftClick()
+        SwiftAutoGUI.leftClick()
         try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
     }
 }

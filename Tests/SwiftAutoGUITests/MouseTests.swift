@@ -139,15 +139,15 @@ struct MouseTests {
     }
     
     @Test("Mouse click functions")
-    func testMouseClickFunctions() async throws {
+    func testMouseClickFunctions() {
         // Note: These tests only verify that the functions can be called without crashing
         // Actual mouse clicks require accessibility permissions
         
         // Test left click
-        await SwiftAutoGUI.leftClick()
+        SwiftAutoGUI.leftClick()
         
         // Test right click
-        await SwiftAutoGUI.rightClick()
+        SwiftAutoGUI.rightClick()
         
         // If we get here without crashing, the basic structure is working
         #expect(true)

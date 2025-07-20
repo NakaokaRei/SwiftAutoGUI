@@ -100,7 +100,7 @@ class ImageRecognitionViewModel: ObservableObject {
             Task {
                 await SwiftAutoGUI.move(to: center, duration: 0)
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                await SwiftAutoGUI.leftClick()
+                SwiftAutoGUI.leftClick()
                 
                 await MainActor.run {
                     imageRecognitionResult += "\nClicked on the test image!"
