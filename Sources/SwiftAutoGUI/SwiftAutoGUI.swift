@@ -115,12 +115,46 @@ public class SwiftAutoGUI {
     /// // Open Spotlight (Command+Space)
     /// SwiftAutoGUI.sendKeyShortcut([.command, .space])
     /// ```
+    @available(*, deprecated, message: "Use the async version of sendKeyShortcut instead")
     public static func sendKeyShortcut(_ keys: [Key]) {
         for key in keys {
             keyDown(key)
         }
         for key in keys.reversed() {
             keyUp(key)
+        }
+    }
+    
+    /// Sends a keyboard shortcut by pressing and releasing multiple keys in sequence with async delays.
+    ///
+    /// This async method simulates pressing multiple keys simultaneously, commonly used for keyboard shortcuts.
+    /// Keys are pressed in the order provided and released in reverse order. Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameter keys: An array of keys to be pressed together. The order matters for the sequence of key presses.
+    ///
+    /// - Note: The system may require accessibility permissions for this method to work.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Copy text (Command+C)
+    /// await SwiftAutoGUI.sendKeyShortcut([.command, .c])
+    ///
+    /// // Switch virtual desktop (Control+Left Arrow)
+    /// await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+    ///
+    /// // Take screenshot (Command+Shift+3)
+    /// await SwiftAutoGUI.sendKeyShortcut([.command, .shift, .three])
+    ///
+    /// // Open Spotlight (Command+Space)
+    /// await SwiftAutoGUI.sendKeyShortcut([.command, .space])
+    /// ```
+    public static func sendKeyShortcut(_ keys: [Key]) async {
+        for key in keys {
+            await keyDown(key)
+        }
+        for key in keys.reversed() {
+            await keyUp(key)
         }
     }
 
@@ -148,11 +182,45 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.keyDown(.soundUp)
     /// SwiftAutoGUI.keyUp(.soundUp)
     /// ```
+    @available(*, deprecated, message: "Use the async version of keyDown instead")
     public static func keyDown(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: true)
         } else if let specialKeycode = key.specialKeycode {
             specialKeyEvent(specialKeycode, down: true)
+        }
+    }
+    
+    /// Simulates pressing down a key without releasing it with async delay.
+    ///
+    /// Use this async method for holding down a key, useful for gaming, continuous scrolling,
+    /// or creating custom key combinations. Remember to call ``keyUp(_:)`` to release the key.
+    /// Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameter key: The key to press down. See ``Key`` for available options.
+    ///
+    /// - Important: Always pair with ``keyUp(_:)`` to avoid stuck keys.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Hold down shift for multiple capital letters
+    /// await SwiftAutoGUI.keyDown(.shift)
+    /// await SwiftAutoGUI.keyDown(.h)
+    /// await SwiftAutoGUI.keyUp(.h)
+    /// await SwiftAutoGUI.keyDown(.i)
+    /// await SwiftAutoGUI.keyUp(.i)
+    /// await SwiftAutoGUI.keyUp(.shift)
+    ///
+    /// // Trigger media key
+    /// await SwiftAutoGUI.keyDown(.soundUp)
+    /// await SwiftAutoGUI.keyUp(.soundUp)
+    /// ```
+    public static func keyDown(_ key: Key) async {
+        if let normalKeycode = key.normalKeycode {
+            await normalKeyEvent(normalKeycode, down: true)
+        } else if let specialKeycode = key.specialKeycode {
+            await specialKeyEvent(specialKeycode, down: true)
         }
     }
 
@@ -177,11 +245,42 @@ public class SwiftAutoGUI {
     /// // ... perform other actions ...
     /// SwiftAutoGUI.keyUp(.command)
     /// ```
+    @available(*, deprecated, message: "Use the async version of keyUp instead")
     public static func keyUp(_ key: Key) {
         if let normalKeycode = key.normalKeycode {
             normalKeyEvent(normalKeycode, down: false)
         } else if let specialKeycode = key.specialKeycode {
             specialKeyEvent(specialKeycode, down: false)
+        }
+    }
+    
+    /// Simulates releasing a previously pressed key with async delay.
+    ///
+    /// This async method releases a key that was pressed using ``keyDown(_:)``.
+    /// It's essential to release keys to prevent them from being stuck in a pressed state.
+    /// Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameter key: The key to release. Must match a previously pressed key.
+    ///
+    /// - Important: Every ``keyDown(_:)`` should have a corresponding ``keyUp(_:)``.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Type a single character
+    /// await SwiftAutoGUI.keyDown(.a)
+    /// await SwiftAutoGUI.keyUp(.a)
+    ///
+    /// // Release modifier key
+    /// await SwiftAutoGUI.keyDown(.command)
+    /// // ... perform other actions ...
+    /// await SwiftAutoGUI.keyUp(.command)
+    /// ```
+    public static func keyUp(_ key: Key) async {
+        if let normalKeycode = key.normalKeycode {
+            await normalKeyEvent(normalKeycode, down: false)
+        } else if let specialKeycode = key.specialKeycode {
+            await specialKeyEvent(specialKeycode, down: false)
         }
     }
 
@@ -195,6 +294,18 @@ public class SwiftAutoGUI {
         let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
         event?.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Simulates a normal key event (press or release) with async delay.
+    ///
+    /// - Parameters:
+    ///   - key: The CGKeyCode value for the key
+    ///   - down: true for key press, false for key release
+    private static func normalKeyEvent(_ key: CGKeyCode, down: Bool) async {
+        let source = CGEventSource(stateID: .hidSystemState)
+        let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
+        event?.post(tap: .cghidEventTap)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
     }
 
     /// Simulates a special key event (press or release) for media and function keys.
@@ -218,6 +329,29 @@ public class SwiftAutoGUI {
         let cgEvent = nsEvent?.cgEvent
         cgEvent?.post(tap: .cghidEventTap)
         Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Simulates a special key event (press or release) for media and function keys with async delay.
+    ///
+    /// - Parameters:
+    ///   - key: The NX_KEYTYPE constant for the special key
+    ///   - down: true for key press, false for key release
+    private static func specialKeyEvent(_ key: Int32, down: Bool) async {
+        let modifierFlags = NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00)
+        let nsEvent = NSEvent.otherEvent(
+            with: .systemDefined,
+            location: NSPoint(x: 0, y: 0),
+            modifierFlags: modifierFlags,
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            subtype: 8,
+            data1: Int((key << 16)) | ((down ? 0xA : 0xB) << 8),
+            data2: -1
+        )
+        let cgEvent = nsEvent?.cgEvent
+        cgEvent?.post(tap: .cghidEventTap)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
     }
 
     /// Types a text string with optional delay between keystrokes.
@@ -253,14 +387,14 @@ public class SwiftAutoGUI {
                 let needsShift = isUppercase || shiftCharacters.contains(char)
                 
                 if needsShift {
-                    keyDown(.shift)
+                    await keyDown(.shift)
                 }
                 
-                keyDown(key)
-                keyUp(key)
+                await keyDown(key)
+                await keyUp(key)
                 
                 if needsShift {
-                    keyUp(.shift)
+                    await keyUp(.shift)
                 }
                 
                 if interval > 0 {
@@ -338,12 +472,44 @@ public class SwiftAutoGUI {
     /// // Small adjustment for precision
     /// SwiftAutoGUI.moveMouse(dx: 1, dy: 1)
     /// ```
+    @available(*, deprecated, message: "Use the async version of moveMouse instead")
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
         let newLoc = CGPoint(x: mouseLoc.x-CGFloat(dx), y: mouseLoc.y + CGFloat(dy))
         CGDisplayMoveCursorToPoint(0, newLoc)
         Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Moves the mouse cursor relative to its current position with async delay.
+    ///
+    /// This async method moves the mouse by the specified distances from wherever it currently is.
+    /// Positive values move right/down, negative values move left/up. Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameters:
+    ///   - dx: Horizontal distance to move (positive = right, negative = left)
+    ///   - dy: Vertical distance to move (positive = down, negative = up)
+    ///
+    /// - Note: The movement is in logical points, not pixels, so it works correctly on Retina displays.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Move mouse 100 points right and 50 points down
+    /// await SwiftAutoGUI.moveMouse(dx: 100, dy: 50)
+    ///
+    /// // Move mouse 50 points left and 25 points up
+    /// await SwiftAutoGUI.moveMouse(dx: -50, dy: -25)
+    ///
+    /// // Small adjustment for precision
+    /// await SwiftAutoGUI.moveMouse(dx: 1, dy: 1)
+    /// ```
+    public static func moveMouse(dx: CGFloat, dy: CGFloat) async {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
+        let newLoc = CGPoint(x: mouseLoc.x-CGFloat(dx), y: mouseLoc.y + CGFloat(dy))
+        CGDisplayMoveCursorToPoint(0, newLoc)
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
     }
 
     /// Moves the mouse cursor to an absolute position on the screen instantly.
@@ -368,6 +534,7 @@ public class SwiftAutoGUI {
     /// let buttonLocation = CGPoint(x: 150, y: 300)
     /// SwiftAutoGUI.move(to: buttonLocation)
     /// ```
+    @available(*, deprecated, message: "Use move(to:duration:tweening:fps:) with duration: 0 for instant movement")
     public static func move(to: CGPoint) {
         CGDisplayMoveCursorToPoint(0, to)
         Thread.sleep(forTimeInterval: 0.01)
@@ -446,10 +613,41 @@ public class SwiftAutoGUI {
     ///
     /// // Double-click
     /// SwiftAutoGUI.leftClick()
-    /// Thread.sleep(forTimeInterval: 0.1)
+    /// // Note: Use async methods with Task.sleep for delays
     /// SwiftAutoGUI.leftClick()
     /// ```
+    @available(*, deprecated, message: "Use the async version of leftClick instead")
     public static func leftClick() {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
+        leftClickDown(position: mouseLoc)
+        leftClickUp(position: mouseLoc)
+    }
+    
+    /// Performs a left mouse button click at the current cursor position with async delay.
+    ///
+    /// This async method simulates a complete mouse click (press and release) at wherever
+    /// the cursor is currently located. It's the most common mouse interaction.
+    /// Uses Task.sleep for non-blocking operation.
+    ///
+    /// - Note: The click happens immediately at the current position without moving the cursor.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Click at current position
+    /// await SwiftAutoGUI.leftClick()
+    ///
+    /// // Move and click pattern
+    /// await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 200))
+    /// await SwiftAutoGUI.leftClick()
+    ///
+    /// // Double-click
+    /// await SwiftAutoGUI.leftClick()
+    /// try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+    /// await SwiftAutoGUI.leftClick()
+    /// ```
+    public static func leftClick() async {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
         leftClickDown(position: mouseLoc)
@@ -476,7 +674,35 @@ public class SwiftAutoGUI {
     /// // Wait for menu to appear
     /// Thread.sleep(forTimeInterval: 0.5)
     /// ```
+    @available(*, deprecated, message: "Use the async version of rightClick instead")
     public static func rightClick() {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
+        rightClickDown(position: mouseLoc)
+        rightClickUp(position: mouseLoc)
+    }
+    
+    /// Performs a right mouse button click at the current cursor position with async delay.
+    ///
+    /// This async method simulates a right-click (press and release) commonly used for
+    /// context menus and secondary actions. Uses Task.sleep for non-blocking operation.
+    ///
+    /// - Note: The click happens immediately at the current position without moving the cursor.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Right-click for context menu
+    /// await SwiftAutoGUI.rightClick()
+    ///
+    /// // Right-click on specific element
+    /// await SwiftAutoGUI.move(to: fileLocation)
+    /// await SwiftAutoGUI.rightClick()
+    ///
+    /// // Wait for menu to appear
+    /// try await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+    /// ```
+    public static func rightClick() async {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
         rightClickDown(position: mouseLoc)
@@ -539,9 +765,11 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.vscroll(clicks: -10)
     ///
     /// // Smooth scroll to top of page
-    /// for _ in 0..<20 {
-    ///     SwiftAutoGUI.vscroll(clicks: 5)
-    ///     Thread.sleep(forTimeInterval: 0.05)
+    /// Task {
+    ///     for _ in 0..<20 {
+    ///         SwiftAutoGUI.vscroll(clicks: 5)
+    ///         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
+    ///     }
     /// }
     /// ```
     public static func vscroll(clicks: Int) {
@@ -589,7 +817,7 @@ public class SwiftAutoGUI {
     ///
     /// // Navigate through horizontal tabs
     /// SwiftAutoGUI.hscroll(clicks: -3)
-    /// Thread.sleep(forTimeInterval: 0.5)
+    /// // Note: Use async methods with Task.sleep for delays
     /// SwiftAutoGUI.leftClick()
     /// ```
     public static func hscroll(clicks: Int) {
@@ -634,10 +862,35 @@ public class SwiftAutoGUI {
     /// // Double-click with right button
     /// SwiftAutoGUI.doubleClick(button: .right)
     /// ```
+    @available(*, deprecated, message: "Use the async version of doubleClick instead")
     public static func doubleClick(button: MouseButton = .left) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
         doubleClick(at: mouseLoc, button: button)
+    }
+    
+    /// Performs a double-click with the specified mouse button at the current cursor position with async delay.
+    ///
+    /// This async method simulates a double-click operation, commonly used to open files,
+    /// select words in text, or activate items. Uses Task.sleep for non-blocking operation.
+    ///
+    /// - Parameter button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system double-click speed.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Double-click at current position
+    /// await SwiftAutoGUI.doubleClick()
+    ///
+    /// // Double-click with right button
+    /// await SwiftAutoGUI.doubleClick(button: .right)
+    /// ```
+    public static func doubleClick(button: MouseButton = .left) async {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
+        await doubleClick(at: mouseLoc, button: button)
     }
     
     /// Performs a double-click with the specified mouse button at a given position.
@@ -665,6 +918,7 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.move(to: wordPosition)
     /// SwiftAutoGUI.doubleClick()
     /// ```
+    @available(*, deprecated, message: "Use the async version of doubleClick(at:button:) instead")
     public static func doubleClick(at position: CGPoint, button: MouseButton = .left) {
         let source = CGEventSource(stateID: .hidSystemState)
         
@@ -695,6 +949,62 @@ public class SwiftAutoGUI {
         Thread.sleep(forTimeInterval: 0.01)
     }
     
+    /// Performs a double-click with the specified mouse button at a given position with async delay.
+    ///
+    /// This async method simulates a double-click operation at the specified coordinates,
+    /// commonly used to open files, select words in text, or activate items.
+    /// Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameters:
+    ///   - at: The position to click in CGWindow coordinates (origin at top-left)
+    ///   - button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system double-click speed.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Double-click at specific position
+    /// await SwiftAutoGUI.doubleClick(at: CGPoint(x: 100, y: 200))
+    ///
+    /// // Double-click at button location
+    /// let buttonPos = CGPoint(x: 150, y: 300)
+    /// await SwiftAutoGUI.doubleClick(at: buttonPos)
+    ///
+    /// // Select a word in text editor
+    /// await SwiftAutoGUI.move(to: wordPosition)
+    /// await SwiftAutoGUI.doubleClick()
+    /// ```
+    public static func doubleClick(at position: CGPoint, button: MouseButton = .left) async {
+        let source = CGEventSource(stateID: .hidSystemState)
+        
+        // Create mouse down and up events with click count set to 2
+        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
+        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
+        
+        // First click
+        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstDown?.post(tap: .cghidEventTap)
+        
+        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstUp?.post(tap: .cghidEventTap)
+        
+        // Second click with click count = 2
+        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondDown?.post(tap: .cghidEventTap)
+        
+        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondUp?.post(tap: .cghidEventTap)
+        
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+    }
+    
     /// Performs a triple-click with the specified mouse button at the current cursor position.
     ///
     /// This method simulates a triple-click operation, commonly used to select entire
@@ -713,10 +1023,35 @@ public class SwiftAutoGUI {
     /// // Triple-click with right button
     /// SwiftAutoGUI.tripleClick(button: .right)
     /// ```
+    @available(*, deprecated, message: "Use the async version of tripleClick instead")
     public static func tripleClick(button: MouseButton = .left) {
         var mouseLoc = NSEvent.mouseLocation
         mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
         tripleClick(at: mouseLoc, button: button)
+    }
+    
+    /// Performs a triple-click with the specified mouse button at the current cursor position with async delay.
+    ///
+    /// This async method simulates a triple-click operation, commonly used to select entire
+    /// lines or paragraphs of text. Uses Task.sleep for non-blocking operation.
+    ///
+    /// - Parameter button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system settings.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Triple-click at current position
+    /// await SwiftAutoGUI.tripleClick()
+    ///
+    /// // Triple-click with right button
+    /// await SwiftAutoGUI.tripleClick(button: .right)
+    /// ```
+    public static func tripleClick(button: MouseButton = .left) async {
+        var mouseLoc = NSEvent.mouseLocation
+        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
+        await tripleClick(at: mouseLoc, button: button)
     }
     
     /// Performs a triple-click with the specified mouse button at a given position.
@@ -743,6 +1078,7 @@ public class SwiftAutoGUI {
     /// // Triple-click with right button
     /// SwiftAutoGUI.tripleClick(at: CGPoint(x: 100, y: 200), button: .right)
     /// ```
+    @available(*, deprecated, message: "Use the async version of tripleClick(at:button:) instead")
     public static func tripleClick(at position: CGPoint, button: MouseButton = .left) {
         let source = CGEventSource(stateID: .hidSystemState)
         
@@ -782,6 +1118,71 @@ public class SwiftAutoGUI {
         thirdUp?.post(tap: .cghidEventTap)
         
         Thread.sleep(forTimeInterval: 0.01)
+    }
+    
+    /// Performs a triple-click with the specified mouse button at a given position with async delay.
+    ///
+    /// This async method simulates a triple-click operation at the specified coordinates,
+    /// commonly used to select entire lines or paragraphs of text. Uses Task.sleep for non-blocking delays.
+    ///
+    /// - Parameters:
+    ///   - at: The position to click in CGWindow coordinates (origin at top-left)
+    ///   - button: The mouse button to click (default: .left)
+    ///
+    /// - Note: The timing between clicks is handled automatically to match system settings.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Triple-click at specific position
+    /// await SwiftAutoGUI.tripleClick(at: CGPoint(x: 150, y: 300))
+    ///
+    /// // Select entire paragraph
+    /// let paragraphPos = CGPoint(x: 200, y: 400)
+    /// await SwiftAutoGUI.tripleClick(at: paragraphPos)
+    ///
+    /// // Triple-click with right button
+    /// await SwiftAutoGUI.tripleClick(at: CGPoint(x: 100, y: 200), button: .right)
+    /// ```
+    public static func tripleClick(at position: CGPoint, button: MouseButton = .left) async {
+        let source = CGEventSource(stateID: .hidSystemState)
+        
+        // Create mouse down and up events
+        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
+        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
+        
+        // First click
+        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstDown?.post(tap: .cghidEventTap)
+        
+        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        firstUp?.post(tap: .cghidEventTap)
+        
+        // Second click with click count = 2
+        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondDown?.post(tap: .cghidEventTap)
+        
+        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
+        secondUp?.post(tap: .cghidEventTap)
+        
+        // Third click with click count = 3
+        let thirdDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
+                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        thirdDown?.setIntegerValueField(.mouseEventClickState, value: 3)
+        thirdDown?.post(tap: .cghidEventTap)
+        
+        let thirdUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
+                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
+        thirdUp?.setIntegerValueField(.mouseEventClickState, value: 3)
+        thirdUp?.post(tap: .cghidEventTap)
+        
+        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
     }
 
     private static func leftClickDown(position: CGPoint) {

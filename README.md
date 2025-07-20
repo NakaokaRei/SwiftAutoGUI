@@ -56,21 +56,24 @@ Currently ***only US keyboards*** are supported. Otherwise, it may not work prop
 ```swift
 import SwiftAutoGUI
 
-// Send ctrl + ←
-SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
-
-// Send sound up
-SwiftAutoGUI.keyDown(.soundUp)
-SwiftAutoGUI.keyUp(.soundUp)
-
-// Type text using the async write method
+// Async methods (recommended for non-blocking operations)
 Task {
+    // Send ctrl + ← using async method
+    await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+    
+    // Send sound up using async methods
+    await SwiftAutoGUI.keyDown(.soundUp)
+    await SwiftAutoGUI.keyUp(.soundUp)
+    
     // Type text instantly
     await SwiftAutoGUI.write("Hello, World!")
     
     // Type with 0.1 second delay between characters
     await SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
 }
+
+// Synchronous methods are deprecated but still available
+// SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
 ```
 
 ## Mouse
@@ -79,22 +82,35 @@ Similarly, mouse operations can generate basic commands such as mouse movement, 
 ```swift
 import SwiftAutoGUI
 
-// Move mouse by dx, dy from the current location
-SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+// Async methods (recommended for non-blocking operations)
+Task {
+    // Move mouse by dx, dy from the current location
+    await SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+    
+    // Move the mouse to a specific position instantly
+    // This parameter is the `CGWindow` coordinate.
+    await SwiftAutoGUI.move(to: CGPointMake(0, 0), duration: 0)
+    
+    // Move with animation over 2 seconds
+    await SwiftAutoGUI.move(to: CGPointMake(500, 500), duration: 2.0, tweening: .easeInOutQuad)
+    
+    // Click where the mouse is located
+    await SwiftAutoGUI.leftClick() // left
+    await SwiftAutoGUI.rightClick() // right
+    
+    // Double and triple clicks
+    await SwiftAutoGUI.doubleClick()
+    await SwiftAutoGUI.tripleClick()
+}
 
-// Move the mouse to a specific position
-// This parameter is the `CGWindow` coordinate.
-SwiftAutoGUI.move(to: CGPointMake(0, 0))
-
-// Click where the mouse is located
-SwiftAutoGUI.leftClick() // left
-SwiftAutoGUI.rightClick() // right
-
-// Scroll
+// Scroll (no async needed - doesn't use Thread.sleep)
 SwiftAutoGUI.vscroll(clicks: 10) // up
 SwiftAutoGUI.vscroll(clicks: -10) // down
 SwiftAutoGUI.hscroll(clicks: 10) // left
 SwiftAutoGUI.hscroll(clicks: -10) // right
+
+// Drag operations (no async needed)
+SwiftAutoGUI.leftDragged(to: CGPoint(x: 300, y: 400), from: CGPoint(x: 100, y: 200))
 ```
 
 ## Screenshot
@@ -143,8 +159,10 @@ if let location = SwiftAutoGUI.locateOnScreen("button.png") {
     
     // Click at the center of the found image
     let center = CGPoint(x: location.midX, y: location.midY)
-    SwiftAutoGUI.move(to: center)
-    SwiftAutoGUI.leftClick()
+    Task {
+        await SwiftAutoGUI.move(to: center, duration: 0)
+        await SwiftAutoGUI.leftClick()
+    }
 }
 
 // Search with confidence threshold (0.0-1.0)
@@ -161,15 +179,19 @@ if let location = SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion
 // Locate and get the center point directly
 if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
     // buttonCenter is a CGPoint with x,y coordinates of the center
-    SwiftAutoGUI.move(to: buttonCenter)
-    SwiftAutoGUI.leftClick()
+    Task {
+        await SwiftAutoGUI.move(to: buttonCenter, duration: 0)
+        await SwiftAutoGUI.leftClick()
+    }
 }
 
 // locateCenterOnScreen also supports confidence and region parameters
 if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8, region: searchRegion) {
     // Click at the center of the found image
-    SwiftAutoGUI.move(to: center)
-    SwiftAutoGUI.leftClick()
+    Task {
+        await SwiftAutoGUI.move(to: center, duration: 0)
+        await SwiftAutoGUI.leftClick()
+    }
 }
 
 // Find all occurrences of an image on screen
@@ -178,8 +200,8 @@ Task {
     print("Found \(buttons.count) buttons")
     for (index, button) in buttons.enumerated() {
         print("Button \(index): \(button)")
-        SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY))
-        SwiftAutoGUI.leftClick()
+        await SwiftAutoGUI.move(to: CGPoint(x: button.midX, y: button.midY), duration: 0)
+        await SwiftAutoGUI.leftClick()
         try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
     }
 }

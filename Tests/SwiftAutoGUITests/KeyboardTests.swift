@@ -78,21 +78,21 @@ struct KeyboardTests {
     }
     
     @Test("Keyboard event functions basic test")
-    func testKeyboardEventFunctions() {
+    func testKeyboardEventFunctions() async throws {
         // Note: These tests only verify that the functions can be called without crashing
         // Actual key event generation requires accessibility permissions and cannot be
         // fully tested in unit tests
         
         // Test single key press
-        SwiftAutoGUI.keyDown(.a)
-        SwiftAutoGUI.keyUp(.a)
+        await SwiftAutoGUI.keyDown(.a)
+        await SwiftAutoGUI.keyUp(.a)
         
         // Test special key
-        SwiftAutoGUI.keyDown(.soundUp)
-        SwiftAutoGUI.keyUp(.soundUp)
+        await SwiftAutoGUI.keyDown(.soundUp)
+        await SwiftAutoGUI.keyUp(.soundUp)
         
         // Test key shortcut
-        SwiftAutoGUI.sendKeyShortcut([.command, .c])
+        await SwiftAutoGUI.sendKeyShortcut([.command, .c])
         
         // If we get here without crashing, the basic structure is working
         #expect(true)

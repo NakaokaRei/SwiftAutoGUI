@@ -13,7 +13,9 @@ class MouseControlViewModel: ObservableObject {
     @Published var isAnimating: Bool = false
     
     func moveMouse() {
-        SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+        Task {
+            await SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+        }
     }
     
     func getMousePosition() {
@@ -22,15 +24,21 @@ class MouseControlViewModel: ObservableObject {
     }
     
     func leftClick() {
-        SwiftAutoGUI.leftClick()
+        Task {
+            await SwiftAutoGUI.leftClick()
+        }
     }
     
     func doubleClick() {
-        SwiftAutoGUI.doubleClick()
+        Task {
+            await SwiftAutoGUI.doubleClick()
+        }
     }
     
     func tripleClick() {
-        SwiftAutoGUI.tripleClick()
+        Task {
+            await SwiftAutoGUI.tripleClick()
+        }
     }
     
     // Tweening movement demonstrations

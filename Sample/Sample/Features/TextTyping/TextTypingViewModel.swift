@@ -58,10 +58,10 @@ class TextTypingViewModel: ObservableObject {
     private func performFocusAndType() async {
         try? await Task.sleep(nanoseconds: 500_000_000)
         
-        SwiftAutoGUI.sendKeyShortcut([.command, .a])
+        await SwiftAutoGUI.sendKeyShortcut([.command, .a])
         try? await Task.sleep(nanoseconds: 100_000_000)
-        SwiftAutoGUI.keyDown(.delete)
-        SwiftAutoGUI.keyUp(.delete)
+        await SwiftAutoGUI.keyDown(.delete)
+        await SwiftAutoGUI.keyUp(.delete)
         try? await Task.sleep(nanoseconds: 100_000_000)
         
         await SwiftAutoGUI.write(textToType, interval: typingSpeed)
