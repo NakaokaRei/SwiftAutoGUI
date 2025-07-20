@@ -161,8 +161,8 @@ if let location = SwiftAutoGUI.locateOnScreen("button.png") {
     let center = CGPoint(x: location.midX, y: location.midY)
     Task {
         await SwiftAutoGUI.move(to: center, duration: 0)
+        SwiftAutoGUI.leftClick()
     }
-    SwiftAutoGUI.leftClick()
 }
 
 // Search with confidence threshold (0.0-1.0)
@@ -181,8 +181,8 @@ if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
     // buttonCenter is a CGPoint with x,y coordinates of the center
     Task {
         await SwiftAutoGUI.move(to: buttonCenter, duration: 0)
+        SwiftAutoGUI.leftClick()
     }
-    SwiftAutoGUI.leftClick()
 }
 
 // locateCenterOnScreen also supports confidence and region parameters
@@ -190,8 +190,8 @@ if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8,
     // Click at the center of the found image
     Task {
         await SwiftAutoGUI.move(to: center, duration: 0)
+        SwiftAutoGUI.leftClick()
     }
-    SwiftAutoGUI.leftClick()
 }
 
 // Find all occurrences of an image on screen
