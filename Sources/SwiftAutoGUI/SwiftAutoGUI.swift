@@ -47,7 +47,9 @@ import AppKit
 ///
 /// ### Mouse Scrolling
 /// - ``vscroll(clicks:)``
+/// - ``vscroll(clicks:duration:tweening:fps:)``
 /// - ``hscroll(clicks:)``
+/// - ``hscroll(clicks:duration:tweening:fps:)``
 ///
 /// ### Screenshots and Screen Information
 /// - ``screenshot()``
@@ -736,6 +738,67 @@ public class SwiftAutoGUI {
         )
         scrollEvent?.post(tap: .cghidEventTap)
     }
+    
+    /// Scrolls the mouse wheel vertically with animated movement over a specified duration.
+    ///
+    /// This async method scrolls the mouse wheel by the specified number of clicks over a given duration,
+    /// using the specified tweening function for smooth, natural scrolling. The scrolling is animated
+    /// using non-blocking Task.sleep.
+    ///
+    /// - Parameters:
+    ///   - clicks: Number of scroll clicks. Positive scrolls up, negative scrolls down.
+    ///   - duration: The time in seconds over which to animate the scrolling.
+    ///   - tweening: The easing function to use for animation (default: .linear).
+    ///   - fps: The target frame rate for the animation (default: 60). Higher values create smoother scrolling but use more CPU.
+    ///
+    /// - Note: One "click" typically scrolls about 3 lines of text, but this varies by application.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Smooth scroll up 100 clicks over 2 seconds with linear animation
+    /// await SwiftAutoGUI.vscroll(clicks: 100, duration: 2.0)
+    ///
+    /// // Smooth scroll down with ease-in-out animation
+    /// await SwiftAutoGUI.vscroll(clicks: -50, duration: 1.5, tweening: .easeInOutQuad)
+    ///
+    /// // Scroll with bounce effect
+    /// await SwiftAutoGUI.vscroll(clicks: 200, duration: 3.0, tweening: .easeOutBounce, fps: 30)
+    ///
+    /// // Custom easing function
+    /// await SwiftAutoGUI.vscroll(clicks: 100, duration: 2.0, tweening: .custom({ t in
+    ///     return t * t * (3 - 2 * t) // Smooth step
+    /// }))
+    /// ```
+    public static func vscroll(clicks: Int, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
+        let frameInterval = 1.0 / fps
+        let totalFrames = Int(duration * fps)
+        let totalClicks = Double(clicks)
+        var accumulatedClicks = 0.0
+        
+        for frame in 0...totalFrames {
+            let progress = Double(frame) / Double(totalFrames)
+            let easedProgress = tweening.apply(progress)
+            
+            let targetClicks = totalClicks * easedProgress
+            let clicksThisFrame = Int(targetClicks - accumulatedClicks)
+            
+            if clicksThisFrame != 0 {
+                vscroll(clicks: clicksThisFrame)
+                accumulatedClicks += Double(clicksThisFrame)
+            }
+            
+            if frame < totalFrames {
+                try? await Task.sleep(nanoseconds: UInt64(frameInterval * 1_000_000_000))
+            }
+        }
+        
+        // Handle any remaining clicks due to rounding
+        let remainingClicks = Int(totalClicks - accumulatedClicks)
+        if remainingClicks != 0 {
+            vscroll(clicks: remainingClicks)
+        }
+    }
 
     /// Scrolls the mouse wheel horizontally by the specified number of clicks.
     ///
@@ -783,6 +846,67 @@ public class SwiftAutoGUI {
             wheel3: 0
         )
         scrollEvent?.post(tap: .cghidEventTap)
+    }
+    
+    /// Scrolls the mouse wheel horizontally with animated movement over a specified duration.
+    ///
+    /// This async method scrolls the mouse wheel horizontally by the specified number of clicks over
+    /// a given duration, using the specified tweening function for smooth, natural scrolling.
+    /// The scrolling is animated using non-blocking Task.sleep.
+    ///
+    /// - Parameters:
+    ///   - clicks: Number of scroll clicks. Positive scrolls left, negative scrolls right.
+    ///   - duration: The time in seconds over which to animate the scrolling.
+    ///   - tweening: The easing function to use for animation (default: .linear).
+    ///   - fps: The target frame rate for the animation (default: 60). Higher values create smoother scrolling but use more CPU.
+    ///
+    /// - Note: Horizontal scrolling requires application support and may not work everywhere.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Smooth scroll left 50 clicks over 1.5 seconds
+    /// await SwiftAutoGUI.hscroll(clicks: 50, duration: 1.5)
+    ///
+    /// // Smooth scroll right with ease-in-out animation
+    /// await SwiftAutoGUI.hscroll(clicks: -100, duration: 2.0, tweening: .easeInOutQuad)
+    ///
+    /// // Scroll through a timeline with elastic effect
+    /// await SwiftAutoGUI.hscroll(clicks: -200, duration: 3.0, tweening: .easeOutElastic, fps: 30)
+    ///
+    /// // Custom easing for precise control
+    /// await SwiftAutoGUI.hscroll(clicks: 75, duration: 2.5, tweening: .custom({ t in
+    ///     return sin(t * Double.pi / 2) // Ease out sine
+    /// }))
+    /// ```
+    public static func hscroll(clicks: Int, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
+        let frameInterval = 1.0 / fps
+        let totalFrames = Int(duration * fps)
+        let totalClicks = Double(clicks)
+        var accumulatedClicks = 0.0
+        
+        for frame in 0...totalFrames {
+            let progress = Double(frame) / Double(totalFrames)
+            let easedProgress = tweening.apply(progress)
+            
+            let targetClicks = totalClicks * easedProgress
+            let clicksThisFrame = Int(targetClicks - accumulatedClicks)
+            
+            if clicksThisFrame != 0 {
+                hscroll(clicks: clicksThisFrame)
+                accumulatedClicks += Double(clicksThisFrame)
+            }
+            
+            if frame < totalFrames {
+                try? await Task.sleep(nanoseconds: UInt64(frameInterval * 1_000_000_000))
+            }
+        }
+        
+        // Handle any remaining clicks due to rounding
+        let remainingClicks = Int(totalClicks - accumulatedClicks)
+        if remainingClicks != 0 {
+            hscroll(clicks: remainingClicks)
+        }
     }
     
     /// Performs a double-click with the specified mouse button at the current cursor position.
