@@ -209,4 +209,86 @@ struct MouseTests {
         // If we get here without crashing, the scroll division logic is working
         #expect(true)
     }
+    
+    @Test("Smooth vertical scrolling with duration")
+    func testSmoothVerticalScrolling() async throws {
+        // Test basic smooth scrolling
+        await SwiftAutoGUI.vscroll(clicks: 10, duration: 0.1)
+        
+        // Test with different tweening functions
+        await SwiftAutoGUI.vscroll(clicks: -20, duration: 0.1, tweening: .easeInQuad)
+        await SwiftAutoGUI.vscroll(clicks: 15, duration: 0.1, tweening: .easeOutQuad)
+        await SwiftAutoGUI.vscroll(clicks: -10, duration: 0.1, tweening: .easeInOutQuad)
+        
+        // Test with custom tweening
+        await SwiftAutoGUI.vscroll(clicks: 25, duration: 0.1, tweening: .custom({ t in
+            return t * t * (3 - 2 * t) // Smooth step
+        }))
+        
+        // Test with different FPS values
+        await SwiftAutoGUI.vscroll(clicks: 30, duration: 0.1, fps: 30)
+        await SwiftAutoGUI.vscroll(clicks: -30, duration: 0.1, fps: 120)
+        
+        // Test edge cases
+        await SwiftAutoGUI.vscroll(clicks: 0, duration: 0.1)
+        await SwiftAutoGUI.vscroll(clicks: 1, duration: 0.05)
+        await SwiftAutoGUI.vscroll(clicks: -1, duration: 0.05)
+        
+        // If we get here without crashing, smooth scrolling is working
+        #expect(true)
+    }
+    
+    @Test("Smooth horizontal scrolling with duration")
+    func testSmoothHorizontalScrolling() async throws {
+        // Test basic smooth scrolling
+        await SwiftAutoGUI.hscroll(clicks: 10, duration: 0.1)
+        
+        // Test with different tweening functions
+        await SwiftAutoGUI.hscroll(clicks: -20, duration: 0.1, tweening: .easeInQuad)
+        await SwiftAutoGUI.hscroll(clicks: 15, duration: 0.1, tweening: .easeOutQuad)
+        await SwiftAutoGUI.hscroll(clicks: -10, duration: 0.1, tweening: .easeInOutQuad)
+        
+        // Test with elastic and bounce effects
+        await SwiftAutoGUI.hscroll(clicks: 50, duration: 0.15, tweening: .easeOutElastic)
+        await SwiftAutoGUI.hscroll(clicks: -50, duration: 0.15, tweening: .easeOutBounce)
+        
+        // Test with custom tweening
+        await SwiftAutoGUI.hscroll(clicks: 25, duration: 0.1, tweening: .custom({ t in
+            return sin(t * Double.pi / 2) // Ease out sine
+        }))
+        
+        // Test with different FPS values
+        await SwiftAutoGUI.hscroll(clicks: 30, duration: 0.1, fps: 24)
+        await SwiftAutoGUI.hscroll(clicks: -30, duration: 0.1, fps: 60)
+        
+        // If we get here without crashing, smooth scrolling is working
+        #expect(true)
+    }
+    
+    @Test("Smooth scrolling with long duration")
+    func testSmoothScrollingLongDuration() async throws {
+        // Test with longer duration to ensure accumulation works correctly
+        await SwiftAutoGUI.vscroll(clicks: 100, duration: 0.3, tweening: .linear)
+        await SwiftAutoGUI.hscroll(clicks: -75, duration: 0.3, tweening: .easeInOutCubic)
+        
+        // Test very large scroll amounts
+        await SwiftAutoGUI.vscroll(clicks: 200, duration: 0.2, tweening: .easeOutQuad, fps: 30)
+        await SwiftAutoGUI.hscroll(clicks: -150, duration: 0.2, tweening: .easeInQuart, fps: 30)
+        
+        #expect(true)
+    }
+    
+    @Test("Smooth scrolling frame calculation")
+    func testSmoothScrollingFrameCalculation() async throws {
+        // Test that very short durations still produce some frames
+        await SwiftAutoGUI.vscroll(clicks: 10, duration: 0.01, fps: 60)
+        
+        // Test high FPS with short duration
+        await SwiftAutoGUI.hscroll(clicks: 5, duration: 0.05, fps: 120)
+        
+        // Test low FPS with longer duration
+        await SwiftAutoGUI.vscroll(clicks: 20, duration: 0.2, fps: 10)
+        
+        #expect(true)
+    }
 }
