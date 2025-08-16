@@ -45,72 +45,170 @@ targets: [
 
 If you would like to know more details, please refer to the [DocC Style Document](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautogui/).
 
-## Keyboard
+## Action Pattern (Recommended)
 
-By calling a method of the SwiftAutoGUI class as shown below, you can send key input commands to macOS. Supported keys are written in [Keycode.swift](/Sources/SwiftAutoGUI/Keycode.swift).
+SwiftAutoGUI provides an intuitive Action pattern for building and executing automation sequences. This is the **recommended way** to use SwiftAutoGUI as it offers better readability and maintainability.
 
-As shown in the sample below, you can also input shortcuts, such as moving the virtual desktop by sending the command `ctrl + ←`.
+### Basic Usage
+
+```swift
+import SwiftAutoGUI
+
+// Execute single actions
+await Action.leftClick.execute()
+await Action.write("Hello, World!").execute()
+await Action.keyShortcut([.command, .a]).execute()  // Select all
+
+// Build and execute action sequences
+let actions: [Action] = [
+    .move(to: CGPoint(x: 100, y: 100)),
+    .wait(0.5),
+    .leftClick,
+    .write("Hello, SwiftAutoGUI!"),
+    .keyShortcut([.returnKey])
+]
+await actions.execute()
+```
+
+### Keyboard Actions
+
+```swift
+// Text input and shortcuts
+let typingActions: [Action] = [
+    .write("Fast typing"),
+    .wait(1.0),
+    .write("Slow typing", interval: 0.1),  // 0.1 second between characters
+    .keyShortcut([.command, .z])  // Undo
+]
+await typingActions.execute()
+
+// Common shortcuts as convenience methods
+await Action.copy().execute()       // Cmd+C
+await Action.paste().execute()      // Cmd+V
+await Action.cut().execute()        // Cmd+X
+await Action.selectAll().execute()  // Cmd+A
+await Action.save().execute()       // Cmd+S
+await Action.undo().execute()       // Cmd+Z
+await Action.redo().execute()       // Cmd+Shift+Z
+
+// Special keys
+await Action.keyDown(.soundUp).execute()
+await Action.keyUp(.soundUp).execute()
+```
+
+### Mouse Actions
+
+```swift
+// Mouse movement and clicks
+let mouseActions: [Action] = [
+    .move(to: CGPoint(x: 200, y: 200)),
+    .leftClick,
+    .wait(0.5),
+    .doubleClick(),
+    .wait(0.5),
+    .rightClick
+]
+await mouseActions.execute()
+
+// Smooth animation with tweening
+await Action.moveSmooth(
+    to: CGPoint(x: 500, y: 500),
+    duration: 2.0,
+    tweening: .easeInOutQuad
+).execute()
+
+// Drag and drop
+await Action.drag(
+    from: CGPoint(x: 100, y: 100),
+    to: CGPoint(x: 300, y: 300)
+).execute()
+
+// Scrolling
+let scrollActions: [Action] = [
+    .vscroll(clicks: -5),  // Scroll down
+    .wait(1.0),
+    .vscroll(clicks: 5),   // Scroll up
+    .hscroll(clicks: 3)    // Scroll right
+]
+await scrollActions.execute()
+```
+
+### Complex Automation Example
+
+```swift
+// Example: Copy text from one app and paste to another
+let copyPasteWorkflow: [Action] = [
+    // Focus on source app
+    .move(to: CGPoint(x: 100, y: 200)),
+    .leftClick,
+    .wait(0.5),
+    
+    // Select and copy text
+    Action.selectAll(),
+    .wait(0.2),
+    Action.copy(),
+    .wait(0.5),
+    
+    // Switch to destination app (using keyboard shortcut)
+    .keyShortcut([.command, .tab]),
+    .wait(1.0),
+    
+    // Paste the text
+    .move(to: CGPoint(x: 500, y: 400)),
+    .leftClick,
+    Action.paste(),
+    
+    // Save the document
+    Action.save()
+]
+
+await copyPasteWorkflow.execute()
+```
+
+### Creating Reusable Action Sequences
+
+```swift
+// Define reusable action sequences
+func createLoginSequence(username: String, password: String) -> [Action] {
+    return [
+        .move(to: CGPoint(x: 400, y: 300)),
+        .leftClick,
+        .write(username),
+        .keyShortcut([.tab]),
+        .write(password),
+        .keyShortcut([.returnKey])
+    ]
+}
+
+// Use the sequence
+let loginActions = createLoginSequence(
+    username: "user@example.com",
+    password: "securePassword123"
+)
+await loginActions.execute()
+```
 
 Currently ***only US keyboards*** are supported. Otherwise, it may not work properly.
 
+## Direct Method Calls (Alternative)
+
+While the Action pattern is recommended, you can also call SwiftAutoGUI methods directly for simple operations:
+
 ```swift
 import SwiftAutoGUI
 
-// Async methods (recommended for non-blocking operations)
+// Keyboard operations
 Task {
-    // Send ctrl + ← using async method
     await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
-    
-    // Send sound up using async methods
-    await SwiftAutoGUI.keyDown(.soundUp)
-    await SwiftAutoGUI.keyUp(.soundUp)
-    
-    // Type text instantly
     await SwiftAutoGUI.write("Hello, World!")
-    
-    // Type with 0.1 second delay between characters
-    await SwiftAutoGUI.write("Slowly typed text", interval: 0.1)
 }
 
-// Synchronous methods are deprecated but still available
-// SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
-```
-
-## Mouse
-Similarly, mouse operations can generate basic commands such as mouse movement, clicking, and scrolling by invoking methods of the SwiftAutoGUI class.
-
-```swift
-import SwiftAutoGUI
-
-// Async methods (recommended for non-blocking operations)
+// Mouse operations
 Task {
-    // Move mouse by dx, dy from the current location
-    await SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
-    
-    // Move the mouse to a specific position instantly
-    // This parameter is the `CGWindow` coordinate.
-    await SwiftAutoGUI.move(to: CGPointMake(0, 0), duration: 0)
-    
-    // Move with animation over 2 seconds
-    await SwiftAutoGUI.move(to: CGPointMake(500, 500), duration: 2.0, tweening: .easeInOutQuad)
-    
-    // Double and triple clicks (async)
-    await SwiftAutoGUI.doubleClick()
-    await SwiftAutoGUI.tripleClick()
+    await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100), duration: 0)
+    SwiftAutoGUI.leftClick()
+    SwiftAutoGUI.vscroll(clicks: 10)
 }
-
-// Click where the mouse is located (no async needed)
-SwiftAutoGUI.leftClick() // left
-SwiftAutoGUI.rightClick() // right
-
-// Scroll (no async needed - doesn't use Thread.sleep)
-SwiftAutoGUI.vscroll(clicks: 10) // up
-SwiftAutoGUI.vscroll(clicks: -10) // down
-SwiftAutoGUI.hscroll(clicks: 10) // left
-SwiftAutoGUI.hscroll(clicks: -10) // right
-
-// Drag operations (no async needed)
-SwiftAutoGUI.leftDragged(to: CGPoint(x: 300, y: 400), from: CGPoint(x: 100, y: 200))
 ```
 
 ## Screenshot
@@ -218,63 +316,6 @@ let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
 let menuItems = SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
 ```
 
-## Action Pattern (New!)
-SwiftAutoGUI now provides an Action pattern for building and executing automation sequences declaratively.
-
-```swift
-import SwiftAutoGUI
-
-// Single action execution
-await Action.leftClick.execute()
-
-// Build complex sequences
-let actions: [Action] = [
-    .move(to: CGPoint(x: 100, y: 100)),
-    .wait(0.5),
-    .leftClick,
-    .write("Hello, SwiftAutoGUI!"),
-    .keyShortcut([.returnKey])
-]
-await actions.execute()
-
-// Use convenience methods for common shortcuts
-await Action.copy().execute()
-await Action.paste().execute()
-await Action.save().execute()
-
-// Create custom sequences
-let mySequence = Action.sequence([
-    Action.selectAll(),
-    .wait(0.2),
-    Action.copy(),
-    .move(to: CGPoint(x: 500, y: 500)),
-    .leftClick,
-    Action.paste()
-])
-await mySequence.execute()
-
-// Mouse actions
-let mouseDemo: [Action] = [
-    .move(to: CGPoint(x: 100, y: 100)),
-    .doubleClick(),
-    .drag(from: CGPoint(x: 100, y: 100), to: CGPoint(x: 300, y: 300)),
-    .vscroll(clicks: -5),
-    .hscroll(clicks: 3)
-]
-await mouseDemo.execute()
-
-// Smooth animations
-await Action.moveSmooth(
-    to: CGPoint(x: 500, y: 500), 
-    duration: 2.0, 
-    tweening: .easeInOutQuad
-).execute()
-```
-
-The Action pattern makes it easy to:
-- Build reusable automation sequences
-- Execute actions asynchronously with proper timing
-- Create readable and maintainable automation code
 
 ## AppleScript Execution
 SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
