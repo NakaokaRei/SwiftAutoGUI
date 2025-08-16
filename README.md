@@ -218,6 +218,64 @@ let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
 let menuItems = SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
 ```
 
+## Action Pattern (New!)
+SwiftAutoGUI now provides an Action pattern for building and executing automation sequences declaratively.
+
+```swift
+import SwiftAutoGUI
+
+// Single action execution
+await Action.leftClick.execute()
+
+// Build complex sequences
+let actions: [Action] = [
+    .move(to: CGPoint(x: 100, y: 100)),
+    .wait(0.5),
+    .leftClick,
+    .write("Hello, SwiftAutoGUI!"),
+    .keyShortcut([.returnKey])
+]
+await actions.execute()
+
+// Use convenience methods for common shortcuts
+await Action.copy().execute()
+await Action.paste().execute()
+await Action.save().execute()
+
+// Create custom sequences
+let mySequence = Action.sequence([
+    Action.selectAll(),
+    .wait(0.2),
+    Action.copy(),
+    .move(to: CGPoint(x: 500, y: 500)),
+    .leftClick,
+    Action.paste()
+])
+await mySequence.execute()
+
+// Mouse actions
+let mouseDemo: [Action] = [
+    .move(to: CGPoint(x: 100, y: 100)),
+    .doubleClick(),
+    .drag(from: CGPoint(x: 100, y: 100), to: CGPoint(x: 300, y: 300)),
+    .vscroll(clicks: -5),
+    .hscroll(clicks: 3)
+]
+await mouseDemo.execute()
+
+// Smooth animations
+await Action.moveSmooth(
+    to: CGPoint(x: 500, y: 500), 
+    duration: 2.0, 
+    tweening: .easeInOutQuad
+).execute()
+```
+
+The Action pattern makes it easy to:
+- Build reusable automation sequences
+- Execute actions asynchronously with proper timing
+- Create readable and maintainable automation code
+
 ## AppleScript Execution
 SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
 
