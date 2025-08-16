@@ -19,28 +19,153 @@ jobs:
       - name: Show Swift version
         run: swift --version
       
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+      
       - name: Build library
-        run: swift build -v
+        run: |
+          set -o pipefail
+          swift build -v 2>&1 | xcbeautify
       
       - name: Build release mode
-        run: swift build -c release -v
+        run: |
+          set -o pipefail
+          swift build -c release -v 2>&1 | xcbeautify
       
       - name: Run tests
-        run: swift test -v
+        id: test
+        run: |
+          set +e
+          set -o pipefail
+          
+          # Run tests and capture both formatted and raw output
+          swift test --parallel 2>&1 | tee test_raw.txt | xcbeautify --report junit --report-path . --junit-report-filename test_results.xml
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            echo "## ❌ Test Failures Detected" > test_summary.md
+            echo "" >> test_summary.md
+            
+            # Extract failed test names from raw output
+            echo "### Failed Tests:" >> test_summary.md
+            echo "" >> test_summary.md
+            
+            # Parse Swift test output for failures
+            grep -E "Test Case.*failed|error:" test_raw.txt | while IFS= read -r line; do
+              if [[ "$line" == *"Test Case"* ]]; then
+                # Extract test name and format it nicely
+                test_name=$(echo "$line" | sed -E "s/.*Test Case '(.+)' failed.*/\1/")
+                echo "- ❌ \`$test_name\`" >> test_summary.md
+              fi
+            done
+            
+            # Extract assertion failures and errors
+            echo "" >> test_summary.md
+            echo "### Failure Details:" >> test_summary.md
+            echo "" >> test_summary.md
+            echo '```' >> test_summary.md
+            grep -A 2 -E "XCTAssert|failed|error:" test_raw.txt | head -20 >> test_summary.md
+            echo '```' >> test_summary.md
+            
+            # Add test statistics if available
+            echo "" >> test_summary.md
+            if grep -q "Test Suite.*failed" test_raw.txt; then
+              echo "### Summary:" >> test_summary.md
+              grep "Test Suite.*failed" test_raw.txt | tail -1 >> test_summary.md
+            fi
+          else
+            echo "## ✅ All Tests Passed!" > test_summary.md
+            echo "" >> test_summary.md
+            
+            # Extract test statistics
+            if grep -q "Test Suite.*passed" test_raw.txt; then
+              stats=$(grep "Test Suite.*passed" test_raw.txt | tail -1)
+              echo "### Summary:" >> test_summary.md
+              echo "$stats" >> test_summary.md
+            fi
+          fi
+          
+          exit $TEST_EXIT_CODE
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test_results.xml
+            test_raw.txt
+            test_summary.md
+      
+      - name: Comment PR with test results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const fs = require('fs');
+            const testExitCode = '${{ steps.test.outputs.exit_code }}';
+            
+            let comment = '## 🧪 Test Results\n\n';
+            
+            if (fs.existsSync('test_summary.md')) {
+              const summary = fs.readFileSync('test_summary.md', 'utf8');
+              comment += summary;
+            } else {
+              comment += testExitCode === '0' 
+                ? '✅ All tests passed!' 
+                : '❌ Tests failed (check logs for details)';
+            }
+            
+            comment += '\n\n---\n';
+            comment += `*Workflow run: [${context.runId}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})*`;
+            comment += '\n';
+            comment += `*Powered by [xcbeautify](https://github.com/cpisciotta/xcbeautify) 🎨*`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🧪 Test Results')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
       
       - name: Build documentation
         run: |
+          set -o pipefail
           # Generate documentation using xcodebuild to properly handle OpenCV dependency
           xcodebuild docbuild \
             -scheme SwiftAutoGUI \
             -derivedDataPath ./DerivedData \
-            -destination 'platform=macOS'
+            -destination 'platform=macOS' 2>&1 | xcbeautify
           
           # Verify documentation was generated
           ls -la ./DerivedData/Build/Products/Debug/SwiftAutoGUI.doccarchive
       
       - name: Build sample app
         run: |
+          set -o pipefail
           cd Sample
           xcodebuild -project Sample.xcodeproj \
             -scheme Sample \
@@ -48,4 +173,4 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | xcbeautify
