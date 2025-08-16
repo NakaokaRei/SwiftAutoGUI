@@ -17,6 +17,7 @@ enum DemoTab: String, CaseIterable {
     case scrolling
     case dialog
     case appleScript
+    case actions
     
     var title: String {
         switch self {
@@ -29,6 +30,7 @@ enum DemoTab: String, CaseIterable {
         case .scrolling: return "Scrolling"
         case .dialog: return "Dialog"
         case .appleScript: return "AppleScript"
+        case .actions: return "Actions"
         }
     }
     
@@ -43,6 +45,7 @@ enum DemoTab: String, CaseIterable {
         case .scrolling: return "arrow.up.and.down"
         case .dialog: return "message"
         case .appleScript: return "applescript"
+        case .actions: return "play.circle"
         }
     }
 }

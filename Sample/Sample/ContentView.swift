@@ -100,6 +100,8 @@ struct ContentView: View {
                             DialogDemoView()
                         case .appleScript:
                             AppleScriptView()
+                        case .actions:
+                            ActionsDemoView()
                         }
                     }
                     .padding(24)
