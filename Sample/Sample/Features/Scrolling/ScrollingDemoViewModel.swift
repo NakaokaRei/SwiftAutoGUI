@@ -11,63 +11,71 @@ import SwiftAutoGUI
 class ScrollingDemoViewModel: ObservableObject {
     
     func verticalScrollDown() {
-        SwiftAutoGUI.vscroll(clicks: -5)
+        Task {
+            await Action.vscroll(clicks: -5).execute()
+        }
     }
     
     func verticalScrollUp() {
-        SwiftAutoGUI.vscroll(clicks: 5)
+        Task {
+            await Action.vscroll(clicks: 5).execute()
+        }
     }
     
     func horizontalScrollLeft() {
-        SwiftAutoGUI.hscroll(clicks: 5)
+        Task {
+            await Action.hscroll(clicks: 5).execute()
+        }
     }
     
     func horizontalScrollRight() {
-        SwiftAutoGUI.hscroll(clicks: -5)
+        Task {
+            await Action.hscroll(clicks: -5).execute()
+        }
     }
     
     // Smooth scrolling methods
     func smoothVerticalScrollDown() {
         Task {
-            await SwiftAutoGUI.vscroll(clicks: -150, duration: 3.0, tweening: .easeInOutQuad)
+            await Action.smoothVScroll(clicks: -150, duration: 3.0, tweening: .easeInOutQuad).execute()
         }
     }
     
     func smoothVerticalScrollUp() {
         Task {
-            await SwiftAutoGUI.vscroll(clicks: 150, duration: 3.0, tweening: .easeInOutQuad)
+            await Action.smoothVScroll(clicks: 150, duration: 3.0, tweening: .easeInOutQuad).execute()
         }
     }
     
     func smoothHorizontalScrollLeft() {
         Task {
-            await SwiftAutoGUI.hscroll(clicks: 100, duration: 2.5, tweening: .easeInOutQuad)
+            await Action.smoothHScroll(clicks: 100, duration: 2.5, tweening: .easeInOutQuad).execute()
         }
     }
     
     func smoothHorizontalScrollRight() {
         Task {
-            await SwiftAutoGUI.hscroll(clicks: -100, duration: 2.5, tweening: .easeInOutQuad)
+            await Action.smoothHScroll(clicks: -100, duration: 2.5, tweening: .easeInOutQuad).execute()
         }
     }
     
     func smoothScrollWithBounce() {
         Task {
-            await SwiftAutoGUI.vscroll(clicks: -200, duration: 4.0, tweening: .easeOutBounce)
+            await Action.smoothVScroll(clicks: -200, duration: 4.0, tweening: .easeOutBounce).execute()
         }
     }
     
     func smoothScrollWithElastic() {
         Task {
-            await SwiftAutoGUI.vscroll(clicks: 180, duration: 3.5, tweening: .easeOutElastic)
+            await Action.smoothVScroll(clicks: 180, duration: 3.5, tweening: .easeOutElastic).execute()
         }
     }
     
     func smoothScrollCustomEasing() {
         Task {
-            await SwiftAutoGUI.vscroll(clicks: -120, duration: 3.0, tweening: .custom({ t in
+            await Action.smoothVScroll(clicks: -120, duration: 3.0, tweening: .custom({ t in
                 return t * t * (3 - 2 * t) // Smooth step
-            }))
+            })).execute()
         }
     }
 }

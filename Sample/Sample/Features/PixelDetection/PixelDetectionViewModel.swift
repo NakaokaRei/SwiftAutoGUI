@@ -13,11 +13,16 @@ class PixelDetectionViewModel: ObservableObject {
     @Published var screenSize: String = ""
     
     func getScreenSize() {
-        let (width, height) = SwiftAutoGUI.size()
-        screenSize = "Screen: \(Int(width)) x \(Int(height))"
+        Task {
+            if let size = await Action.getScreenSize.execute() as? (CGFloat, CGFloat) {
+                screenSize = "Screen: \(Int(size.0)) x \(Int(size.1))"
+            }
+        }
     }
     
     func getPixelColor() {
-        pixelColor = SwiftAutoGUI.pixel(x: 100, y: 100)
+        Task {
+            pixelColor = await Action.getPixel(x: 100, y: 100).execute() as? NSColor
+        }
     }
 }

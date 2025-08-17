@@ -32,34 +32,20 @@ end tell
         result = ""
         
         Task {
-            do {
-                print("Executing AppleScript:")
-                print(scriptText)
-                print("---")
-                
-                if let output = try SwiftAutoGUI.executeAppleScript(scriptText) {
-                    print("Script output: \(output)")
-                    await MainActor.run {
-                        self.result = output
-                        self.isExecuting = false
-                    }
-                } else {
-                    print("Script completed with no output")
-                    await MainActor.run {
-                        self.result = "Script executed successfully (no output)"
-                        self.isExecuting = false
-                    }
-                }
-            } catch let error as SwiftAutoGUI.AppleScriptError {
-                print("AppleScript error: \(error)")
+            print("Executing AppleScript:")
+            print(scriptText)
+            print("---")
+            
+            if let output = await Action.executeAppleScript(scriptText).execute() as? String {
+                print("Script output: \(output)")
                 await MainActor.run {
-                    self.errorMessage = error.errorDescription
+                    self.result = output
                     self.isExecuting = false
                 }
-            } catch {
-                print("Unexpected error: \(error)")
+            } else {
+                print("Script completed with no output")
                 await MainActor.run {
-                    self.errorMessage = "Unexpected error: \(error.localizedDescription)"
+                    self.result = "Script executed successfully (no output)"
                     self.isExecuting = false
                 }
             }

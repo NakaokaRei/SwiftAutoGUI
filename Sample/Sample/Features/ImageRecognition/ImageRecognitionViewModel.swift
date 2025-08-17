@@ -56,33 +56,35 @@ class ImageRecognitionViewModel: ObservableObject {
         
         imageRecognitionResult = "Searching for test image on screen..."
         
-        if let foundRect = SwiftAutoGUI.locateOnScreen(testImagePath) {
-            imageRecognitionResult = """
-                Found test image!
-                Location: x=\(Int(foundRect.origin.x)), y=\(Int(foundRect.origin.y))
-                Size: \(Int(foundRect.width))x\(Int(foundRect.height))
-                """
-            
-            let centerX = foundRect.midX
-            let centerY = foundRect.midY
-            
-            Task {
-                await SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY), duration: 0)
+        Task {
+            if let foundRect = await Action.locateOnScreen(testImagePath).execute() as? CGRect {
+                imageRecognitionResult = """
+                    Found test image!
+                    Location: x=\(Int(foundRect.origin.x)), y=\(Int(foundRect.origin.y))
+                    Size: \(Int(foundRect.width))x\(Int(foundRect.height))
+                    """
                 
-                await SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y), duration: 0)
-                try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-                await SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y), duration: 0)
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                await SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y + foundRect.height), duration: 0)
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                await SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y + foundRect.height), duration: 0)
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                await SwiftAutoGUI.move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y), duration: 0)
-                try? await Task.sleep(nanoseconds: 200_000_000)
-                await SwiftAutoGUI.move(to: CGPoint(x: centerX, y: centerY), duration: 0)
+                let centerX = foundRect.midX
+                let centerY = foundRect.midY
+                
+                let actions: [Action] = [
+                    .move(to: CGPoint(x: centerX, y: centerY)),
+                    .move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y)),
+                    .wait(0.2),
+                    .move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y)),
+                    .wait(0.2),
+                    .move(to: CGPoint(x: foundRect.origin.x + foundRect.width, y: foundRect.origin.y + foundRect.height)),
+                    .wait(0.2),
+                    .move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y + foundRect.height)),
+                    .wait(0.2),
+                    .move(to: CGPoint(x: foundRect.origin.x, y: foundRect.origin.y)),
+                    .wait(0.2),
+                    .move(to: CGPoint(x: centerX, y: centerY))
+                ]
+                await actions.execute()
+            } else {
+                imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
             }
-        } else {
-            imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
         }
     }
     
@@ -94,20 +96,23 @@ class ImageRecognitionViewModel: ObservableObject {
         
         imageRecognitionResult = "Searching for test image to click..."
         
-        if let center = SwiftAutoGUI.locateCenterOnScreen(testImagePath) {
-            imageRecognitionResult = "Found and clicking test image at: x=\(Int(center.x)), y=\(Int(center.y))"
-            
-            Task {
-                await SwiftAutoGUI.move(to: center, duration: 0)
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                SwiftAutoGUI.leftClick()
+        Task {
+            if let center = await Action.locateCenterOnScreen(testImagePath).execute() as? CGPoint {
+                imageRecognitionResult = "Found and clicking test image at: x=\(Int(center.x)), y=\(Int(center.y))"
+                
+                let actions: [Action] = [
+                    .move(to: center),
+                    .wait(0.5),
+                    .leftClick
+                ]
+                await actions.execute()
                 
                 await MainActor.run {
                     imageRecognitionResult += "\nClicked on the test image!"
                 }
+            } else {
+                imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
             }
-        } else {
-            imageRecognitionResult = "Test image not found on screen. Make sure the test image is visible in an app window."
         }
     }
     
@@ -119,12 +124,12 @@ class ImageRecognitionViewModel: ObservableObject {
         
         imageRecognitionResult = "Searching for all test images..."
         
-        let allMatches = SwiftAutoGUI.locateAllOnScreen(testImagePath, confidence: 0.8)
-        
-        if !allMatches.isEmpty {
-            imageRecognitionResult = "Found \(allMatches.count) instances of the test image:\n"
+        Task {
+            let allMatches = await Action.locateAllOnScreen(testImagePath, grayscale: true, confidence: 0.8).execute() as? [CGRect] ?? []
             
-            Task {
+            if !allMatches.isEmpty {
+                imageRecognitionResult = "Found \(allMatches.count) instances of the test image:\n"
+                
                 for (index, rect) in allMatches.enumerated() {
                     await MainActor.run {
                         imageRecognitionResult += "\n[\(index + 1)] at x=\(Int(rect.origin.x)), y=\(Int(rect.origin.y)), size=\(Int(rect.width))x\(Int(rect.height))"
@@ -138,24 +143,26 @@ class ImageRecognitionViewModel: ObservableObject {
                         CGPoint(x: rect.origin.x, y: rect.origin.y)
                     ]
                     
+                    var actions: [Action] = []
                     for i in 0..<corners.count - 1 {
-                        await SwiftAutoGUI.move(to: corners[i], duration: 0)
-                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                        await SwiftAutoGUI.move(to: corners[i + 1], duration: 0)
-                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        actions.append(.move(to: corners[i]))
+                        actions.append(.wait(0.1))
+                        actions.append(.move(to: corners[i + 1]))
+                        actions.append(.wait(0.1))
                     }
+                    await actions.execute()
                 }
                 
                 if let firstMatch = allMatches.first {
-                    await SwiftAutoGUI.move(to: CGPoint(x: firstMatch.midX, y: firstMatch.midY), duration: 0)
+                    await Action.move(to: CGPoint(x: firstMatch.midX, y: firstMatch.midY)).execute()
                 }
                 
                 await MainActor.run {
                     imageRecognitionResult += "\n\nHighlighted all \(allMatches.count) matches!"
                 }
+            } else {
+                imageRecognitionResult = "No test images found on screen. Try opening multiple windows with the test image visible."
             }
-        } else {
-            imageRecognitionResult = "No test images found on screen. Try opening multiple windows with the test image visible."
         }
     }
 }

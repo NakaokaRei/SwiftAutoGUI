@@ -12,14 +12,17 @@ class KeyboardDemoViewModel: ObservableObject {
     
     func sendKeyShortcut() {
         Task {
-            await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
+            await Action.keyShortcut([.control, .leftArrow]).execute()
         }
     }
     
     func sendSpecialKeyEvent() {
         Task {
-            await SwiftAutoGUI.keyDown(.soundUp)
-            await SwiftAutoGUI.keyUp(.soundUp)
+            let actions: [Action] = [
+                .keyDown(.soundUp),
+                .keyUp(.soundUp)
+            ]
+            await actions.execute()
         }
     }
 }
