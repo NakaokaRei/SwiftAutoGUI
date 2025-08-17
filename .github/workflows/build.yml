@@ -7,6 +7,11 @@ on:
     branches: [ "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   build-and-test:
     name: Build and Test on macOS

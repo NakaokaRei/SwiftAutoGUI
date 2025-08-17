@@ -16,45 +16,45 @@ class DialogDemoViewModel: ObservableObject {
     @Published var passwordResult: String?
     
     func showAlert() async {
-        let result = SwiftAutoGUI.alert(
+        let result = await Action.alert(
             "This is a sample alert message!",
             title: "SwiftAutoGUI Alert",
             button: "Got it!"
-        )
+        ).execute() as? String
         alertResult = result
     }
     
     func showDefaultConfirm() async {
-        let result = SwiftAutoGUI.confirm(
+        let result = await Action.confirm(
             "Do you want to continue with the operation?",
             title: "Confirmation Required"
-        )
+        ).execute() as? String
         confirmResult = result ?? "Cancelled"
     }
     
     func showCustomConfirm() async {
-        let result = SwiftAutoGUI.confirm(
+        let result = await Action.confirm(
             "What would you like to do next?",
             title: "Choose Action",
             buttons: ["Save", "Don't Save", "Cancel"]
-        )
+        ).execute() as? String
         confirmResult = result ?? "Cancelled"
     }
     
     func showPrompt() async {
-        let result = SwiftAutoGUI.prompt(
+        let result = await Action.prompt(
             "Please enter your name:",
             title: "User Information",
-            default: "John Doe"
-        )
+            defaultAnswer: "John Doe"
+        ).execute() as? String
         promptResult = result ?? "Cancelled"
     }
     
     func showPassword() async {
-        let result = SwiftAutoGUI.password(
+        let result = await Action.password(
             "Enter your password to continue:",
             title: "Authentication Required"
-        )
+        ).execute() as? String
         passwordResult = result ?? "Cancelled"
     }
 }

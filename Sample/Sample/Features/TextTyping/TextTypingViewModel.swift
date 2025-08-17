@@ -49,22 +49,26 @@ class TextTypingViewModel: ObservableObject {
     
     @MainActor
     private func performTyping(text: String) async {
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
-        await SwiftAutoGUI.write(text, interval: typingSpeed)
+        let actions: [Action] = [
+            .wait(1.0),
+            .write(text, interval: typingSpeed)
+        ]
+        await actions.execute()
         typingStatus = "✅ Completed typing: \"\(text)\""
     }
     
     @MainActor
     private func performFocusAndType() async {
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        
-        await SwiftAutoGUI.sendKeyShortcut([.command, .a])
-        try? await Task.sleep(nanoseconds: 100_000_000)
-        await SwiftAutoGUI.keyDown(.delete)
-        await SwiftAutoGUI.keyUp(.delete)
-        try? await Task.sleep(nanoseconds: 100_000_000)
-        
-        await SwiftAutoGUI.write(textToType, interval: typingSpeed)
+        let actions: [Action] = [
+            .wait(0.5),
+            .selectAll(),
+            .wait(0.1),
+            .keyDown(.delete),
+            .keyUp(.delete),
+            .wait(0.1),
+            .write(textToType, interval: typingSpeed)
+        ]
+        await actions.execute()
         typingStatus = "✅ Focused and typed in target field: \"\(textToType)\""
     }
 }

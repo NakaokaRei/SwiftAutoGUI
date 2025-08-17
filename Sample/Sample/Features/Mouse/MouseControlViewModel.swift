@@ -14,7 +14,7 @@ class MouseControlViewModel: ObservableObject {
     
     func moveMouse() {
         Task {
-            await SwiftAutoGUI.moveMouse(dx: 10, dy: 10)
+            await Action.moveMouse(dx: 10, dy: 10).execute()
         }
     }
     
@@ -24,18 +24,20 @@ class MouseControlViewModel: ObservableObject {
     }
     
     func leftClick() {
-        SwiftAutoGUI.leftClick()
+        Task {
+            await Action.leftClick.execute()
+        }
     }
     
     func doubleClick() {
         Task {
-            await SwiftAutoGUI.doubleClick()
+            await Action.doubleClick().execute()
         }
     }
     
     func tripleClick() {
         Task {
-            await SwiftAutoGUI.tripleClick()
+            await Action.tripleClick().execute()
         }
     }
     
@@ -45,7 +47,7 @@ class MouseControlViewModel: ObservableObject {
             await animateMovement {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x + 200, y: startPos.y + 100)
-                await SwiftAutoGUI.move(to: targetPos, duration: 2.0, tweening: .linear)
+                await Action.moveSmooth(to: targetPos, duration: 2.0, tweening: .linear).execute()
             }
         }
     }
@@ -55,7 +57,7 @@ class MouseControlViewModel: ObservableObject {
             await animateMovement {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x - 150, y: startPos.y + 150)
-                await SwiftAutoGUI.move(to: targetPos, duration: 1.5, tweening: .easeInOutQuad)
+                await Action.moveSmooth(to: targetPos, duration: 1.5, tweening: .easeInOutQuad).execute()
             }
         }
     }
@@ -65,7 +67,7 @@ class MouseControlViewModel: ObservableObject {
             await animateMovement {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x + 250, y: startPos.y - 100)
-                await SwiftAutoGUI.move(to: targetPos, duration: 2.0, tweening: .easeOutElastic)
+                await Action.moveSmooth(to: targetPos, duration: 2.0, tweening: .easeOutElastic).execute()
             }
         }
     }
@@ -75,7 +77,7 @@ class MouseControlViewModel: ObservableObject {
             await animateMovement {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x - 200, y: startPos.y - 150)
-                await SwiftAutoGUI.move(to: targetPos, duration: 2.0, tweening: .easeOutBounce)
+                await Action.moveSmooth(to: targetPos, duration: 2.0, tweening: .easeOutBounce).execute()
             }
         }
     }
@@ -89,13 +91,15 @@ class MouseControlViewModel: ObservableObject {
                 let duration = 3.0
                 let stepDuration = duration / Double(steps)
                 
+                var actions: [Action] = []
                 for i in 0...steps {
                     let angle = (Double(i) / Double(steps)) * 2 * Double.pi
                     let x = center.x + radius * cos(angle)
                     let y = center.y + radius * sin(angle)
                     
-                    await SwiftAutoGUI.move(to: CGPoint(x: x, y: y), duration: stepDuration, tweening: .easeInOutSine)
+                    actions.append(.moveSmooth(to: CGPoint(x: x, y: y), duration: stepDuration, tweening: .easeInOutSine))
                 }
+                await actions.execute()
             }
         }
     }
@@ -106,7 +110,7 @@ class MouseControlViewModel: ObservableObject {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x + 300, y: startPos.y)
                 // 24 FPS creates visible stepping effect
-                await SwiftAutoGUI.move(to: targetPos, duration: 2.0, tweening: .linear, fps: 24)
+                await Action.moveSmooth(to: targetPos, duration: 2.0, tweening: .linear, fps: 24).execute()
             }
         }
     }
@@ -117,7 +121,7 @@ class MouseControlViewModel: ObservableObject {
                 let startPos = SwiftAutoGUI.position()
                 let targetPos = CGPoint(x: startPos.x - 300, y: startPos.y)
                 // 120 FPS creates ultra-smooth movement
-                await SwiftAutoGUI.move(to: targetPos, duration: 2.0, tweening: .linear, fps: 120)
+                await Action.moveSmooth(to: targetPos, duration: 2.0, tweening: .linear, fps: 120).execute()
             }
         }
     }
