@@ -101,7 +101,7 @@ class ActionsDemoViewModel: ObservableObject {
         
         for (index, action) in selectedExample.actions.enumerated() {
             addToLog("[\(index + 1)] Executing: \(actionDescription(for: action))")
-            await action.execute()
+            _ = await action.execute()
         }
         
         addToLog("Execution completed!")

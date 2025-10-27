@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftAutoGUI
 
+@MainActor
 class ImageRecognitionViewModel: ObservableObject {
     @Published var imageRecognitionResult: String = ""
     @Published var testImagePath: String = ""

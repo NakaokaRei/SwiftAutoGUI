@@ -47,26 +47,26 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> CGRect? {
+    ) async throws -> CGRect? {
         // Load the needle image
         guard let needleImage = NSImage(contentsOfFile: imagePath) else {
             print("SwiftAutoGUI: Could not load image from path: \(imagePath)")
             return nil
         }
-        
+
         // Take screenshot of the region or entire screen
         let screenshot: NSImage?
         if let region = region {
-            screenshot = self.screenshot(region: region)
+            screenshot = try await self.screenshot(region: region)
         } else {
-            screenshot = self.screenshot()
+            screenshot = try await self.screenshot()
         }
-        
+
         guard let haystackImage = screenshot else {
             print("SwiftAutoGUI: Could not capture screenshot")
             return nil
         }
-        
+
         // Perform image matching
         return findImageInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
     }
@@ -110,12 +110,12 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> CGPoint? {
+    ) async throws -> CGPoint? {
         // Use locateOnScreen to find the image
-        guard let rect = locateOnScreen(imagePath, grayscale: grayscale, confidence: confidence, region: region) else {
+        guard let rect = try await locateOnScreen(imagePath, grayscale: grayscale, confidence: confidence, region: region) else {
             return nil
         }
-        
+
         // Return the center point of the found rectangle
         return CGPoint(x: rect.midX, y: rect.midY)
     }
@@ -156,26 +156,26 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> [CGRect] {
+    ) async throws -> [CGRect] {
         // Load the needle image
         guard let needleImage = NSImage(contentsOfFile: imagePath) else {
             print("SwiftAutoGUI: Could not load image from path: \(imagePath)")
             return []
         }
-        
+
         // Take screenshot of the region or entire screen
         let screenshot: NSImage?
         if let region = region {
-            screenshot = self.screenshot(region: region)
+            screenshot = try await self.screenshot(region: region)
         } else {
-            screenshot = self.screenshot()
+            screenshot = try await self.screenshot()
         }
-        
+
         guard let haystackImage = screenshot else {
             print("SwiftAutoGUI: Could not capture screenshot")
             return []
         }
-        
+
         // Perform image matching to find all instances
         return findAllImagesInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
     }
@@ -243,22 +243,21 @@ extension SwiftAutoGUI {
             
             // Convert OpenCV coordinates to CGRect
             // OpenCV works with actual pixels, we need to convert to points for macOS
-            let pixelRect = CGRect(
-                x: CGFloat(maxLoc.x) + regionOffset.x,
-                y: CGFloat(maxLoc.y) + regionOffset.y,
-                width: CGFloat(needleMat.cols()),
-                height: CGFloat(needleMat.rows())
-            )
-            
-            // Convert from pixels to points (logical coordinates)
+            // First convert OpenCV pixel coordinates to points
+            let pointX = CGFloat(maxLoc.x) / scaleFactor
+            let pointY = CGFloat(maxLoc.y) / scaleFactor
+            let pointWidth = CGFloat(needleMat.cols()) / scaleFactor
+            let pointHeight = CGFloat(needleMat.rows()) / scaleFactor
+
+            // Then add region offset (which is already in points)
             let pointRect = CGRect(
-                x: pixelRect.origin.x / scaleFactor,
-                y: pixelRect.origin.y / scaleFactor,
-                width: pixelRect.width / scaleFactor,
-                height: pixelRect.height / scaleFactor
+                x: pointX + regionOffset.x,
+                y: pointY + regionOffset.y,
+                width: pointWidth,
+                height: pointHeight
             )
             
-            print("SwiftAutoGUI: OpenCV found image at pixels: \(pixelRect), points: \(pointRect)")
+            print("SwiftAutoGUI: OpenCV found image at points: \(pointRect)")
             return pointRect
         }
         
@@ -345,19 +344,18 @@ extension SwiftAutoGUI {
             let x = maxIdx % Int(result.cols())
             
             // Convert OpenCV coordinates to CGRect
-            let pixelRect = CGRect(
-                x: CGFloat(x) + regionOffset.x,
-                y: CGFloat(y) + regionOffset.y,
-                width: CGFloat(templateWidth),
-                height: CGFloat(templateHeight)
-            )
-            
-            // Convert from pixels to points (logical coordinates)
+            // First convert OpenCV pixel coordinates to points
+            let pointX = CGFloat(x) / scaleFactor
+            let pointY = CGFloat(y) / scaleFactor
+            let pointWidth = CGFloat(templateWidth) / scaleFactor
+            let pointHeight = CGFloat(templateHeight) / scaleFactor
+
+            // Then add region offset (which is already in points)
             let pointRect = CGRect(
-                x: pixelRect.origin.x / scaleFactor,
-                y: pixelRect.origin.y / scaleFactor,
-                width: pixelRect.width / scaleFactor,
-                height: pixelRect.height / scaleFactor
+                x: pointX + regionOffset.x,
+                y: pointY + regionOffset.y,
+                width: pointWidth,
+                height: pointHeight
             )
             
             matches.append(pointRect)

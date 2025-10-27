@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftAutoGUI
 
+@MainActor
 class TextTypingViewModel: ObservableObject {
     @Published var textToType: String = ""
     @Published var typingSpeed: Double = 0.0

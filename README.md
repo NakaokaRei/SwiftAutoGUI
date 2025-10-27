@@ -16,8 +16,8 @@ This repository is inspired by [pyautogui](https://github.com/asweigart/pyautogu
 
 # Requirements
 
-- macOS 13.0+
-- Swift 5.7+
+- macOS 26.0+
+- Swift 6.0+
 
 # Installation
 
@@ -212,27 +212,35 @@ Task {
 ```
 
 ## Screenshot
-SwiftAutoGUI can take screenshots of the entire screen or specific regions, save them to files, and get pixel colors.
+SwiftAutoGUI can take screenshots of the entire screen or specific regions, save them to files, and get pixel colors. Screenshot operations are async and use ScreenCaptureKit for modern macOS compatibility.
 
 ```swift
 import SwiftAutoGUI
 
 // Take a screenshot of the entire screen
-if let screenshot = SwiftAutoGUI.screenshot() {
-    // Use the NSImage object
+Task {
+    if let screenshot = try await SwiftAutoGUI.screenshot() {
+        // Use the NSImage object
+    }
 }
 
 // Take a screenshot of a specific region
 let region = CGRect(x: 100, y: 100, width: 200, height: 200)
-if let regionScreenshot = SwiftAutoGUI.screenshot(region: region) {
-    // Use the NSImage object
+Task {
+    if let regionScreenshot = try await SwiftAutoGUI.screenshot(region: region) {
+        // Use the NSImage object
+    }
 }
 
 // Save a screenshot directly to a file
-SwiftAutoGUI.screenshot(imageFilename: "screenshot.png")
+Task {
+    try await SwiftAutoGUI.screenshot(imageFilename: "screenshot.png")
+}
 
 // Save a region screenshot to a file
-SwiftAutoGUI.screenshot(imageFilename: "region.jpg", region: region)
+Task {
+    try await SwiftAutoGUI.screenshot(imageFilename: "region.jpg", region: region)
+}
 
 // Get screen size
 let (width, height) = SwiftAutoGUI.size()
@@ -245,48 +253,53 @@ if let color = SwiftAutoGUI.pixel(x: 100, y: 200) {
 ```
 
 ## Image Recognition
-SwiftAutoGUI can locate images on the screen using OpenCV template matching, similar to PyAutoGUI.
+SwiftAutoGUI can locate images on the screen using OpenCV template matching, similar to PyAutoGUI. Image recognition operations are async and use ScreenCaptureKit for capturing screenshots.
 
 ```swift
 import SwiftAutoGUI
 
 // Locate an image on the screen
-if let location = SwiftAutoGUI.locateOnScreen("button.png") {
-    print("Found at: \(location)")
-    // location is a CGRect with the position and size
-    
-    // Click at the center of the found image
-    let center = CGPoint(x: location.midX, y: location.midY)
-    Task {
+Task {
+    if let location = try await SwiftAutoGUI.locateOnScreen("button.png") {
+        print("Found at: \(location)")
+        // location is a CGRect with the position and size
+
+        // Click at the center of the found image
+        let center = CGPoint(x: location.midX, y: location.midY)
         await SwiftAutoGUI.move(to: center, duration: 0)
         SwiftAutoGUI.leftClick()
     }
 }
 
 // Search with confidence threshold (0.0-1.0)
-if let location = SwiftAutoGUI.locateOnScreen("button.png", confidence: 0.9) {
-    // Found with 90% confidence
+Task {
+    if let location = try await SwiftAutoGUI.locateOnScreen("button.png", confidence: 0.9) {
+        // Found with 90% confidence
+    }
 }
 
 // Search in a specific region for better performance
-let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
-if let location = SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion) {
-    // Found within the specified region
+Task {
+    let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
+    if let location = try await SwiftAutoGUI.locateOnScreen("button.png", region: searchRegion) {
+        // Found within the specified region
+    }
 }
 
 // Locate and get the center point directly
-if let buttonCenter = SwiftAutoGUI.locateCenterOnScreen("button.png") {
-    // buttonCenter is a CGPoint with x,y coordinates of the center
-    Task {
+Task {
+    if let buttonCenter = try await SwiftAutoGUI.locateCenterOnScreen("button.png") {
+        // buttonCenter is a CGPoint with x,y coordinates of the center
         await SwiftAutoGUI.move(to: buttonCenter, duration: 0)
         SwiftAutoGUI.leftClick()
     }
 }
 
 // locateCenterOnScreen also supports confidence and region parameters
-if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8, region: searchRegion) {
-    // Click at the center of the found image
-    Task {
+Task {
+    let searchRegion = CGRect(x: 0, y: 0, width: 500, height: 500)
+    if let center = try await SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8, region: searchRegion) {
+        // Click at the center of the found image
         await SwiftAutoGUI.move(to: center, duration: 0)
         SwiftAutoGUI.leftClick()
     }
@@ -294,7 +307,7 @@ if let center = SwiftAutoGUI.locateCenterOnScreen("target.png", confidence: 0.8,
 
 // Find all occurrences of an image on screen
 Task {
-    let buttons = SwiftAutoGUI.locateAllOnScreen("button.png")
+    let buttons = try await SwiftAutoGUI.locateAllOnScreen("button.png")
     print("Found \(buttons.count) buttons")
     for (index, button) in buttons.enumerated() {
         print("Button \(index): \(button)")
@@ -305,15 +318,19 @@ Task {
 }
 
 // locateAllOnScreen with confidence threshold for flexible matching
-let icons = SwiftAutoGUI.locateAllOnScreen("app_icon.png", confidence: 0.85)
-for icon in icons {
-    // Process each found icon
-    print("Found icon at: \(icon)")
+Task {
+    let icons = try await SwiftAutoGUI.locateAllOnScreen("app_icon.png", confidence: 0.85)
+    for icon in icons {
+        // Process each found icon
+        print("Found icon at: \(icon)")
+    }
 }
 
 // Search for multiple matches in a specific region
-let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
-let menuItems = SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
+Task {
+    let topRegion = CGRect(x: 0, y: 0, width: 1920, height: 100)
+    let menuItems = try await SwiftAutoGUI.locateAllOnScreen("menu_item.png", region: topRegion)
+}
 ```
 
 

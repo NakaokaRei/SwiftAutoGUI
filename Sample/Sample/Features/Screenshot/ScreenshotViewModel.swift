@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftAutoGUI
 
+@MainActor
 class ScreenshotViewModel: ObservableObject {
     @Published var screenshotImage: NSImage?
     
