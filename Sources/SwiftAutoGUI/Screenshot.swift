@@ -36,8 +36,9 @@ extension SwiftAutoGUI {
 
         // Create configuration
         let config = SCStreamConfiguration()
-        config.width = display.width
-        config.height = display.height
+        // display.width and display.height are in logical points, convert to pixels
+        config.width = Int(CGFloat(display.width) * screen.backingScaleFactor)
+        config.height = Int(CGFloat(display.height) * screen.backingScaleFactor)
         config.scalesToFit = false
         config.showsCursor = false
 
