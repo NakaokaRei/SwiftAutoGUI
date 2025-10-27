@@ -318,28 +318,28 @@ public enum Action {
             return nil
             
         case .screenshot:
-            return SwiftAutoGUI.screenshot()
-            
+            return try? await SwiftAutoGUI.screenshot()
+
         case .screenshotRegion(let region):
-            return SwiftAutoGUI.screenshot(region: region)
-            
+            return try? await SwiftAutoGUI.screenshot(region: region)
+
         case .screenshotToFile(let filename, let region):
-            return SwiftAutoGUI.screenshot(imageFilename: filename, region: region)
-            
+            return try? await SwiftAutoGUI.screenshot(imageFilename: filename, region: region)
+
         case .getScreenSize:
             return SwiftAutoGUI.size()
-            
+
         case .getPixel(let x, let y):
-            return SwiftAutoGUI.pixel(x: x, y: y)
+            return try? await SwiftAutoGUI.pixel(x: x, y: y)
             
         case .locateOnScreen(let image, let grayscale, let confidence, let region):
-            return SwiftAutoGUI.locateOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
-            
+            return try? await SwiftAutoGUI.locateOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
+
         case .locateCenterOnScreen(let image, let grayscale, let confidence, let region):
-            return SwiftAutoGUI.locateCenterOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
-            
+            return try? await SwiftAutoGUI.locateCenterOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
+
         case .locateAllOnScreen(let image, let grayscale, let confidence, let region):
-            return SwiftAutoGUI.locateAllOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
+            return try? await SwiftAutoGUI.locateAllOnScreen(image, grayscale: grayscale, confidence: confidence, region: region)
             
         case .alert(let text, let title, let button):
             return SwiftAutoGUI.alert(text, title: title, button: button)

@@ -47,26 +47,26 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> CGRect? {
+    ) async throws -> CGRect? {
         // Load the needle image
         guard let needleImage = NSImage(contentsOfFile: imagePath) else {
             print("SwiftAutoGUI: Could not load image from path: \(imagePath)")
             return nil
         }
-        
+
         // Take screenshot of the region or entire screen
         let screenshot: NSImage?
         if let region = region {
-            screenshot = self.screenshot(region: region)
+            screenshot = try await self.screenshot(region: region)
         } else {
-            screenshot = self.screenshot()
+            screenshot = try await self.screenshot()
         }
-        
+
         guard let haystackImage = screenshot else {
             print("SwiftAutoGUI: Could not capture screenshot")
             return nil
         }
-        
+
         // Perform image matching
         return findImageInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
     }
@@ -110,12 +110,12 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> CGPoint? {
+    ) async throws -> CGPoint? {
         // Use locateOnScreen to find the image
-        guard let rect = locateOnScreen(imagePath, grayscale: grayscale, confidence: confidence, region: region) else {
+        guard let rect = try await locateOnScreen(imagePath, grayscale: grayscale, confidence: confidence, region: region) else {
             return nil
         }
-        
+
         // Return the center point of the found rectangle
         return CGPoint(x: rect.midX, y: rect.midY)
     }
@@ -156,26 +156,26 @@ extension SwiftAutoGUI {
         grayscale: Bool = false,
         confidence: Double? = nil,
         region: CGRect? = nil
-    ) -> [CGRect] {
+    ) async throws -> [CGRect] {
         // Load the needle image
         guard let needleImage = NSImage(contentsOfFile: imagePath) else {
             print("SwiftAutoGUI: Could not load image from path: \(imagePath)")
             return []
         }
-        
+
         // Take screenshot of the region or entire screen
         let screenshot: NSImage?
         if let region = region {
-            screenshot = self.screenshot(region: region)
+            screenshot = try await self.screenshot(region: region)
         } else {
-            screenshot = self.screenshot()
+            screenshot = try await self.screenshot()
         }
-        
+
         guard let haystackImage = screenshot else {
             print("SwiftAutoGUI: Could not capture screenshot")
             return []
         }
-        
+
         // Perform image matching to find all instances
         return findAllImagesInImage(needle: needleImage, haystack: haystackImage, confidence: confidence, searchRegion: region)
     }

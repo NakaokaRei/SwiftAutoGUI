@@ -76,7 +76,7 @@ import AppKit
 public class SwiftAutoGUI {
     
     /// Represents mouse buttons that can be clicked.
-    public enum MouseButton {
+    public enum MouseButton: Sendable {
         case left
         case right
         

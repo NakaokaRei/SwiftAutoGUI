@@ -4,7 +4,7 @@ import Foundation
 ///
 /// These functions create natural-looking transitions by varying the speed of movement over time.
 /// Each function takes a progress value (0.0 to 1.0) and returns a modified progress value.
-public enum TweeningFunction {
+public enum TweeningFunction: Sendable {
     // Quad functions (t^2)
     case linear
     case easeInQuad
@@ -57,7 +57,7 @@ public enum TweeningFunction {
     case easeInOutBounce
     
     /// Custom tweening function
-    case custom((Double) -> Double)
+    case custom(@Sendable (Double) -> Double)
     
     /// Applies the easing function to a progress value.
     ///

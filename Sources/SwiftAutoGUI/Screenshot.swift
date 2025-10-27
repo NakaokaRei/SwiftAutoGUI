@@ -1,108 +1,151 @@
 import Foundation
 import AppKit
 import CoreGraphics
+import ScreenCaptureKit
 
 extension SwiftAutoGUI {
-    
+
     // MARK: Screenshot Functions
-    
+
     /// Take a screenshot of the entire screen
     ///
     /// - Returns: NSImage containing the screenshot, or nil if failed
+    /// - Throws: ScreenCaptureKit errors if capture fails
     ///
     /// Example:
     /// ```swift
-    /// if let screenshot = SwiftAutoGUI.screenshot() {
-    ///     // Use the screenshot image
+    /// do {
+    ///     if let screenshot = try await SwiftAutoGUI.screenshot() {
+    ///         // Use the screenshot image
+    ///     }
+    /// } catch {
+    ///     print("Screenshot failed: \(error)")
     /// }
     /// ```
-    public static func screenshot() -> NSImage? {
+    public static func screenshot() async throws -> NSImage? {
         guard let screen = NSScreen.main else { return nil }
-        let screenRect = screen.frame
-        
-        guard let cgImage = CGWindowListCreateImage(
-            screenRect,
-            .optionOnScreenOnly,
-            kCGNullWindowID,
-            .bestResolution
-        ) else {
-            return nil
-        }
-        
-        // CGWindowListCreateImage returns image in actual pixels
-        // NSImage size should be in points (logical pixels)
+
+        // Get shareable content
+        let content = try await SCShareableContent.current
+
+        // Find the main display
+        guard let display = content.displays.first else { return nil }
+
+        // Create content filter for the display
+        let filter = SCContentFilter(display: display, excludingWindows: [])
+
+        // Create configuration
+        let config = SCStreamConfiguration()
+        config.width = display.width
+        config.height = display.height
+        config.scalesToFit = false
+        config.showsCursor = false
+
+        // Capture the screenshot
+        let cgImage = try await SCScreenshotManager.captureImage(
+            contentFilter: filter,
+            configuration: config
+        )
+
+        // Convert to NSImage with proper size
         let scaleFactor = screen.backingScaleFactor
         let size = NSSize(
             width: CGFloat(cgImage.width) / scaleFactor,
             height: CGFloat(cgImage.height) / scaleFactor
         )
-        print("SwiftAutoGUI: Screenshot - CGImage size: \(cgImage.width)x\(cgImage.height), NSImage size: \(size), scale: \(scaleFactor)")
+
         return NSImage(cgImage: cgImage, size: size)
     }
-    
+
     /// Take a screenshot of a specific region
     ///
     /// - Parameter region: The region to capture as CGRect
     /// - Returns: NSImage containing the screenshot of the region, or nil if failed
+    /// - Throws: ScreenCaptureKit errors if capture fails
     ///
     /// Example:
     /// ```swift
     /// let region = CGRect(x: 100, y: 100, width: 200, height: 200)
-    /// if let screenshot = SwiftAutoGUI.screenshot(region: region) {
-    ///     // Use the screenshot image
+    /// do {
+    ///     if let screenshot = try await SwiftAutoGUI.screenshot(region: region) {
+    ///         // Use the screenshot image
+    ///     }
+    /// } catch {
+    ///     print("Screenshot failed: \(error)")
     /// }
     /// ```
-    public static func screenshot(region: CGRect) -> NSImage? {
-        guard let cgImage = CGWindowListCreateImage(
-            region,
-            .optionOnScreenOnly,
-            kCGNullWindowID,
-            .bestResolution
-        ) else {
-            return nil
-        }
-        
-        // Get screen scale factor
-        let screen = NSScreen.main ?? NSScreen.screens[0]
+    public static func screenshot(region: CGRect) async throws -> NSImage? {
+        guard let screen = NSScreen.main else { return nil }
+
+        // Get shareable content
+        let content = try await SCShareableContent.current
+
+        // Find the main display
+        guard let display = content.displays.first else { return nil }
+
+        // Create content filter for the display
+        let filter = SCContentFilter(display: display, excludingWindows: [])
+
+        // Create configuration
+        let config = SCStreamConfiguration()
+        config.width = Int(region.width * screen.backingScaleFactor)
+        config.height = Int(region.height * screen.backingScaleFactor)
+        config.sourceRect = region
+        config.scalesToFit = false
+        config.showsCursor = false
+
+        // Capture the screenshot
+        let cgImage = try await SCScreenshotManager.captureImage(
+            contentFilter: filter,
+            configuration: config
+        )
+
+        // Convert to NSImage with proper size
         let scaleFactor = screen.backingScaleFactor
         let size = NSSize(
             width: CGFloat(cgImage.width) / scaleFactor,
             height: CGFloat(cgImage.height) / scaleFactor
         )
+
         return NSImage(cgImage: cgImage, size: size)
     }
-    
+
     /// Take a screenshot and save it to a file
     ///
     /// - Parameters:
     ///   - imageFilename: The path where to save the screenshot
     ///   - region: Optional region to capture. If nil, captures entire screen
     /// - Returns: True if successfully saved, false otherwise
+    /// - Throws: ScreenCaptureKit errors if capture fails
     ///
     /// Example:
     /// ```swift
-    /// // Save full screenshot
-    /// SwiftAutoGUI.screenshot(imageFilename: "screenshot.png")
-    /// 
-    /// // Save region screenshot
-    /// let region = CGRect(x: 0, y: 0, width: 500, height: 500)
-    /// SwiftAutoGUI.screenshot(imageFilename: "region.png", region: region)
+    /// do {
+    ///     // Save full screenshot
+    ///     try await SwiftAutoGUI.screenshot(imageFilename: "screenshot.png")
+    ///
+    ///     // Save region screenshot
+    ///     let region = CGRect(x: 0, y: 0, width: 500, height: 500)
+    ///     try await SwiftAutoGUI.screenshot(imageFilename: "region.png", region: region)
+    /// } catch {
+    ///     print("Screenshot failed: \(error)")
+    /// }
     /// ```
     @discardableResult
-    public static func screenshot(imageFilename: String, region: CGRect? = nil) -> Bool {
+    public static func screenshot(imageFilename: String, region: CGRect? = nil) async throws -> Bool {
         let image: NSImage?
-        
+
         if let region = region {
-            image = screenshot(region: region)
+            image = try await screenshot(region: region)
         } else {
-            image = screenshot()
+            image = try await screenshot()
         }
-        
+
         guard let screenshotImage = image else { return false }
-        
+
         return saveImage(screenshotImage, to: imageFilename)
     }
-    
+
     /// Get the size of the main screen
     ///
     /// - Returns: A tuple containing (width, height) of the main screen
@@ -117,54 +160,52 @@ extension SwiftAutoGUI {
         let frame = screen.frame
         return (frame.width, frame.height)
     }
-    
+
     /// Get the color of a pixel at the specified coordinates
     ///
     /// - Parameters:
     ///   - x: The x coordinate
     ///   - y: The y coordinate
     /// - Returns: NSColor of the pixel at the specified coordinates, or nil if failed
+    /// - Throws: ScreenCaptureKit errors if capture fails
     ///
     /// Example:
     /// ```swift
-    /// if let color = SwiftAutoGUI.pixel(x: 100, y: 200) {
-    ///     print("Pixel color: \(color)")
+    /// do {
+    ///     if let color = try await SwiftAutoGUI.pixel(x: 100, y: 200) {
+    ///         print("Pixel color: \(color)")
+    ///     }
+    /// } catch {
+    ///     print("Pixel capture failed: \(error)")
     /// }
     /// ```
-    public static func pixel(x: Int, y: Int) -> NSColor? {
+    public static func pixel(x: Int, y: Int) async throws -> NSColor? {
         let rect = CGRect(x: x, y: y, width: 1, height: 1)
-        
-        guard let cgImage = CGWindowListCreateImage(
-            rect,
-            .optionOnScreenOnly,
-            kCGNullWindowID,
-            .bestResolution
-        ) else {
+
+        guard let image = try await screenshot(region: rect) else {
             return nil
         }
-        
-        let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: 1, height: 1))
-        
-        guard let tiffData = nsImage.tiffRepresentation,
+
+        guard let tiffData = image.tiffRepresentation,
               let bitmap = NSBitmapImageRep(data: tiffData) else {
             return nil
         }
-        
+
         return bitmap.colorAt(x: 0, y: 0)
     }
-    
+
     // MARK: Private Helper Functions
-    
+
     /// Save an NSImage to a file
     private static func saveImage(_ image: NSImage, to path: String) -> Bool {
         guard let tiffData = image.tiffRepresentation,
               let bitmapImage = NSBitmapImageRep(data: tiffData) else {
             return false
         }
-        
+
         let url = URL(fileURLWithPath: path)
         let fileType: NSBitmapImageRep.FileType
-        
+
         switch url.pathExtension.lowercased() {
         case "png":
             fileType = .png
@@ -179,11 +220,11 @@ extension SwiftAutoGUI {
         default:
             fileType = .png
         }
-        
+
         guard let data = bitmapImage.representation(using: fileType, properties: [:]) else {
             return false
         }
-        
+
         do {
             try data.write(to: url)
             return true

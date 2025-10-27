@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftAutoGUI
 
+@MainActor
 class PixelDetectionViewModel: ObservableObject {
     @Published var pixelColor: NSColor?
     @Published var screenSize: String = ""

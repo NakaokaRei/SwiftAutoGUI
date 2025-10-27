@@ -8,72 +8,73 @@
 import SwiftUI
 import SwiftAutoGUI
 
+@MainActor
 class ScrollingDemoViewModel: ObservableObject {
     
     func verticalScrollDown() {
         Task {
-            await Action.vscroll(clicks: -5).execute()
+            _ = await Action.vscroll(clicks: -5).execute()
         }
     }
-    
+
     func verticalScrollUp() {
         Task {
-            await Action.vscroll(clicks: 5).execute()
+            _ = await Action.vscroll(clicks: 5).execute()
         }
     }
-    
+
     func horizontalScrollLeft() {
         Task {
-            await Action.hscroll(clicks: 5).execute()
+            _ = await Action.hscroll(clicks: 5).execute()
         }
     }
-    
+
     func horizontalScrollRight() {
         Task {
-            await Action.hscroll(clicks: -5).execute()
+            _ = await Action.hscroll(clicks: -5).execute()
         }
     }
-    
+
     // Smooth scrolling methods
     func smoothVerticalScrollDown() {
         Task {
-            await Action.smoothVScroll(clicks: -150, duration: 3.0, tweening: .easeInOutQuad).execute()
+            _ = await Action.smoothVScroll(clicks: -150, duration: 3.0, tweening: .easeInOutQuad).execute()
         }
     }
-    
+
     func smoothVerticalScrollUp() {
         Task {
-            await Action.smoothVScroll(clicks: 150, duration: 3.0, tweening: .easeInOutQuad).execute()
+            _ = await Action.smoothVScroll(clicks: 150, duration: 3.0, tweening: .easeInOutQuad).execute()
         }
     }
-    
+
     func smoothHorizontalScrollLeft() {
         Task {
-            await Action.smoothHScroll(clicks: 100, duration: 2.5, tweening: .easeInOutQuad).execute()
+            _ = await Action.smoothHScroll(clicks: 100, duration: 2.5, tweening: .easeInOutQuad).execute()
         }
     }
-    
+
     func smoothHorizontalScrollRight() {
         Task {
-            await Action.smoothHScroll(clicks: -100, duration: 2.5, tweening: .easeInOutQuad).execute()
+            _ = await Action.smoothHScroll(clicks: -100, duration: 2.5, tweening: .easeInOutQuad).execute()
         }
     }
-    
+
     func smoothScrollWithBounce() {
         Task {
-            await Action.smoothVScroll(clicks: -200, duration: 4.0, tweening: .easeOutBounce).execute()
+            _ = await Action.smoothVScroll(clicks: -200, duration: 4.0, tweening: .easeOutBounce).execute()
         }
     }
-    
+
     func smoothScrollWithElastic() {
         Task {
-            await Action.smoothVScroll(clicks: 180, duration: 3.5, tweening: .easeOutElastic).execute()
+            _ = await Action.smoothVScroll(clicks: 180, duration: 3.5, tweening: .easeOutElastic).execute()
         }
     }
-    
+
     func smoothScrollCustomEasing() {
         Task {
-            await Action.smoothVScroll(clicks: -120, duration: 3.0, tweening: .custom({ t in
+            _ = await Action.smoothVScroll(clicks: -120, duration: 3.0, tweening: .custom({ t in
                 return t * t * (3 - 2 * t) // Smooth step
             })).execute()
         }
