@@ -26,7 +26,6 @@ struct MouseTests {
         let position2 = SwiftAutoGUI.position()
         
         // Verify the mouse moved exactly by the specified amount
-        // Note: moveMouse uses dx with negative sign for x coordinate
         #expect(abs(position2.x - (position1.x + 10)) <= 1.0)
         #expect(abs(position2.y - (position1.y + 15)) <= 1.0)
         
