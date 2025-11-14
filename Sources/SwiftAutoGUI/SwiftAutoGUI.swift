@@ -476,9 +476,8 @@ public class SwiftAutoGUI {
     /// ```
     @available(*, deprecated, message: "Use the async version of moveMouse instead")
     public static func moveMouse(dx: CGFloat, dy: CGFloat) {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
-        let newLoc = CGPoint(x: mouseLoc.x-CGFloat(dx), y: mouseLoc.y + CGFloat(dy))
+        let mouseLoc = position()
+        let newLoc = CGPoint(x: mouseLoc.x + dx, y: mouseLoc.y + dy)
         CGDisplayMoveCursorToPoint(0, newLoc)
         Thread.sleep(forTimeInterval: 0.01)
     }
@@ -507,11 +506,10 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.moveMouse(dx: 1, dy: 1)
     /// ```
     public static func moveMouse(dx: CGFloat, dy: CGFloat) async {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y;
-        let newLoc = CGPoint(x: mouseLoc.x-CGFloat(dx), y: mouseLoc.y + CGFloat(dy))
+        let mouseLoc = position()
+        let newLoc = CGPoint(x: mouseLoc.x + dx, y: mouseLoc.y + dy)
         CGDisplayMoveCursorToPoint(0, newLoc)
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        try? await Task.sleep(for: .milliseconds(10))
     }
 
     /// Moves the mouse cursor to an absolute position on the screen instantly.
