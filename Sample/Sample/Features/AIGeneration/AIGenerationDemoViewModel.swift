@@ -16,6 +16,28 @@ class AIGenerationDemoViewModel {
     var isExecuting = false
     var error: String?
 
+    // MARK: - Backend Selection
+
+    enum Backend: String, CaseIterable, Identifiable {
+        case foundationModels = "Foundation Models"
+        case openAI = "OpenAI"
+
+        var id: String { rawValue }
+    }
+
+    var selectedBackend: Backend = .foundationModels
+    var openAIKey: String = ""
+    var openAIModel: String = "gpt-4.1-nano"
+
+    static let availableOpenAIModels = [
+        "gpt-4.1-nano",
+        "gpt-4.1-mini",
+        "gpt-4.1",
+        "gpt-5-nano",
+        "gpt-5-mini",
+        "gpt-5",
+    ]
+
     let samplePrompts: [String] = [
         "Click at 300, 400",
         "Type 'Hello, AI!'",
@@ -30,10 +52,18 @@ class AIGenerationDemoViewModel {
             return
         }
 
-        guard ActionGenerator.isAvailable else {
-            error = ActionGenerator.unavailableReason ?? "Model is unavailable."
-            addToLog("Model unavailable: \(error!)")
-            return
+        switch selectedBackend {
+        case .foundationModels:
+            guard ActionGenerator.isAvailable else {
+                error = ActionGenerator.unavailableReason ?? "Model is unavailable."
+                addToLog("Model unavailable: \(error!)")
+                return
+            }
+        case .openAI:
+            guard !openAIKey.isEmpty else {
+                error = "Please enter your OpenAI API key."
+                return
+            }
         }
 
         isGenerating = true
@@ -43,9 +73,17 @@ class AIGenerationDemoViewModel {
 
         do {
             addToLog("Generating actions from prompt...")
+            addToLog("Backend: \(selectedBackend.rawValue)")
             addToLog("Prompt: \"\(prompt)\"")
 
-            let actions = try await ActionGenerator.generateActionSequence(from: prompt)
+            let actions: [Action]
+            switch selectedBackend {
+            case .foundationModels:
+                actions = try await ActionGenerator.generateActionSequence(from: prompt)
+            case .openAI:
+                let generator = ActionGenerator(openAIKey: openAIKey, model: openAIModel)
+                actions = try await generator.generateActionSequence(from: prompt)
+            }
 
             if actions.isEmpty {
                 error = "Could not generate actions from prompt"

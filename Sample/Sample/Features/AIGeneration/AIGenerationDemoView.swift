@@ -29,6 +29,39 @@ struct AIGenerationDemoView: View {
 
             Divider()
 
+            // Backend Selection
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Backend")
+                    .font(.headline)
+
+                Picker("Backend", selection: $viewModel.selectedBackend) {
+                    ForEach(AIGenerationDemoViewModel.Backend.allCases) { backend in
+                        Text(backend.rawValue).tag(backend)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                // OpenAI Settings
+                if viewModel.selectedBackend == .openAI {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SecureField("OpenAI API Key", text: $viewModel.openAIKey)
+                            .textFieldStyle(.roundedBorder)
+
+                        Picker("Model", selection: $viewModel.openAIModel) {
+                            ForEach(AIGenerationDemoViewModel.availableOpenAIModels, id: \.self) { model in
+                                Text(model).tag(model)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(colorScheme == .dark ? Color.gray.opacity(0.15) : Color.gray.opacity(0.08))
+                    )
+                }
+            }
+
             // Input Section
             VStack(alignment: .leading, spacing: 16) {
                 Text("Prompt")
@@ -142,7 +175,7 @@ struct AIGenerationDemoView: View {
                     Text("Generated Actions (\(viewModel.generatedActions.count))")
                         .font(.headline)
 
-                    ForEach(Array(viewModel.generatedActions.enumerated()), id: \.offset) { index, _ in
+                    ForEach(Array(viewModel.generatedActions.enumerated()), id: \.offset) { index, action in
                         HStack {
                             Text("\(index + 1)")
                                 .font(.caption)
@@ -151,7 +184,7 @@ struct AIGenerationDemoView: View {
                                 .frame(width: 24, height: 24)
                                 .background(Circle().fill(Color.purple))
 
-                            Text(viewModel.actionDescription(for: viewModel.generatedActions[index]))
+                            Text(viewModel.actionDescription(for: action))
                                 .font(.caption)
 
                             Spacer()
