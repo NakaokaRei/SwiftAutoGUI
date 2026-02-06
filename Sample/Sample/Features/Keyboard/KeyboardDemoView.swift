@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct KeyboardDemoView: View {
-    @StateObject private var viewModel = KeyboardDemoViewModel()
+    @State private var viewModel = KeyboardDemoViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

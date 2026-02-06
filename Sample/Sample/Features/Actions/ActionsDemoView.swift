@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftAutoGUI
 
 struct ActionsDemoView: View {
-    @StateObject private var viewModel = ActionsDemoViewModel()
+    @State private var viewModel = ActionsDemoViewModel()
     
     var body: some View {
         VStack(spacing: 20) {

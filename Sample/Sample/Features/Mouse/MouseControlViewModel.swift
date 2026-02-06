@@ -9,9 +9,10 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class MouseControlViewModel: ObservableObject {
-    @Published var mousePosition: String = ""
-    @Published var isAnimating: Bool = false
+@Observable
+class MouseControlViewModel {
+    var mousePosition: String = ""
+    var isAnimating: Bool = false
     
     func moveMouse() {
         Task {

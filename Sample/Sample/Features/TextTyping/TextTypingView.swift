@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TextTypingView: View {
-    @StateObject private var viewModel = TextTypingViewModel()
+    @State private var viewModel = TextTypingViewModel()
     @FocusState private var isTargetFieldFocused: Bool
     @Environment(\.colorScheme) var colorScheme
     

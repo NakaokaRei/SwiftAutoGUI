@@ -9,11 +9,12 @@ import Foundation
 import SwiftAutoGUI
 
 @MainActor
-final class AppleScriptViewModel: ObservableObject {
-    @Published var scriptText: String
-    @Published var result: String = ""
-    @Published var isExecuting: Bool = false
-    @Published var errorMessage: String?
+@Observable
+final class AppleScriptViewModel {
+    var scriptText: String
+    var result: String = ""
+    var isExecuting: Bool = false
+    var errorMessage: String?
     
     init() {
         // Initial sample script

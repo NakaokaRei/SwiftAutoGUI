@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PixelDetectionView: View {
-    @StateObject private var viewModel = PixelDetectionViewModel()
+    @State private var viewModel = PixelDetectionViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

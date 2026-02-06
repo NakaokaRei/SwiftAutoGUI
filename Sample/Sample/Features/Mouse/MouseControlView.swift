@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MouseControlView: View {
-    @StateObject private var viewModel = MouseControlViewModel()
+    @State private var viewModel = MouseControlViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

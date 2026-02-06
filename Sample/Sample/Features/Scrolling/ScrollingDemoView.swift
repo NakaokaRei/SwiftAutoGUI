@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ScrollingDemoView: View {
-    @StateObject private var viewModel = ScrollingDemoViewModel()
+    @State private var viewModel = ScrollingDemoViewModel()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {

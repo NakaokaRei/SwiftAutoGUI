@@ -9,7 +9,8 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class ScrollingDemoViewModel: ObservableObject {
+@Observable
+class ScrollingDemoViewModel {
     
     func verticalScrollDown() {
         Task {
