@@ -141,6 +141,30 @@ let formActions = fillForm(name: "John Doe", email: "john@example.com")
 await formActions.execute()
 ```
 
+### AI Action Generation
+
+Generate automation actions from natural language using Apple's Foundation Models framework:
+
+```swift
+// Check availability
+guard ActionGenerator.isAvailable else {
+    print(ActionGenerator.unavailableReason ?? "Model unavailable")
+    return
+}
+
+// Generate and execute actions from a prompt
+let actions = try await ActionGenerator.generateActionSequence(
+    from: "Click at 100, 200, wait 1 second, then type 'Hello'"
+)
+await actions.execute()
+
+// Or use the convenience method
+let action = try await Action.fromPrompt("scroll down 5 clicks")
+await action.execute()
+```
+
+> Note: Requires macOS 26.0+ with Apple Intelligence enabled.
+
 ### Direct Method Calls (Alternative)
 
 While the Action pattern is recommended, you can also use SwiftAutoGUI methods directly for simple operations:
@@ -162,12 +186,12 @@ Task {
 }
 
 // Screenshots
-if let screenshot = SwiftAutoGUI.screenshot() {
+if let screenshot = try await SwiftAutoGUI.screenshot() {
     // Process NSImage
 }
 
 // Image recognition
-if let location = SwiftAutoGUI.locateOnScreen("button.png") {
+if let location = try await SwiftAutoGUI.locateOnScreen("button.png") {
     let center = CGPoint(x: location.midX, y: location.midY)
     await SwiftAutoGUI.move(to: center, duration: 0)
     SwiftAutoGUI.leftClick()
@@ -201,5 +225,6 @@ The sample app demonstrates all SwiftAutoGUI features with interactive examples.
 
 - ``SwiftAutoGUI/SwiftAutoGUI``
 - ``Action``
+- ``ActionGenerator``
 - ``Key``
 - ``TweeningFunction``
