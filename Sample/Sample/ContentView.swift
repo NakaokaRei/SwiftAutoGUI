@@ -102,6 +102,8 @@ struct ContentView: View {
                             AppleScriptView()
                         case .actions:
                             ActionsDemoView()
+                        case .aiGeneration:
+                            AIGenerationDemoView()
                         }
                     }
                     .padding(24)
