@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ScreenshotView: View {
-    @StateObject private var viewModel = ScreenshotViewModel()
+    @State private var viewModel = ScreenshotViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

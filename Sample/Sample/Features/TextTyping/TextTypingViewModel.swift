@@ -9,12 +9,13 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class TextTypingViewModel: ObservableObject {
-    @Published var textToType: String = ""
-    @Published var typingSpeed: Double = 0.0
-    @Published var typingStatus: String = ""
-    @Published var targetTextField: String = ""
-    @Published var isTargetFieldFocused: Bool = false
+@Observable
+class TextTypingViewModel {
+    var textToType: String = ""
+    var typingSpeed: Double = 0.0
+    var typingStatus: String = ""
+    var targetTextField: String = ""
+    var isTargetFieldFocused: Bool = false
     
     func typeText(_ text: String) {
         guard !text.isEmpty else {

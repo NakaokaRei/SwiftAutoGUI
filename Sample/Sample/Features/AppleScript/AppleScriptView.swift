@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AppleScriptView: View {
-    @StateObject private var viewModel = AppleScriptViewModel()
+    @State private var viewModel = AppleScriptViewModel()
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {

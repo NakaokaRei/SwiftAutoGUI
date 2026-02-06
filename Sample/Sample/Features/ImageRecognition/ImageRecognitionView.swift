@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ImageRecognitionView: View {
-    @StateObject private var viewModel = ImageRecognitionViewModel()
+    @State private var viewModel = ImageRecognitionViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

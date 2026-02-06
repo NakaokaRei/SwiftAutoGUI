@@ -9,9 +9,10 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class ImageRecognitionViewModel: ObservableObject {
-    @Published var imageRecognitionResult: String = ""
-    @Published var testImagePath: String = ""
+@Observable
+class ImageRecognitionViewModel {
+    var imageRecognitionResult: String = ""
+    var testImagePath: String = ""
     
     func createTestImageForRecognition() {
         let size = NSSize(width: 100, height: 100)

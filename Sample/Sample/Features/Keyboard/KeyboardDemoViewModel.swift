@@ -9,7 +9,8 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class KeyboardDemoViewModel: ObservableObject {
+@Observable
+class KeyboardDemoViewModel {
     
     func sendKeyShortcut() {
         Task {

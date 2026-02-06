@@ -9,11 +9,12 @@ import Foundation
 import SwiftAutoGUI
 
 @MainActor
-class DialogDemoViewModel: ObservableObject {
-    @Published var alertResult: String?
-    @Published var confirmResult: String?
-    @Published var promptResult: String?
-    @Published var passwordResult: String?
+@Observable
+class DialogDemoViewModel {
+    var alertResult: String?
+    var confirmResult: String?
+    var promptResult: String?
+    var passwordResult: String?
     
     func showAlert() async {
         let result = await Action.alert(

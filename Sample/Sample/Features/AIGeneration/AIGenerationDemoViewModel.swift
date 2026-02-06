@@ -7,13 +7,14 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class AIGenerationDemoViewModel: ObservableObject {
-    @Published var prompt: String = ""
-    @Published var generatedActions: [Action] = []
-    @Published var executionLog: [String] = []
-    @Published var isGenerating = false
-    @Published var isExecuting = false
-    @Published var error: String?
+@Observable
+class AIGenerationDemoViewModel {
+    var prompt: String = ""
+    var generatedActions: [Action] = []
+    var executionLog: [String] = []
+    var isGenerating = false
+    var isExecuting = false
+    var error: String?
 
     let samplePrompts: [String] = [
         "Click at 300, 400",

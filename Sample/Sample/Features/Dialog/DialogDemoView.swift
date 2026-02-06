@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftAutoGUI
 
 struct DialogDemoView: View {
-    @StateObject private var viewModel = DialogDemoViewModel()
+    @State private var viewModel = DialogDemoViewModel()
     
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {

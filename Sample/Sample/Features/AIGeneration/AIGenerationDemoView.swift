@@ -7,7 +7,7 @@ import SwiftUI
 import SwiftAutoGUI
 
 struct AIGenerationDemoView: View {
-    @StateObject private var viewModel = AIGenerationDemoViewModel()
+    @State private var viewModel = AIGenerationDemoViewModel()
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {

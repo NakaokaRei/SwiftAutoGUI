@@ -9,10 +9,11 @@ import SwiftUI
 import SwiftAutoGUI
 
 @MainActor
-class ActionsDemoViewModel: ObservableObject {
-    @Published var executionLog: [String] = []
-    @Published var isExecuting = false
-    @Published var selectedExample = ActionExample.mouseClick
+@Observable
+class ActionsDemoViewModel {
+    var executionLog: [String] = []
+    var isExecuting = false
+    var selectedExample = ActionExample.mouseClick
     
     enum ActionExample: String, CaseIterable {
         case mouseClick = "Mouse Click"
