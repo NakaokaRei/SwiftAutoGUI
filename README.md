@@ -334,6 +334,34 @@ Task {
 ```
 
 
+## AI Action Generation
+
+SwiftAutoGUI can generate automation actions from natural language prompts using Apple's Foundation Models framework (on-device LLM). Requires macOS 26.0+ with Apple Intelligence enabled.
+
+```swift
+import SwiftAutoGUI
+
+// Check if AI generation is available
+guard ActionGenerator.isAvailable else {
+    print(ActionGenerator.unavailableReason ?? "Model unavailable")
+    return
+}
+
+// Generate a single action
+let action = try await ActionGenerator.generateAction(from: "click at 300, 400")
+await action.execute()
+
+// Generate a sequence of actions
+let actions = try await ActionGenerator.generateActionSequence(
+    from: "Move to 200, 200, click, wait 0.5 seconds, then type 'Hello'"
+)
+await actions.execute()
+
+// Convenience method on Action
+let copyAction = try await Action.fromPrompt("press Command+C to copy")
+await copyAction.execute()
+```
+
 ## AppleScript Execution
 SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
 
