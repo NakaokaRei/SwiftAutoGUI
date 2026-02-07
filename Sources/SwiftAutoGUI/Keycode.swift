@@ -133,6 +133,12 @@ public enum Key: String, Sendable {
     case keypad8
     case keypad9
 
+    // JIS-specific keys
+    case jisYen
+    case jisUnderscore
+    case jisEisu
+    case jisKana
+
     // special keycode
     // TODO: add other code
     case soundUp
@@ -262,6 +268,11 @@ public enum Key: String, Sendable {
         case .keypad7        : return 0x59
         case .keypad8        : return 0x5B
         case .keypad9        : return 0x5C
+
+        case .jisYen         : return 0x5D
+        case .jisUnderscore  : return 0x5E
+        case .jisEisu        : return 0x66
+        case .jisKana        : return 0x68
         default              : return nil
         }
     }
@@ -284,11 +295,11 @@ public enum Key: String, Sendable {
         }
     }
     
-    /// Maps a character to its corresponding Key enum case.
+    /// Maps a character to its corresponding Key enum case using the current keyboard layout.
     ///
-    /// This method provides a convenient way to convert characters to Key enum cases
-    /// for use with keyboard input methods. It supports ASCII characters, numbers,
-    /// and common punctuation marks.
+    /// This method uses `SwiftAutoGUI.currentLayout` to determine the correct key mapping.
+    /// Since `currentLayout` is `@MainActor`, this overload is also `@MainActor`.
+    /// For non-MainActor contexts, use ``from(character:layout:)`` instead.
     ///
     /// - Parameter character: The character to map to a Key enum case
     /// - Returns: The corresponding Key enum case, or `nil` if the character is not supported
@@ -296,93 +307,33 @@ public enum Key: String, Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// // Map letter to key
+    /// // Map letter to key (uses current layout)
     /// let aKey = Key.from(character: "a")  // Returns .a
-    /// 
-    /// // Map number to key
-    /// let oneKey = Key.from(character: "1")  // Returns .one
-    /// 
-    /// // Map special character to key
-    /// let spaceKey = Key.from(character: " ")  // Returns .space
-    /// 
-    /// // Unsupported character
-    /// let emojiKey = Key.from(character: "😀")  // Returns nil
     /// ```
+    @MainActor
     public static func from(character: Character) -> Key? {
-        switch character.lowercased() {
-        case "a": return .a
-        case "b": return .b
-        case "c": return .c
-        case "d": return .d
-        case "e": return .e
-        case "f": return .f
-        case "g": return .g
-        case "h": return .h
-        case "i": return .i
-        case "j": return .j
-        case "k": return .k
-        case "l": return .l
-        case "m": return .m
-        case "n": return .n
-        case "o": return .o
-        case "p": return .p
-        case "q": return .q
-        case "r": return .r
-        case "s": return .s
-        case "t": return .t
-        case "u": return .u
-        case "v": return .v
-        case "w": return .w
-        case "x": return .x
-        case "y": return .y
-        case "z": return .z
-        case "0": return .zero
-        case "1": return .one
-        case "2": return .two
-        case "3": return .three
-        case "4": return .four
-        case "5": return .five
-        case "6": return .six
-        case "7": return .seven
-        case "8": return .eight
-        case "9": return .nine
-        case " ": return .space
-        case "\t": return .tab
-        case "\n": return .returnKey
-        case "\r": return .returnKey
-        case "=": return .equals
-        case "-": return .minus
-        case ";": return .semicolon
-        case "'": return .apostrophe
-        case ",": return .comma
-        case ".": return .period
-        case "/": return .forwardSlash
-        case "\\": return .backslash
-        case "`": return .grave
-        case "[": return .leftBracket
-        case "]": return .rightBracket
-        case "!": return .one      // Shift+1
-        case "@": return .two      // Shift+2
-        case "#": return .three    // Shift+3
-        case "$": return .four     // Shift+4
-        case "%": return .five     // Shift+5
-        case "^": return .six      // Shift+6
-        case "&": return .seven    // Shift+7
-        case "*": return .eight    // Shift+8
-        case "(": return .nine     // Shift+9
-        case ")": return .zero     // Shift+0
-        case "_": return .minus    // Shift+-
-        case "+": return .equals   // Shift+=
-        case "{": return .leftBracket  // Shift+[
-        case "}": return .rightBracket // Shift+]
-        case "|": return .backslash    // Shift+\
-        case ":": return .semicolon    // Shift+;
-        case "\"": return .apostrophe  // Shift+'
-        case "<": return .comma        // Shift+,
-        case ">": return .period       // Shift+.
-        case "?": return .forwardSlash // Shift+/
-        case "~": return .grave        // Shift+`
-        default: return nil
-        }
+        return from(character: character, layout: SwiftAutoGUI.currentLayout)
+    }
+
+    /// Maps a character to its corresponding Key enum case for the specified keyboard layout.
+    ///
+    /// This method provides a convenient way to convert characters to Key enum cases
+    /// for use with keyboard input methods. It supports ASCII characters, numbers,
+    /// and common punctuation marks. The mapping varies by keyboard layout.
+    ///
+    /// - Parameters:
+    ///   - character: The character to map to a Key enum case
+    ///   - layout: The keyboard layout to use for mapping
+    /// - Returns: The corresponding Key enum case, or `nil` if the character is not supported
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Map with explicit layout
+    /// let key = Key.from(character: "@", layout: .jis)  // Returns .leftBracket
+    /// let key2 = Key.from(character: "@", layout: .us)  // Returns .two
+    /// ```
+    public static func from(character: Character, layout: KeyboardLayout) -> Key? {
+        return layout.mapping(for: character)?.key
     }
 }
