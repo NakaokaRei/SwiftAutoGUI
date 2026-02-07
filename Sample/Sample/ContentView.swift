@@ -84,6 +84,8 @@ struct ContentView: View {
                         switch selectedTab {
                         case .keyboard:
                             KeyboardDemoView()
+                        case .keyboardLayout:
+                            KeyboardLayoutView()
                         case .mouse:
                             MouseControlView()
                         case .textTyping:
