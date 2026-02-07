@@ -9,6 +9,7 @@ import SwiftUI
 
 enum DemoTab: String, CaseIterable {
     case keyboard
+    case keyboardLayout
     case mouse
     case textTyping
     case screenshot
@@ -23,6 +24,7 @@ enum DemoTab: String, CaseIterable {
     var title: String {
         switch self {
         case .keyboard: return "Keyboard"
+        case .keyboardLayout: return "KB Layout"
         case .mouse: return "Mouse"
         case .textTyping: return "Text Typing"
         case .screenshot: return "Screenshot"
@@ -39,6 +41,7 @@ enum DemoTab: String, CaseIterable {
     var icon: String {
         switch self {
         case .keyboard: return "keyboard"
+        case .keyboardLayout: return "globe"
         case .mouse: return "cursorarrow"
         case .textTyping: return "text.cursor"
         case .screenshot: return "camera.viewfinder"

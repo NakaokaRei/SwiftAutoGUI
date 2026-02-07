@@ -188,7 +188,28 @@ let loginActions = createLoginSequence(
 await loginActions.execute()
 ```
 
-Currently ***only US keyboards*** are supported. Otherwise, it may not work properly.
+## Keyboard Layout
+
+SwiftAutoGUI supports both **US** and **JIS** keyboard layouts. The physical keyboard type is auto-detected by default, so symbols like `@`, `[`, `:`, `_` are mapped to the correct keys regardless of the layout.
+
+```swift
+import SwiftAutoGUI
+
+// Auto-detected — just works on both US and JIS keyboards
+await SwiftAutoGUI.write("Hello @world [test]")
+
+// Check the current layout
+let layout = SwiftAutoGUI.currentLayout  // .us or .jis
+
+// Manually override the layout
+SwiftAutoGUI.currentLayout = .jis
+
+// Reset to auto-detection
+SwiftAutoGUI.resetLayoutToAutoDetect()
+
+// Use a specific layout without changing global state
+let key = Key.from(character: "@", layout: .jis)  // .leftBracket
+```
 
 ## Direct Method Calls (Alternative)
 

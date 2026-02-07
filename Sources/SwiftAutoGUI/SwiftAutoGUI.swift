@@ -74,7 +74,46 @@ import AppKit
 /// - ``executeAppleScriptFile(_:)``
 /// - ``AppleScriptError``
 public class SwiftAutoGUI {
-    
+
+    // MARK: Keyboard Layout
+
+    @MainActor
+    private static var _layoutOverride: KeyboardLayout? = nil
+
+    /// The current keyboard layout used for character-to-key mapping.
+    ///
+    /// When not explicitly set, the layout is auto-detected from the current macOS input source.
+    /// Set this property to manually override the detected layout.
+    /// Use ``resetLayoutToAutoDetect()`` to revert to auto-detection.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Use auto-detected layout (default)
+    /// await SwiftAutoGUI.write("Hello!")
+    ///
+    /// // Manually set JIS layout
+    /// SwiftAutoGUI.currentLayout = .jis
+    /// await SwiftAutoGUI.write("Hello!")
+    ///
+    /// // Reset to auto-detection
+    /// SwiftAutoGUI.resetLayoutToAutoDetect()
+    /// ```
+    @MainActor
+    public static var currentLayout: KeyboardLayout {
+        get { _layoutOverride ?? KeyboardLayout.detect() }
+        set { _layoutOverride = newValue }
+    }
+
+    /// Resets the keyboard layout to auto-detection mode.
+    ///
+    /// After calling this method, `currentLayout` will use `KeyboardLayout.detect()`
+    /// to determine the layout from the current macOS input source.
+    @MainActor
+    public static func resetLayoutToAutoDetect() {
+        _layoutOverride = nil
+    }
+
     /// Represents mouse buttons that can be clicked.
     public enum MouseButton: Sendable {
         case left
@@ -382,36 +421,28 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.click(x: 100, y: 200)  // Click on text field
     /// await SwiftAutoGUI.write("user@example.com")
     /// ```
+    @MainActor
     public static func write(_ text: String, interval: TimeInterval = 0) async {
+        let layout = currentLayout
         for char in text {
-            if let key = Key.from(character: char) {
-                let isUppercase = char.isUppercase
-                let needsShift = isUppercase || shiftCharacters.contains(char)
-                
-                if needsShift {
+            if let mapping = layout.mapping(for: char) {
+                if mapping.needsShift {
                     await keyDown(.shift)
                 }
-                
-                await keyDown(key)
-                await keyUp(key)
-                
-                if needsShift {
+
+                await keyDown(mapping.key)
+                await keyUp(mapping.key)
+
+                if mapping.needsShift {
                     await keyUp(.shift)
                 }
-                
+
                 if interval > 0 {
                     try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
                 }
             }
         }
     }
-    
-    
-    /// Set of characters that require the shift key to be pressed.
-    private static let shiftCharacters: Set<Character> = [
-        "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-        "_", "+", "{", "}", "|", ":", "\"", "<", ">", "?", "~"
-    ]
 
     // MARK: Mouse Event
 
