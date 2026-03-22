@@ -11,7 +11,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.0.app/Contents/Developer
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: build docc
         run: |
           # Generate documentation using xcodebuild to properly handle OpenCV dependency
