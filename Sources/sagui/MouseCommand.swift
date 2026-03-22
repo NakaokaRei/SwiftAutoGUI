@@ -2,6 +2,37 @@ import ArgumentParser
 import SwiftAutoGUI
 import CoreGraphics
 
+/// Mouse control commands for the sagui CLI.
+///
+/// Provides subcommands for querying the cursor position, moving the mouse,
+/// clicking, dragging, and scrolling.
+///
+/// ## Usage
+///
+/// ```bash
+/// # Get current mouse position
+/// sagui mouse position
+///
+/// # Move to absolute coordinates
+/// sagui mouse move --x 100 --y 200
+///
+/// # Click at the current position
+/// sagui mouse click
+/// sagui mouse click --right
+///
+/// # Scroll
+/// sagui mouse scroll --vertical 5
+/// ```
+///
+/// ## Topics
+///
+/// ### Subcommands
+/// - ``Position``
+/// - ``Move``
+/// - ``MoveRelative``
+/// - ``Click``
+/// - ``Drag``
+/// - ``Scroll``
 struct MouseCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "mouse",
@@ -11,6 +42,14 @@ struct MouseCommand: AsyncParsableCommand {
 }
 
 extension MouseCommand {
+    /// Print the current mouse cursor position.
+    ///
+    /// Outputs the X and Y coordinates separated by a space.
+    ///
+    /// ```bash
+    /// sagui mouse position
+    /// # Output: 512.0 384.0
+    /// ```
     struct Position: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Print the current mouse cursor position."
@@ -22,6 +61,14 @@ extension MouseCommand {
         }
     }
 
+    /// Move the mouse cursor to an absolute screen position.
+    ///
+    /// Coordinates use the macOS screen coordinate system where the origin (0, 0)
+    /// is at the top-left corner of the main display.
+    ///
+    /// ```bash
+    /// sagui mouse move --x 100 --y 200
+    /// ```
     struct Move: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Move the mouse to an absolute position."
@@ -38,6 +85,13 @@ extension MouseCommand {
         }
     }
 
+    /// Move the mouse cursor relative to its current position.
+    ///
+    /// Positive `dx` moves right, positive `dy` moves down.
+    ///
+    /// ```bash
+    /// sagui mouse move-relative --dx 50 --dy -30
+    /// ```
     struct MoveRelative: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "move-relative",
@@ -55,6 +109,16 @@ extension MouseCommand {
         }
     }
 
+    /// Click the mouse at the current cursor position.
+    ///
+    /// Supports left click (default), right click, double-click, and triple-click.
+    ///
+    /// ```bash
+    /// sagui mouse click              # Left click
+    /// sagui mouse click --right      # Right click
+    /// sagui mouse click --double     # Double click
+    /// sagui mouse click --triple     # Triple click
+    /// ```
     struct Click: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Click the mouse at the current position."
@@ -86,6 +150,13 @@ extension MouseCommand {
         }
     }
 
+    /// Drag the mouse from one position to another.
+    ///
+    /// Performs a left-button drag from the start coordinates to the end coordinates.
+    ///
+    /// ```bash
+    /// sagui mouse drag --from-x 100 --from-y 100 --to-x 300 --to-y 300
+    /// ```
     struct Drag: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Drag the mouse from one position to another."
@@ -111,6 +182,17 @@ extension MouseCommand {
         }
     }
 
+    /// Scroll the mouse wheel vertically or horizontally.
+    ///
+    /// At least one of `--vertical` or `--horizontal` must be specified.
+    /// For vertical scrolling, positive values scroll up and negative values scroll down.
+    /// For horizontal scrolling, positive values scroll left and negative values scroll right.
+    ///
+    /// ```bash
+    /// sagui mouse scroll --vertical 5       # Scroll up
+    /// sagui mouse scroll --vertical -3      # Scroll down
+    /// sagui mouse scroll --horizontal 2     # Scroll left
+    /// ```
     struct Scroll: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Scroll the mouse wheel."
