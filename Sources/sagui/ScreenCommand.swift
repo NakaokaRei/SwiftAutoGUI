@@ -2,6 +2,36 @@ import ArgumentParser
 import SwiftAutoGUI
 import AppKit
 
+/// Screen information and capture commands for the sagui CLI.
+///
+/// Provides subcommands for querying screen dimensions, taking screenshots,
+/// reading pixel colors, and locating images on screen.
+///
+/// ## Usage
+///
+/// ```bash
+/// # Get screen dimensions
+/// sagui screen size
+///
+/// # Take a screenshot
+/// sagui screen screenshot --output capture.png
+///
+/// # Get pixel color at coordinates
+/// sagui screen pixel --x 100 --y 200
+///
+/// # Find an image on screen
+/// sagui screen locate button.png
+/// sagui screen locate-center button.png
+/// ```
+///
+/// ## Topics
+///
+/// ### Subcommands
+/// - ``Size``
+/// - ``Screenshot``
+/// - ``Pixel``
+/// - ``Locate``
+/// - ``LocateCenter``
 struct ScreenCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "screen",
@@ -11,6 +41,14 @@ struct ScreenCommand: AsyncParsableCommand {
 }
 
 extension ScreenCommand {
+    /// Print the main screen dimensions.
+    ///
+    /// Outputs the width and height in pixels separated by a space.
+    ///
+    /// ```bash
+    /// sagui screen size
+    /// # Output: 1920.0 1080.0
+    /// ```
     struct Size: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Print the main screen dimensions."
@@ -22,6 +60,16 @@ extension ScreenCommand {
         }
     }
 
+    /// Take a screenshot and save it to a file.
+    ///
+    /// Captures the full screen or a specified region and saves it as a PNG image.
+    /// On success, prints the output file path.
+    ///
+    /// ```bash
+    /// sagui screen screenshot                                    # Save as screenshot.png
+    /// sagui screen screenshot --output capture.png               # Custom filename
+    /// sagui screen screenshot --region 0,0,500,500               # Capture a region
+    /// ```
     struct Screenshot: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Take a screenshot and save to file."
@@ -52,6 +100,14 @@ extension ScreenCommand {
         }
     }
 
+    /// Get the color of a pixel at given screen coordinates.
+    ///
+    /// Outputs the RGBA components as integers (0–255) separated by spaces.
+    ///
+    /// ```bash
+    /// sagui screen pixel --x 100 --y 200
+    /// # Output: 255 128 64 255
+    /// ```
     struct Pixel: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Get the color of a pixel at given coordinates."
@@ -75,6 +131,16 @@ extension ScreenCommand {
         }
     }
 
+    /// Find an image on screen and print its bounding rectangle.
+    ///
+    /// Searches the current screen for a matching image using template matching.
+    /// Outputs the position and size as `x y width height`.
+    ///
+    /// ```bash
+    /// sagui screen locate button.png
+    /// sagui screen locate button.png --confidence 0.9
+    /// # Output: 120.0 340.0 50.0 30.0
+    /// ```
     struct Locate: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             abstract: "Find an image on screen and print its position."
@@ -94,6 +160,16 @@ extension ScreenCommand {
         }
     }
 
+    /// Find an image on screen and print its center point.
+    ///
+    /// Searches the current screen for a matching image and outputs the center
+    /// coordinates as `x y`.
+    ///
+    /// ```bash
+    /// sagui screen locate-center button.png
+    /// sagui screen locate-center button.png --confidence 0.9
+    /// # Output: 145.0 355.0
+    /// ```
     struct LocateCenter: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "locate-center",
@@ -115,6 +191,7 @@ extension ScreenCommand {
     }
 }
 
+/// An error type for runtime failures in sagui commands.
 struct RuntimeError: Error, CustomStringConvertible {
     let description: String
     init(_ description: String) {
