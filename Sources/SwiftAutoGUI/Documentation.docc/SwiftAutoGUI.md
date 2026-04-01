@@ -165,6 +165,23 @@ await action.execute()
 
 > Note: Requires macOS 26.0+ with Apple Intelligence enabled.
 
+### AI Agent (Autonomous Loop)
+
+The ``Agent`` observes the screen via screenshots, sends them to a vision-capable LLM, executes the returned actions, and repeats until the goal is achieved. This follows the **ReAct** (Observe → Think → Act) pattern.
+
+```swift
+let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
+let agent = Agent(backend: backend, maxIterations: 15)
+
+let result = try await agent.run(goal: "Open Safari and search for Swift") { step in
+    print("Step: \(step.reasoning)")
+    print("Actions: \(step.actions)")
+}
+print("Completed: \(result.completed)")
+```
+
+You can implement ``VisionActionGenerating`` to use any vision-capable backend.
+
 ### Direct Method Calls (Alternative)
 
 While the Action pattern is recommended, you can also use SwiftAutoGUI methods directly for simple operations:
@@ -221,10 +238,25 @@ The sample app demonstrates all SwiftAutoGUI features with interactive examples.
 
 ## Topics
 
-### API Reference
+### Core
 
 - ``SwiftAutoGUI/SwiftAutoGUI``
 - ``Action``
-- ``ActionGenerator``
 - ``Key``
 - ``TweeningFunction``
+
+### AI Action Generation
+
+- ``ActionGenerator``
+- ``ActionGenerating``
+- ``OpenAIBackend``
+- ``BasicAction``
+
+### AI Agent
+
+- ``Agent``
+- ``VisionActionGenerating``
+- ``OpenAIVisionBackend``
+- ``AgentStep``
+- ``AgentResponse``
+- ``AgentResult``
