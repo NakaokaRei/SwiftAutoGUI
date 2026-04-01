@@ -21,8 +21,7 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
-        .package(url: "https://github.com/yeatse/opencv-spm.git", from: "4.9.0"),
-        .package(url: "https://github.com/MacPaw/OpenAI.git", from: "0.4.7")
+        .package(url: "https://github.com/yeatse/opencv-spm.git", from: "4.9.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -30,8 +29,7 @@ let package = Package(
         .target(
             name: "SwiftAutoGUI",
             dependencies: [
-                .product(name: "OpenCV", package: "opencv-spm"),
-                .product(name: "OpenAI", package: "OpenAI")
+                .product(name: "OpenCV", package: "opencv-spm")
             ]),
         .executableTarget(
             name: "sagui",

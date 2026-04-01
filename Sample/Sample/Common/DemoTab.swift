@@ -20,6 +20,7 @@ enum DemoTab: String, CaseIterable {
     case appleScript
     case actions
     case aiGeneration
+    case agent
 
     var title: String {
         switch self {
@@ -35,6 +36,7 @@ enum DemoTab: String, CaseIterable {
         case .appleScript: return "AppleScript"
         case .actions: return "Actions"
         case .aiGeneration: return "AI Generation"
+        case .agent: return "AI Agent"
         }
     }
 
@@ -52,6 +54,7 @@ enum DemoTab: String, CaseIterable {
         case .appleScript: return "applescript"
         case .actions: return "play.circle"
         case .aiGeneration: return "sparkles"
+        case .agent: return "brain"
         }
     }
 }

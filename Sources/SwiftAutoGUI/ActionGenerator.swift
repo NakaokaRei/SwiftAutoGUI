@@ -14,7 +14,7 @@ import FoundationModels
 /// context window. It covers common automation operations and converts to
 /// the full ``Action`` type via ``toAction()``.
 @Generable
-enum BasicAction: Sendable, Codable {
+public enum BasicAction: Sendable, Codable {
     /// Type text.
     case write(text: String)
 
@@ -46,7 +46,7 @@ enum BasicAction: Sendable, Codable {
     case drag(fromX: Double, fromY: Double, toX: Double, toY: Double)
 
     /// Convert to an executable ``Action``.
-    func toAction() -> Action {
+    public func toAction() -> Action {
         switch self {
         case .write(let text):
             return .write(text)
@@ -86,17 +86,17 @@ enum BasicAction: Sendable, Codable {
         case vscroll, hscroll, wait, keyShortcut, drag
     }
 
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(ActionType.self, forKey: .type)
 
         switch type {
         case .write:
-            let text = try container.decode(String.self, forKey: .text)
+            let text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
             self = .write(text: text)
         case .move:
-            let x = try container.decode(Double.self, forKey: .x)
-            let y = try container.decode(Double.self, forKey: .y)
+            let x = try container.decodeIfPresent(Double.self, forKey: .x) ?? 0
+            let y = try container.decodeIfPresent(Double.self, forKey: .y) ?? 0
             self = .move(x: x, y: y)
         case .leftClick:
             self = .leftClick
@@ -105,27 +105,27 @@ enum BasicAction: Sendable, Codable {
         case .doubleClick:
             self = .doubleClick
         case .vscroll:
-            let clicks = try container.decode(Int.self, forKey: .clicks)
+            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
             self = .vscroll(clicks: clicks)
         case .hscroll:
-            let clicks = try container.decode(Int.self, forKey: .clicks)
+            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
             self = .hscroll(clicks: clicks)
         case .wait:
-            let duration = try container.decode(Double.self, forKey: .duration)
+            let duration = try container.decodeIfPresent(Double.self, forKey: .duration) ?? 0
             self = .wait(duration: duration)
         case .keyShortcut:
-            let keys = try container.decode([String].self, forKey: .keys)
+            let keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
             self = .keyShortcut(keys: keys)
         case .drag:
-            let fromX = try container.decode(Double.self, forKey: .fromX)
-            let fromY = try container.decode(Double.self, forKey: .fromY)
-            let toX = try container.decode(Double.self, forKey: .toX)
-            let toY = try container.decode(Double.self, forKey: .toY)
+            let fromX = try container.decodeIfPresent(Double.self, forKey: .fromX) ?? 0
+            let fromY = try container.decodeIfPresent(Double.self, forKey: .fromY) ?? 0
+            let toX = try container.decodeIfPresent(Double.self, forKey: .toX) ?? 0
+            let toY = try container.decodeIfPresent(Double.self, forKey: .toY) ?? 0
             self = .drag(fromX: fromX, fromY: fromY, toX: toX, toY: toY)
         }
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
         switch self {
