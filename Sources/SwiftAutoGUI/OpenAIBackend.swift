@@ -4,7 +4,6 @@
 //
 
 import Foundation
-@preconcurrency import OpenAI
 
 // MARK: - OpenAIBackend
 
@@ -29,26 +28,24 @@ import Foundation
 /// Never hard-code API keys in source code. Use environment variables or secure storage.
 public struct OpenAIBackend: ActionGenerating, Sendable {
 
-    private let client: OpenAI
-    private let model: Model
+    private let apiKey: String
+    private let model: String
+    private let baseURL: String
 
     /// Creates an OpenAI backend.
     ///
     /// - Parameters:
     ///   - apiKey: Your OpenAI API key.
     ///   - model: The model to use (default: `gpt-4.1-nano`).
-    public init(apiKey: String, model: String = "gpt-4.1-nano") {
-        self.client = OpenAI(apiToken: apiKey)
-        self.model = Model(model)
+    ///   - baseURL: The API base URL (default: OpenAI).
+    public init(apiKey: String, model: String = "gpt-4.1-nano", baseURL: String = "https://api.openai.com/v1") {
+        self.apiKey = apiKey
+        self.model = model
+        self.baseURL = baseURL
     }
 
-    public var isAvailable: Bool {
-        true
-    }
-
-    public var unavailableReason: String? {
-        nil
-    }
+    public var isAvailable: Bool { true }
+    public var unavailableReason: String? { nil }
 
     public func generateAction(from prompt: String) async throws -> Action {
         let actions = try await generateActionSequence(from: prompt)
@@ -59,28 +56,58 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
     }
 
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
-        let query = ChatQuery(
-            messages: [
-                .system(.init(content: .textContent(Self.systemPrompt))),
-                .user(.init(content: .string(prompt)))
-            ],
-            model: model,
-            responseFormat: .jsonSchema(.init(
-                name: "action_sequence",
-                schema: .jsonSchema(Self.actionsSchema),
-                strict: true
-            ))
-        )
+        let requestBody: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "messages": [
+                ["role": "system", "content": Self.systemPrompt],
+                ["role": "user", "content": prompt]
+            ] as [[String: Any]],
+            "response_format": [
+                "type": "json_schema",
+                "json_schema": [
+                    "name": "action_sequence",
+                    "strict": true,
+                    "schema": Self.actionsSchemaDict
+                ] as [String: Any]
+            ] as [String: Any]
+        ]
 
-        let result = try await client.chats(query: query)
+        let requestData = try JSONSerialization.data(withJSONObject: requestBody)
 
-        guard let content = result.choices.first?.message.content,
-              let data = content.data(using: .utf8) else {
-            throw ActionGeneratorError.invalidResponse(detail: "No content in response")
+        var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = requestData
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            let body = String(data: data, encoding: .utf8) ?? "(no body)"
+            throw ActionGeneratorError.invalidResponse(
+                detail: "API returned HTTP \(httpResponse.statusCode): \(String(body.prefix(500)))"
+            )
         }
 
-        let wrapper = try JSONDecoder().decode(ActionsWrapper.self, from: data)
-        let actions = wrapper.actions.map { $0.toAction() }
+        let json = try OpenAIVisionBackend.parseJSON(data)
+
+        guard let choices = json["choices"] as? [[String: Any]],
+              let firstChoice = choices.first,
+              let message = firstChoice["message"] as? [String: Any],
+              let content = message["content"] as? String else {
+            let preview = String(data: data, encoding: .utf8)?.prefix(500) ?? "(empty)"
+            throw ActionGeneratorError.invalidResponse(
+                detail: "Unexpected API response structure.\nRaw: \(preview)"
+            )
+        }
+
+        let parsed = try OpenAIVisionBackend.parseJSON(Data(content.utf8))
+
+        let actionsArray = parsed["actions"] as? [[String: Any]] ?? []
+        let actions: [Action] = actionsArray.compactMap { dict in
+            OpenAIVisionBackend.parseAction(dict)?.toAction()
+        }
 
         guard !actions.isEmpty else {
             throw ActionGeneratorError.noActionsGenerated
@@ -88,12 +115,6 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
 
         return actions
     }
-}
-
-// MARK: - Response Wrapper
-
-private struct ActionsWrapper: Codable {
-    let actions: [BasicAction]
 }
 
 // MARK: - System Prompt
@@ -124,83 +145,20 @@ extension OpenAIBackend {
         """
 }
 
-// MARK: - JSON Schema for Structured Outputs
+// MARK: - JSON Schema (as Dictionary)
 
 extension OpenAIBackend {
-    /// JSON Schema for the actions wrapper object.
-    ///
-    /// Uses flat object format with all fields required (nullable for optional ones),
-    /// because OpenAI's strict mode does not fully support `oneOf`/`anyOf`.
-    static let actionsSchema: JSONSchema = .init(
-        .type(.object),
-        .description("A wrapper containing an array of automation actions."),
-        .properties([
-            "actions": JSONSchema(
-                .type(.array),
-                .description("The array of actions to execute."),
-                .items(actionItemSchema)
-            )
-        ]),
-        .required(["actions"]),
-        .additionalProperties(.boolean(false))
-    )
-
-    /// JSON Schema for a single action item (flat object, type-discriminated).
-    private static let actionItemSchema: JSONSchema = .init(
-        .type(.object),
-        .description("A single automation action."),
-        .properties([
-            "type": JSONSchema(
-                .type(.string),
-                .description("The action type."),
-                .enumValues([
-                    "write", "move", "leftClick", "rightClick", "doubleClick",
-                    "vscroll", "hscroll", "wait", "keyShortcut", "drag"
-                ] as [String])
-            ),
-            "text": JSONSchema(
-                .type(.types(["string", "null"])),
-                .description("Text to type. Used with 'write' action.")
-            ),
-            "x": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("X coordinate for mouse position. Used with 'move' action.")
-            ),
-            "y": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("Y coordinate for mouse position. Used with 'move' action.")
-            ),
-            "clicks": JSONSchema(
-                .type(.types(["integer", "null"])),
-                .description("Number of scroll clicks. Used with 'vscroll' and 'hscroll' actions.")
-            ),
-            "duration": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("Wait duration in seconds. Used with 'wait' action.")
-            ),
-            "keys": JSONSchema(
-                .type(.types(["array", "null"])),
-                .description("Key names for shortcut. Used with 'keyShortcut' action."),
-                .items(JSONSchema(.type(.string)))
-            ),
-            "fromX": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("Start X coordinate. Used with 'drag' action.")
-            ),
-            "fromY": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("Start Y coordinate. Used with 'drag' action.")
-            ),
-            "toX": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("End X coordinate. Used with 'drag' action.")
-            ),
-            "toY": JSONSchema(
-                .type(.types(["number", "null"])),
-                .description("End Y coordinate. Used with 'drag' action.")
-            )
-        ]),
-        .required(["type", "text", "x", "y", "clicks", "duration", "keys", "fromX", "fromY", "toX", "toY"]),
-        .additionalProperties(.boolean(false))
-    )
+    nonisolated(unsafe) static let actionsSchemaDict: [String: Any] = [
+        "type": "object",
+        "description": "A wrapper containing an array of automation actions.",
+        "properties": [
+            "actions": [
+                "type": "array",
+                "description": "The array of actions to execute.",
+                "items": OpenAIVisionBackend.actionItemSchemaDict
+            ] as [String: Any]
+        ] as [String: Any],
+        "required": ["actions"],
+        "additionalProperties": false
+    ] as [String: Any]
 }

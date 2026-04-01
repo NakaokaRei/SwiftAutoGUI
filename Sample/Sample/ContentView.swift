@@ -106,6 +106,8 @@ struct ContentView: View {
                             ActionsDemoView()
                         case .aiGeneration:
                             AIGenerationDemoView()
+                        case .agent:
+                            AgentDemoView()
                         }
                     }
                     .padding(24)

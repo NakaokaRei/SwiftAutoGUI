@@ -410,6 +410,66 @@ let actions = try await backend.generateActionSequence(from: "click at 100, 200"
 
 > **Important**: Never hard-code API keys in source code. Use environment variables or secure storage mechanisms.
 
+## AI Agent (Autonomous Loop)
+
+SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason about what it sees, and execute actions in a loop until a goal is achieved. This follows the **ReAct** (Observe → Think → Act) pattern using a vision-capable LLM.
+
+### Basic Usage
+
+```swift
+import SwiftAutoGUI
+
+let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
+let agent = Agent(backend: backend, maxIterations: 15)
+
+let result = try await agent.run(goal: "Open Safari and search for Swift")
+print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
+```
+
+### With Step Callback
+
+```swift
+let result = try await agent.run(goal: "Click the Settings icon") { step in
+    print("Reasoning: \(step.reasoning)")
+    print("Actions: \(step.actions)")
+}
+```
+
+### Custom Backend
+
+You can implement the `VisionActionGenerating` protocol to use any vision-capable LLM:
+
+```swift
+struct MyBackend: VisionActionGenerating {
+    var isAvailable: Bool { true }
+    var unavailableReason: String? { nil }
+    
+    func generateActions(
+        goal: String,
+        screenshot: Data,
+        screenSize: CGSize,
+        history: [AgentStep]
+    ) async throws -> AgentResponse {
+        // Send screenshot to your LLM and parse the response
+        ...
+    }
+}
+```
+
+### CLI
+
+```bash
+# Run the agent from the command line
+sagui agent "Open Safari and search for Swift" --api-key sk-...
+
+# With options
+sagui agent "Click the trash icon" --model gpt-4o --max-iterations 15 --delay 2.0
+
+# Using environment variable for the API key
+export OPENAI_API_KEY=sk-...
+sagui agent "Open Terminal"
+```
+
 ## AppleScript Execution
 SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
 
