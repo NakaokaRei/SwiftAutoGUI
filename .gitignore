@@ -9,3 +9,4 @@ DerivedData/
 .netrc
 .vscode/settings.json
 **/.build
+.claude/worktrees
