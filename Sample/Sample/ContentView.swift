@@ -106,6 +106,8 @@ struct ContentView: View {
                             ActionsDemoView()
                         case .aiGeneration:
                             AIGenerationDemoView()
+                        case .screenContext:
+                            ScreenContextDemoView()
                         case .agent:
                             AgentDemoView()
                         }

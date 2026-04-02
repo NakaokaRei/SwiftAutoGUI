@@ -54,11 +54,28 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
         screenSize: CGSize,
         history: [AgentStep]
     ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history,
+            screenContext: nil
+        )
+    }
+
+    public func generateActions(
+        goal: String,
+        screenshot: Data,
+        screenSize: CGSize,
+        history: [AgentStep],
+        screenContext: ScreenContext?
+    ) async throws -> AgentResponse {
         let messages = buildMessages(
             goal: goal,
             screenshot: screenshot,
             screenSize: screenSize,
-            history: history
+            history: history,
+            screenContext: screenContext
         )
 
         let requestBody: [String: Any] = [
@@ -122,14 +139,15 @@ extension OpenAIVisionBackend {
         goal: String,
         screenshot: Data,
         screenSize: CGSize,
-        history: [AgentStep]
+        history: [AgentStep],
+        screenContext: ScreenContext? = nil
     ) -> [[String: Any]] {
         var messages: [[String: Any]] = []
 
         // System prompt
         messages.append([
             "role": "system",
-            "content": Self.buildSystemPrompt(screenSize: screenSize)
+            "content": Self.buildSystemPrompt(screenSize: screenSize, hasScreenContext: screenContext != nil)
         ])
 
         // History steps
@@ -141,8 +159,17 @@ extension OpenAIVisionBackend {
             ])
         }
 
-        // Current screenshot + goal
+        // Current screenshot + goal + screen context
         let base64 = screenshot.base64EncodedString()
+
+        var userText = "Goal: \(goal)\n"
+        if let context = screenContext {
+            userText += "\n--- Screen Context ---\n"
+            userText += context.formatted()
+            userText += "\n--- End Screen Context ---\n"
+        }
+        userText += "\nThis is the current screenshot. What actions should I take next?"
+
         messages.append([
             "role": "user",
             "content": [
@@ -155,7 +182,7 @@ extension OpenAIVisionBackend {
                 ] as [String: Any],
                 [
                     "type": "text",
-                    "text": "Goal: \(goal)\n\nThis is the current screenshot. What actions should I take next?"
+                    "text": userText
                 ] as [String: Any]
             ] as [[String: Any]]
         ] as [String: Any])
@@ -183,8 +210,8 @@ extension OpenAIVisionBackend {
 // MARK: - System Prompt
 
 extension OpenAIVisionBackend {
-    static func buildSystemPrompt(screenSize: CGSize) -> String {
-        """
+    static func buildSystemPrompt(screenSize: CGSize, hasScreenContext: Bool = false) -> String {
+        var prompt = """
         You are an AI agent controlling a macOS computer to achieve a user's goal. \
         You will receive screenshots of the current screen state and must decide what actions to take.
 
@@ -215,6 +242,24 @@ extension OpenAIVisionBackend {
 
         Respond with a JSON object containing "reasoning", "isDone", and "actions" fields.
         """
+
+        if hasScreenContext {
+            prompt += """
+
+
+            You will also receive structured screen context alongside the screenshot. This includes:
+            - The frontmost application name and bundle identifier
+            - A list of visible windows with their titles, owning apps, and screen bounds
+            - An accessibility tree of the focused window showing UI elements with their roles, labels, values, and positions
+
+            Use this context to precisely locate UI elements. The bounding boxes in the accessibility tree \
+            give exact coordinates you can use with move/click actions. Prefer using accessibility tree \
+            coordinates over guessing positions from the screenshot when available. \
+            The accessibility tree may be truncated ([...]) for deeply nested elements.
+            """
+        }
+
+        return prompt
     }
 }
 

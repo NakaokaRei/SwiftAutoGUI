@@ -34,6 +34,9 @@ struct AgentCommand: AsyncParsableCommand {
     @Option(help: "Delay between steps in seconds.")
     var delay: Double = 1.0
 
+    @Flag(help: "Disable screen context (accessibility tree and window info).")
+    var noScreenContext: Bool = false
+
     @MainActor
     func run() async throws {
         let key = apiKey ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
@@ -42,14 +45,16 @@ struct AgentCommand: AsyncParsableCommand {
         }
 
         let backend = OpenAIVisionBackend(apiKey: key, model: model)
+        let contextOptions: ScreenContextProvider.Options? = noScreenContext ? nil : ScreenContextProvider.Options()
         let agent = Agent(
             backend: backend,
             maxIterations: maxIterations,
-            delayBetweenSteps: delay
+            delayBetweenSteps: delay,
+            screenContextOptions: contextOptions
         )
 
         print("Agent starting with goal: \"\(goal)\"")
-        print("Model: \(model), Max iterations: \(maxIterations), Delay: \(delay)s")
+        print("Model: \(model), Max iterations: \(maxIterations), Delay: \(delay)s, Screen context: \(!noScreenContext)")
         print("---")
 
         let result = try await agent.run(goal: goal) { step in

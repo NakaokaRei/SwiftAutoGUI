@@ -124,6 +124,13 @@ struct AgentDemoView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+                Toggle(isOn: $viewModel.useScreenContext) {
+                    Text("Screen context")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .toggleStyle(.checkbox)
+                .help("Send accessibility tree and window info alongside screenshots")
             }
         }
         .padding(10)

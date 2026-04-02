@@ -39,20 +39,28 @@ public struct Agent: Sendable {
     /// Delay between steps to allow the screen to update.
     public let delayBetweenSteps: TimeInterval
 
+    /// Options for gathering screen context (accessibility tree, window info).
+    /// Set to `nil` to disable screen context gathering entirely.
+    public let screenContextOptions: ScreenContextProvider.Options?
+
     /// Creates an agent with the specified configuration.
     ///
     /// - Parameters:
     ///   - backend: The vision backend to use for action generation.
     ///   - maxIterations: Maximum loop iterations (default: 20).
     ///   - delayBetweenSteps: Seconds to wait between steps (default: 1.0).
+    ///   - screenContextOptions: Options for screen context gathering (default: enabled with defaults).
+    ///     Pass `nil` to disable.
     public init(
         backend: any VisionActionGenerating,
         maxIterations: Int = 20,
-        delayBetweenSteps: TimeInterval = 1.0
+        delayBetweenSteps: TimeInterval = 1.0,
+        screenContextOptions: ScreenContextProvider.Options? = ScreenContextProvider.Options()
     ) {
         self.backend = backend
         self.maxIterations = maxIterations
         self.delayBetweenSteps = delayBetweenSteps
+        self.screenContextOptions = screenContextOptions
     }
 
     /// Runs the agent loop to achieve the given goal.
@@ -87,12 +95,18 @@ public struct Agent: Sendable {
             let screenSize = SwiftAutoGUI.size()
             let screenCGSize = CGSize(width: screenSize.width, height: screenSize.height)
 
+            // 1b. Gather screen context (if enabled)
+            let screenContext: ScreenContext? = screenContextOptions.map { options in
+                ScreenContextProvider.gather(options: options)
+            }
+
             // 2. Think: send to backend
             let response = try await backend.generateActions(
                 goal: goal,
                 screenshot: jpegData,
                 screenSize: screenCGSize,
-                history: steps
+                history: steps,
+                screenContext: screenContext
             )
 
             // 3. Act: execute actions
