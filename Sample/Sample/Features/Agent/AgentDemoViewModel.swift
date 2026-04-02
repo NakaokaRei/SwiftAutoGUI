@@ -19,6 +19,7 @@ class AgentDemoViewModel {
     var openAIModel: String = "gpt-5.4"
     var maxIterations: Int = 20
     var delayBetweenSteps: Double = 1.0
+    var useScreenContext: Bool = true
 
     static let availableModels = [
         "gpt-5.4",
@@ -72,10 +73,12 @@ class AgentDemoViewModel {
         runTask = Task {
             do {
                 let backend = OpenAIVisionBackend(apiKey: openAIKey, model: openAIModel)
+                let contextOptions: ScreenContextProvider.Options? = useScreenContext ? ScreenContextProvider.Options() : nil
                 let agent = Agent(
                     backend: backend,
                     maxIterations: maxIterations,
-                    delayBetweenSteps: delayBetweenSteps
+                    delayBetweenSteps: delayBetweenSteps,
+                    screenContextOptions: contextOptions
                 )
 
                 let result = try await agent.run(goal: goal) { [weak self] step in
