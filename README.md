@@ -188,6 +188,66 @@ let loginActions = createLoginSequence(
 await loginActions.execute()
 ```
 
+## AI Agent (Autonomous Loop)
+
+SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason about what it sees, and execute actions in a loop until a goal is achieved. This follows the **ReAct** (Observe → Think → Act) pattern using a vision-capable LLM.
+
+### Basic Usage
+
+```swift
+import SwiftAutoGUI
+
+let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
+let agent = Agent(backend: backend, maxIterations: 15)
+
+let result = try await agent.run(goal: "Open Safari and search for Swift")
+print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
+```
+
+### With Step Callback
+
+```swift
+let result = try await agent.run(goal: "Click the Settings icon") { step in
+    print("Reasoning: \(step.reasoning)")
+    print("Actions: \(step.actions)")
+}
+```
+
+### Custom Backend
+
+You can implement the `VisionActionGenerating` protocol to use any vision-capable LLM:
+
+```swift
+struct MyBackend: VisionActionGenerating {
+    var isAvailable: Bool { true }
+    var unavailableReason: String? { nil }
+    
+    func generateActions(
+        goal: String,
+        screenshot: Data,
+        screenSize: CGSize,
+        history: [AgentStep]
+    ) async throws -> AgentResponse {
+        // Send screenshot to your LLM and parse the response
+        ...
+    }
+}
+```
+
+### CLI
+
+```bash
+# Run the agent from the command line
+sagui agent "Open Safari and search for Swift" --api-key sk-...
+
+# With options
+sagui agent "Click the trash icon" --model gpt-4o --max-iterations 15 --delay 2.0
+
+# Using environment variable for the API key
+export OPENAI_API_KEY=sk-...
+sagui agent "Open Terminal"
+```
+
 ## Keyboard Layout
 
 SwiftAutoGUI supports both **US** and **JIS** keyboard layouts. The physical keyboard type is auto-detected by default, so symbols like `@`, `[`, `:`, `_` are mapped to the correct keys regardless of the layout.
@@ -209,27 +269,6 @@ SwiftAutoGUI.resetLayoutToAutoDetect()
 
 // Use a specific layout without changing global state
 let key = Key.from(character: "@", layout: .jis)  // .leftBracket
-```
-
-## Direct Method Calls (Alternative)
-
-While the Action pattern is recommended, you can also call SwiftAutoGUI methods directly for simple operations:
-
-```swift
-import SwiftAutoGUI
-
-// Keyboard operations
-Task {
-    await SwiftAutoGUI.sendKeyShortcut([.control, .leftArrow])
-    await SwiftAutoGUI.write("Hello, World!")
-}
-
-// Mouse operations
-Task {
-    await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 100), duration: 0)
-    SwiftAutoGUI.leftClick()
-    SwiftAutoGUI.vscroll(clicks: 10)
-}
 ```
 
 ## Screenshot
@@ -354,121 +393,6 @@ Task {
 }
 ```
 
-
-## AI Action Generation
-
-SwiftAutoGUI can generate automation actions from natural language prompts using AI backends. Two backends are available:
-
-- **Foundation Models** (default): Apple's on-device LLM. Requires macOS 26.0+ with Apple Intelligence enabled.
-- **OpenAI**: Uses the OpenAI API for generation. Requires an API key.
-
-### Foundation Models (Default)
-
-```swift
-import SwiftAutoGUI
-
-// Check if AI generation is available
-guard ActionGenerator.isAvailable else {
-    print(ActionGenerator.unavailableReason ?? "Model unavailable")
-    return
-}
-
-// Generate a single action
-let action = try await ActionGenerator.generateAction(from: "click at 300, 400")
-await action.execute()
-
-// Generate a sequence of actions
-let actions = try await ActionGenerator.generateActionSequence(
-    from: "Move to 200, 200, click, wait 0.5 seconds, then type 'Hello'"
-)
-await actions.execute()
-
-// Convenience method on Action
-let copyAction = try await Action.fromPrompt("press Command+C to copy")
-await copyAction.execute()
-```
-
-### OpenAI Backend
-
-```swift
-import SwiftAutoGUI
-
-// Create an ActionGenerator with OpenAI backend
-let generator = ActionGenerator(openAIKey: "sk-...", model: "gpt-4.1-nano")
-let actions = try await generator.generateActionSequence(from: "type hello and press enter")
-await actions.execute()
-
-// Or switch the global default backend
-ActionGenerator.defaultBackend = OpenAIBackend(apiKey: "sk-...", model: "gpt-4.1")
-let action = try await ActionGenerator.generateAction(from: "scroll down 5 clicks")
-await action.execute()
-
-// Use the protocol directly
-let backend: any ActionGenerating = OpenAIBackend(apiKey: "sk-...")
-let actions = try await backend.generateActionSequence(from: "click at 100, 200")
-```
-
-> **Important**: Never hard-code API keys in source code. Use environment variables or secure storage mechanisms.
-
-## AI Agent (Autonomous Loop)
-
-SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason about what it sees, and execute actions in a loop until a goal is achieved. This follows the **ReAct** (Observe → Think → Act) pattern using a vision-capable LLM.
-
-### Basic Usage
-
-```swift
-import SwiftAutoGUI
-
-let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
-let agent = Agent(backend: backend, maxIterations: 15)
-
-let result = try await agent.run(goal: "Open Safari and search for Swift")
-print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
-```
-
-### With Step Callback
-
-```swift
-let result = try await agent.run(goal: "Click the Settings icon") { step in
-    print("Reasoning: \(step.reasoning)")
-    print("Actions: \(step.actions)")
-}
-```
-
-### Custom Backend
-
-You can implement the `VisionActionGenerating` protocol to use any vision-capable LLM:
-
-```swift
-struct MyBackend: VisionActionGenerating {
-    var isAvailable: Bool { true }
-    var unavailableReason: String? { nil }
-    
-    func generateActions(
-        goal: String,
-        screenshot: Data,
-        screenSize: CGSize,
-        history: [AgentStep]
-    ) async throws -> AgentResponse {
-        // Send screenshot to your LLM and parse the response
-        ...
-    }
-}
-```
-
-### CLI
-
-```bash
-# Run the agent from the command line
-sagui agent "Open Safari and search for Swift" --api-key sk-...
-
-# With options
-sagui agent "Click the trash icon" --model gpt-4o --max-iterations 15 --delay 2.0
-
-# Using environment variable for the API key
-export OPENAI_API_KEY=sk-...
-sagui agent "Open Terminal"
-```
 
 ## AppleScript Execution
 SwiftAutoGUI can execute AppleScript code to control macOS applications and system features.
