@@ -10,7 +10,7 @@
 
 <!-- # Short Description -->
 
-A library for manipulating macOS with Swift, which is used to programmatically control the mouse & keyboard.
+A Swift library for macOS automation — mouse, keyboard, screenshots, image recognition, and AI-powered agents.
 
 This repository is inspired by [pyautogui](https://github.com/asweigart/pyautogui).
 
