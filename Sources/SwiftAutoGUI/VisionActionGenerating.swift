@@ -46,6 +46,38 @@ public protocol VisionActionGenerating: Sendable {
     ) async throws -> AgentResponse
 }
 
+// MARK: - Default Implementation with Screen Context
+
+extension VisionActionGenerating {
+    /// Generates actions with additional screen context alongside the screenshot.
+    ///
+    /// The default implementation ignores the screen context and delegates to the
+    /// base ``generateActions(goal:screenshot:screenSize:history:)`` method.
+    /// Backends that support screen context can override this method.
+    ///
+    /// - Parameters:
+    ///   - goal: The natural language goal to accomplish.
+    ///   - screenshot: JPEG-compressed screenshot data of the current screen.
+    ///   - screenSize: The screen dimensions in points.
+    ///   - history: Previous agent steps for context.
+    ///   - screenContext: Structured information about the current screen state.
+    /// - Returns: An ``AgentResponse`` containing actions, reasoning, and completion status.
+    public func generateActions(
+        goal: String,
+        screenshot: Data,
+        screenSize: CGSize,
+        history: [AgentStep],
+        screenContext: ScreenContext?
+    ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history
+        )
+    }
+}
+
 // MARK: - Agent Types
 
 /// A record of one step in the agent loop.
