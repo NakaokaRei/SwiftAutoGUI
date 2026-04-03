@@ -5,6 +5,7 @@
 
 import AppKit
 import ApplicationServices
+import Carbon
 import Foundation
 
 // MARK: - Data Types
@@ -24,10 +25,14 @@ public struct ScreenContext: Sendable, Codable {
     /// The accessibility tree of the focused window (nil if unavailable).
     public let focusedWindowAXTree: AXNode?
 
-    public init(frontmostApp: AppInfo?, visibleWindows: [WindowInfo], focusedWindowAXTree: AXNode?) {
+    /// The current keyboard input source / IME mode (nil if unavailable).
+    public let keyboardInputSource: InputSourceInfo?
+
+    public init(frontmostApp: AppInfo?, visibleWindows: [WindowInfo], focusedWindowAXTree: AXNode?, keyboardInputSource: InputSourceInfo? = nil) {
         self.frontmostApp = frontmostApp
         self.visibleWindows = visibleWindows
         self.focusedWindowAXTree = focusedWindowAXTree
+        self.keyboardInputSource = keyboardInputSource
     }
 }
 
@@ -41,6 +46,20 @@ public struct AppInfo: Sendable, Codable {
         self.name = name
         self.bundleIdentifier = bundleIdentifier
         self.pid = pid
+    }
+}
+
+/// Information about the current keyboard input source (IME state).
+public struct InputSourceInfo: Sendable, Codable {
+    /// The input source identifier (e.g., "com.apple.inputmethod.Japanese.RomajiTyping").
+    public let id: String
+
+    /// The localized display name (e.g., "日本語ローマ字", "U.S.").
+    public let localizedName: String
+
+    public init(id: String, localizedName: String) {
+        self.id = id
+        self.localizedName = localizedName
     }
 }
 
@@ -157,6 +176,7 @@ public struct ScreenContextProvider: Sendable {
     public static func gather(options: Options = Options()) -> ScreenContext {
         let frontmostApp = gatherFrontmostApp()
         let visibleWindows = gatherVisibleWindows()
+        let inputSource = gatherKeyboardInputSource()
 
         var axTree: AXNode?
         if options.includeAXTree, let app = frontmostApp {
@@ -167,7 +187,8 @@ public struct ScreenContextProvider: Sendable {
         return ScreenContext(
             frontmostApp: frontmostApp,
             visibleWindows: visibleWindows,
-            focusedWindowAXTree: axTree
+            focusedWindowAXTree: axTree,
+            keyboardInputSource: inputSource
         )
     }
 }
@@ -182,6 +203,26 @@ extension ScreenContextProvider {
             bundleIdentifier: app.bundleIdentifier,
             pid: app.processIdentifier
         )
+    }
+}
+
+// MARK: - Gathering: Keyboard Input Source
+
+extension ScreenContextProvider {
+    private static func gatherKeyboardInputSource() -> InputSourceInfo? {
+        guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+            return nil
+        }
+
+        let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID)
+        let namePtr = TISGetInputSourceProperty(source, kTISPropertyLocalizedName)
+
+        guard let idPtr, let namePtr else { return nil }
+
+        let id = Unmanaged<CFString>.fromOpaque(idPtr).takeUnretainedValue() as String
+        let localizedName = Unmanaged<CFString>.fromOpaque(namePtr).takeUnretainedValue() as String
+
+        return InputSourceInfo(id: id, localizedName: localizedName)
     }
 }
 
@@ -376,6 +417,11 @@ extension ScreenContext {
         if let app = frontmostApp {
             let bundle = app.bundleIdentifier.map { " (\($0))" } ?? ""
             lines.append("Frontmost app: \(app.name)\(bundle)")
+        }
+
+        // Keyboard input source
+        if let inputSource = keyboardInputSource {
+            lines.append("Keyboard input source: \(inputSource.localizedName) (\(inputSource.id))")
         }
 
         // Visible windows

@@ -249,6 +249,7 @@ extension OpenAIVisionBackend {
 
             You will also receive structured screen context alongside the screenshot. This includes:
             - The frontmost application name and bundle identifier
+            - The current keyboard input source / IME mode (e.g., "U.S.", "日本語ローマ字")
             - A list of visible windows with their titles, owning apps, and screen bounds
             - An accessibility tree of the focused window showing UI elements with their roles, labels, values, and positions
 
@@ -256,6 +257,10 @@ extension OpenAIVisionBackend {
             give exact coordinates you can use with move/click actions. Prefer using accessibility tree \
             coordinates over guessing positions from the screenshot when available. \
             The accessibility tree may be truncated ([...]) for deeply nested elements.
+
+            When the keyboard input source indicates a non-ASCII input mode (e.g., Japanese), \
+            consider switching to an ASCII-capable source before using the 'write' action for English text. \
+            Common shortcuts to toggle input source include Control+Space or Caps Lock, depending on user settings.
             """
         }
 
