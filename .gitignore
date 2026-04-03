@@ -10,3 +10,4 @@ DerivedData/
 .vscode/settings.json
 **/.build
 .claude/worktrees
+.claude/settings.local.json
