@@ -20,7 +20,7 @@ AI Agent that autonomously observes the screen and executes actions to achieve a
 
 `sagui agent "Open Safari and search for Swift"`
 
-<img src="https://github.com/user-attachments/assets/0b501faa-ff8a-4fee-8bf7-9db49bbd6766" alt="Demo: sagui agent" width="600">
+<img src="https://github.com/user-attachments/assets/0b501faa-ff8a-4fee-8bf7-9db49bbd6766" alt="Demo: sagui agent" width="900">
 
 # Requirements
 
