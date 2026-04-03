@@ -10,6 +10,21 @@ import Testing
 @Suite("ScreenContext Tests")
 struct ScreenContextTests {
 
+    // MARK: - InputSourceInfo Tests
+
+    @Suite("InputSourceInfo")
+    struct InputSourceInfoTests {
+
+        @Test("round-trip encoding/decoding")
+        func roundTrip() throws {
+            let info = InputSourceInfo(id: "com.apple.keylayout.US", localizedName: "U.S.")
+            let data = try JSONEncoder().encode(info)
+            let decoded = try JSONDecoder().decode(InputSourceInfo.self, from: data)
+            #expect(decoded.id == info.id)
+            #expect(decoded.localizedName == info.localizedName)
+        }
+    }
+
     // MARK: - CodableRect Tests
 
     @Suite("CodableRect")
@@ -194,6 +209,33 @@ struct ScreenContextTests {
             )
             let output = context.formatted()
             #expect(output.contains("[...]"))
+        }
+
+        @Test("formats keyboard input source")
+        func keyboardInputSource() {
+            let context = ScreenContext(
+                frontmostApp: nil,
+                visibleWindows: [],
+                focusedWindowAXTree: nil,
+                keyboardInputSource: InputSourceInfo(
+                    id: "com.apple.keylayout.US",
+                    localizedName: "U.S."
+                )
+            )
+            let output = context.formatted()
+            #expect(output.contains("Keyboard input source: U.S. (com.apple.keylayout.US)"))
+        }
+
+        @Test("omits keyboard input source when nil")
+        func noKeyboardInputSource() {
+            let context = ScreenContext(
+                frontmostApp: nil,
+                visibleWindows: [],
+                focusedWindowAXTree: nil,
+                keyboardInputSource: nil
+            )
+            let output = context.formatted()
+            #expect(!output.contains("Keyboard input source"))
         }
 
         @Test("full context output combines all sections")
