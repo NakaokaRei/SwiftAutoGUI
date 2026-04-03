@@ -14,6 +14,14 @@ A Swift library for macOS automation — mouse, keyboard, screenshots, image rec
 
 This repository is inspired by [pyautogui](https://github.com/asweigart/pyautogui).
 
+## Demo
+
+AI Agent that autonomously observes the screen and executes actions to achieve a goal.
+
+`sagui agent "Open Safari and search for Swift"`
+
+<img src="https://github.com/user-attachments/assets/0b501faa-ff8a-4fee-8bf7-9db49bbd6766" alt="Demo: sagui agent" width="600">
+
 # Requirements
 
 - macOS 26.0+
