@@ -279,6 +279,20 @@ SwiftAutoGUI.resetLayoutToAutoDetect()
 let key = Key.from(character: "@", layout: .jis)  // .leftBracket
 ```
 
+# Claude Code Skill
+
+SwiftAutoGUI provides a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that enables Claude to control macOS GUI applications via the `sagui` CLI.
+
+## Setup
+
+1. Clone this repository or add it as a dependency
+2. Copy the `.claude/skills/swift-auto-gui/` directory into your project's `.claude/skills/` directory
+3. Grant Accessibility and Screen Recording permissions to the application running Claude Code (e.g., Terminal.app)
+
+Claude Code will automatically discover the skill and use it when you ask it to interact with macOS applications — taking screenshots, clicking buttons, typing text, scrolling, and more.
+
+For details, see [`.claude/skills/swift-auto-gui/SKILL.md`](.claude/skills/swift-auto-gui/SKILL.md).
+
 # Contributors
 
 - [NakaokaRei](https://github.com/NakaokaRei)
