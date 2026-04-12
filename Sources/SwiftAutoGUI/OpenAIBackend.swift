@@ -10,7 +10,7 @@ import Foundation
 /// An ``ActionGenerating`` backend that uses the OpenAI API.
 ///
 /// This backend sends natural language prompts to OpenAI's chat completion API
-/// and uses Structured Outputs to get well-formed action JSON.
+/// and uses Structured Outputs to get well-formed action JSON via the Responses API.
 ///
 /// ## Example
 ///
@@ -58,14 +58,11 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
         let requestBody: [String: Any] = [
             "model": model,
-            "stream": false,
-            "messages": [
-                ["role": "system", "content": Self.systemPrompt],
-                ["role": "user", "content": prompt]
-            ] as [[String: Any]],
-            "response_format": [
-                "type": "json_schema",
-                "json_schema": [
+            "instructions": Self.systemPrompt,
+            "input": prompt,
+            "text": [
+                "format": [
+                    "type": "json_schema",
                     "name": "action_sequence",
                     "strict": true,
                     "schema": Self.actionsSchemaDict
@@ -75,7 +72,7 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
 
         let requestData = try JSONSerialization.data(withJSONObject: requestBody)
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
+        var request = URLRequest(url: URL(string: "\(baseURL)/responses")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -92,10 +89,11 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
 
         let json = try OpenAIVisionBackend.parseJSON(data)
 
-        guard let choices = json["choices"] as? [[String: Any]],
-              let firstChoice = choices.first,
-              let message = firstChoice["message"] as? [String: Any],
-              let content = message["content"] as? String else {
+        guard let output = json["output"] as? [[String: Any]],
+              let message = output.first(where: { $0["type"] as? String == "message" }),
+              let messageContent = message["content"] as? [[String: Any]],
+              let textItem = messageContent.first(where: { $0["type"] as? String == "output_text" }),
+              let content = textItem["text"] as? String else {
             let preview = String(data: data, encoding: .utf8)?.prefix(500) ?? "(empty)"
             throw ActionGeneratorError.invalidResponse(
                 detail: "Unexpected API response structure.\nRaw: \(preview)"
