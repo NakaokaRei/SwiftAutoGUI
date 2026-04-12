@@ -13,7 +13,7 @@ import Foundation
 /// This backend sends screenshots along with the goal and history to a vision-capable
 /// OpenAI model, enabling an observe-think-act agent loop.
 ///
-/// Uses direct HTTP calls to the OpenAI Chat Completions API (no SDK dependency)
+/// Uses direct HTTP calls to the OpenAI Responses API (no SDK dependency)
 /// for maximum compatibility with the latest models.
 ///
 /// ## Example
@@ -70,7 +70,7 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
         history: [AgentStep],
         screenContext: ScreenContext?
     ) async throws -> AgentResponse {
-        let messages = buildMessages(
+        let input = buildInput(
             goal: goal,
             screenshot: screenshot,
             screenSize: screenSize,
@@ -80,11 +80,11 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 
         let requestBody: [String: Any] = [
             "model": model,
-            "stream": false,
-            "messages": messages,
-            "response_format": [
-                "type": "json_schema",
-                "json_schema": [
+            "instructions": Self.buildSystemPrompt(screenSize: screenSize, hasScreenContext: screenContext != nil),
+            "input": input,
+            "text": [
+                "format": [
+                    "type": "json_schema",
                     "name": "agent_response",
                     "strict": true,
                     "schema": Self.agentResponseSchemaDict
@@ -94,7 +94,7 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 
         let requestData = try JSONSerialization.data(withJSONObject: requestBody)
 
-        var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
+        var request = URLRequest(url: URL(string: "\(baseURL)/responses")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -111,10 +111,11 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 
         let json = try Self.parseJSON(data)
 
-        guard let choices = json["choices"] as? [[String: Any]],
-              let firstChoice = choices.first,
-              let message = firstChoice["message"] as? [String: Any],
-              let content = message["content"] as? String else {
+        guard let output = json["output"] as? [[String: Any]],
+              let message = output.first(where: { $0["type"] as? String == "message" }),
+              let messageContent = message["content"] as? [[String: Any]],
+              let textItem = messageContent.first(where: { $0["type"] as? String == "output_text" }),
+              let content = textItem["text"] as? String else {
             let preview = String(data: data, encoding: .utf8)?.prefix(500) ?? "(empty)"
             throw ActionGeneratorError.invalidResponse(
                 detail: "Unexpected API response structure.\nRaw: \(preview)"
@@ -135,25 +136,19 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 // MARK: - Message Building
 
 extension OpenAIVisionBackend {
-    private func buildMessages(
+    private func buildInput(
         goal: String,
         screenshot: Data,
         screenSize: CGSize,
         history: [AgentStep],
         screenContext: ScreenContext? = nil
     ) -> [[String: Any]] {
-        var messages: [[String: Any]] = []
-
-        // System prompt
-        messages.append([
-            "role": "system",
-            "content": Self.buildSystemPrompt(screenSize: screenSize, hasScreenContext: screenContext != nil)
-        ])
+        var input: [[String: Any]] = []
 
         // History steps
         for (index, step) in history.enumerated() {
             let actionSummary = step.actions.map { describeBasicAction($0) }.joined(separator: ", ")
-            messages.append([
+            input.append([
                 "role": "assistant",
                 "content": "Step \(index + 1): \(step.reasoning)\nActions executed: \(actionSummary)"
             ])
@@ -170,24 +165,22 @@ extension OpenAIVisionBackend {
         }
         userText += "\nThis is the current screenshot. What actions should I take next?"
 
-        messages.append([
+        input.append([
             "role": "user",
             "content": [
                 [
-                    "type": "image_url",
-                    "image_url": [
-                        "url": "data:image/jpeg;base64,\(base64)",
-                        "detail": "low"
-                    ] as [String: Any]
+                    "type": "input_image",
+                    "image_url": "data:image/jpeg;base64,\(base64)",
+                    "detail": "low"
                 ] as [String: Any],
                 [
-                    "type": "text",
+                    "type": "input_text",
                     "text": userText
                 ] as [String: Any]
             ] as [[String: Any]]
         ] as [String: Any])
 
-        return messages
+        return input
     }
 
     private func describeBasicAction(_ action: BasicAction) -> String {
