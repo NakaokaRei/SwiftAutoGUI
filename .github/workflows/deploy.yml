@@ -25,7 +25,7 @@ jobs:
           transform-for-static-hosting ./DerivedData/Build/Products/Debug/SwiftAutoGUI.doccarchive \
           --hosting-base-path SwiftAutoGUI \
           --output-path ./docs
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
