@@ -136,6 +136,17 @@ extension OpenAIBackend {
         "returnKey", "space", "delete", "tab", "escape", "upArrow", "downArrow", "leftArrow", "rightArrow", \
         "f1"-"f20".
         - drag: Drag mouse from one position to another. Parameters: fromX, fromY, toX, toY (numbers)
+        - pressButton: Press a button by accessibility label (semantic, no coordinates needed). \
+        Parameters: label (string, e.g. "OK"), bundleID (string, empty = frontmost app, otherwise e.g. "com.apple.calculator")
+        - setTextField: Set a text field's value via accessibility. \
+        Parameters: label (string, may be empty for role-only match), value (string), bundleID (string, empty = frontmost)
+        - selectMenuItem: Select a menu item by hierarchical path. \
+        Parameters: path (array of strings, e.g. ["File", "Save As…"]), bundleID (string, empty = frontmost)
+        - raiseWindow: Bring a window to the front by title. \
+        Parameters: title (string), bundleID (string, empty = frontmost)
+
+        Prefer pressButton/setTextField/selectMenuItem/raiseWindow over coordinate-based actions \
+        when the user identifies a target by name — they are more reliable than guessing coordinates.
 
         Respond with a JSON object containing an "actions" array. Each action must have a "type" field \
         and the relevant parameters for that type. For parameters not relevant to the action type, \

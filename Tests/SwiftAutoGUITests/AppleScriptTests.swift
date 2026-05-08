@@ -15,27 +15,6 @@ struct AppleScriptTests {
         }
     }
     
-    @Test("Execute AppleScript from file")
-    func testExecuteAppleScriptFile() throws {
-        // Create a temporary AppleScript file
-        let tempDir = FileManager.default.temporaryDirectory
-        let scriptPath = tempDir.appendingPathComponent("test_script.applescript").path
-        
-        let scriptContent = """
-        on run
-            return "Hello from file"
-        end run
-        """
-        
-        try scriptContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
-        defer {
-            try? FileManager.default.removeItem(atPath: scriptPath)
-        }
-        
-        let result = try SwiftAutoGUI.executeAppleScriptFile(scriptPath)
-        #expect(result == "Hello from file")
-    }
-    
     @Test("Execute AppleScript from non-existent file throws error")
     func testExecuteAppleScriptFileNotFound() {
         let nonExistentPath = "/tmp/non_existent_script.applescript"

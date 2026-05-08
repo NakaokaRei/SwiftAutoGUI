@@ -133,6 +133,14 @@ class AgentDemoViewModel {
         case .keyShortcut(let keys): return "keyShortcut(\(keys.joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             return "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
+        case .pressButton(let label, let bundleID):
+            return "pressButton(\"\(label)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .setTextField(let label, let value, let bundleID):
+            return "setTextField(label:\"\(label)\", value:\"\(value)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .selectMenuItem(let path, let bundleID):
+            return "selectMenuItem(\(path.joined(separator: " > "))\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .raiseWindow(let title, let bundleID):
+            return "raiseWindow(\"\(title)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         }
     }
 }

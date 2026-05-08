@@ -122,6 +122,55 @@ struct ActionGeneratorTests {
             #expect(toX == 300)
             #expect(toY == 400)
         }
+
+        @Test("pressButton round-trip")
+        func pressButtonRoundTrip() throws {
+            let action = BasicAction.pressButton(label: "Save", bundleID: "com.apple.TextEdit")
+            let roundTripped = try roundTrip(action)
+            guard case .pressButton(let label, let bundleID) = roundTripped else {
+                Issue.record("Expected .pressButton, got \(roundTripped)")
+                return
+            }
+            #expect(label == "Save")
+            #expect(bundleID == "com.apple.TextEdit")
+        }
+
+        @Test("setTextField round-trip preserves empty label")
+        func setTextFieldRoundTrip() throws {
+            let action = BasicAction.setTextField(label: "", value: "hello", bundleID: "")
+            let roundTripped = try roundTrip(action)
+            guard case .setTextField(let label, let value, let bundleID) = roundTripped else {
+                Issue.record("Expected .setTextField, got \(roundTripped)")
+                return
+            }
+            #expect(label == "")
+            #expect(value == "hello")
+            #expect(bundleID == "")
+        }
+
+        @Test("selectMenuItem round-trip preserves path")
+        func selectMenuItemRoundTrip() throws {
+            let action = BasicAction.selectMenuItem(path: ["File", "Save As…"], bundleID: "com.apple.TextEdit")
+            let roundTripped = try roundTrip(action)
+            guard case .selectMenuItem(let path, let bundleID) = roundTripped else {
+                Issue.record("Expected .selectMenuItem, got \(roundTripped)")
+                return
+            }
+            #expect(path == ["File", "Save As…"])
+            #expect(bundleID == "com.apple.TextEdit")
+        }
+
+        @Test("raiseWindow round-trip")
+        func raiseWindowRoundTrip() throws {
+            let action = BasicAction.raiseWindow(title: "Untitled", bundleID: "")
+            let roundTripped = try roundTrip(action)
+            guard case .raiseWindow(let title, let bundleID) = roundTripped else {
+                Issue.record("Expected .raiseWindow, got \(roundTripped)")
+                return
+            }
+            #expect(title == "Untitled")
+            #expect(bundleID == "")
+        }
     }
 
     // MARK: - OpenAI JSON Response Parsing Tests
@@ -257,6 +306,36 @@ struct ActionGeneratorTests {
             }
             #expect(duration == 2.5)
         }
+
+        @Test("parse pressButton action")
+        func parsePressButton() throws {
+            let json = """
+            {"actions": [{"type": "pressButton", "label": "OK", "bundleID": "com.apple.calculator", "text": null, "x": null, "y": null, "clicks": null, "duration": null, "keys": null, "fromX": null, "fromY": null, "toX": null, "toY": null, "value": null, "path": null, "title": null}]}
+            """
+            let actions = try decodeActions(from: json)
+            #expect(actions.count == 1)
+            guard case .pressButton(let label, let bundleID) = actions[0] else {
+                Issue.record("Expected .pressButton")
+                return
+            }
+            #expect(label == "OK")
+            #expect(bundleID == "com.apple.calculator")
+        }
+
+        @Test("parse selectMenuItem action with array path")
+        func parseSelectMenuItem() throws {
+            let json = """
+            {"actions": [{"type": "selectMenuItem", "path": ["File", "Save As…"], "bundleID": "", "text": null, "x": null, "y": null, "clicks": null, "duration": null, "keys": null, "fromX": null, "fromY": null, "toX": null, "toY": null, "label": null, "value": null, "title": null}]}
+            """
+            let actions = try decodeActions(from: json)
+            #expect(actions.count == 1)
+            guard case .selectMenuItem(let path, let bundleID) = actions[0] else {
+                Issue.record("Expected .selectMenuItem")
+                return
+            }
+            #expect(path == ["File", "Save As…"])
+            #expect(bundleID == "")
+        }
     }
 
     // MARK: - BasicAction to Action Conversion Tests
@@ -307,6 +386,77 @@ struct ActionGeneratorTests {
                 return
             }
             #expect(duration == 0)
+        }
+
+        @Test("pressButton with bundleID maps to .bundleID scope")
+        func pressButtonWithBundleID() {
+            let basic = BasicAction.pressButton(label: "Save", bundleID: "com.apple.TextEdit")
+            let action = basic.toAction()
+            guard case .pressButton(let label, let app, let exact, let axOnly) = action else {
+                Issue.record("Expected Action.pressButton")
+                return
+            }
+            #expect(label == "Save")
+            #expect(exact == false)
+            #expect(axOnly == false)
+            guard case .bundleID(let id) = app else {
+                Issue.record("Expected .bundleID scope, got \(app)")
+                return
+            }
+            #expect(id == "com.apple.TextEdit")
+        }
+
+        @Test("pressButton with empty bundleID maps to .frontmost")
+        func pressButtonFrontmost() {
+            let basic = BasicAction.pressButton(label: "OK", bundleID: "")
+            let action = basic.toAction()
+            guard case .pressButton(_, let app, _, _) = action else {
+                Issue.record("Expected Action.pressButton")
+                return
+            }
+            guard case .frontmost = app else {
+                Issue.record("Expected .frontmost scope, got \(app)")
+                return
+            }
+        }
+
+        @Test("setTextField with empty label converts to nil")
+        func setTextFieldEmptyLabel() {
+            let basic = BasicAction.setTextField(label: "", value: "hello", bundleID: "")
+            let action = basic.toAction()
+            guard case .setTextField(let label, _, let value, _, _) = action else {
+                Issue.record("Expected Action.setTextField")
+                return
+            }
+            #expect(label == nil)
+            #expect(value == "hello")
+        }
+
+        @Test("selectMenuItem preserves path and scope")
+        func selectMenuItemConversion() {
+            let basic = BasicAction.selectMenuItem(path: ["File", "New"], bundleID: "com.apple.TextEdit")
+            let action = basic.toAction()
+            guard case .selectMenuItem(let path, let app, _) = action else {
+                Issue.record("Expected Action.selectMenuItem")
+                return
+            }
+            #expect(path == ["File", "New"])
+            guard case .bundleID(let id) = app else {
+                Issue.record("Expected .bundleID")
+                return
+            }
+            #expect(id == "com.apple.TextEdit")
+        }
+
+        @Test("raiseWindow preserves title")
+        func raiseWindowConversion() {
+            let basic = BasicAction.raiseWindow(title: "Untitled", bundleID: "")
+            let action = basic.toAction()
+            guard case .raiseWindow(let title, _, _) = action else {
+                Issue.record("Expected Action.raiseWindow")
+                return
+            }
+            #expect(title == "Untitled")
         }
     }
 

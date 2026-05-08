@@ -213,8 +213,25 @@ public enum Action {
     /// Show a password dialog.
     case password(String, title: String = "Password", defaultAnswer: String = "", button: String = "OK")
     
+    // MARK: - Accessibility (AX)
+
+    /// Press a button by label via the macOS accessibility API.
+    /// Falls back to a CGEvent click at the element's frame center unless
+    /// `axOnly` is true.
+    case pressButton(label: String, app: AXAppScope = .frontmost, exact: Bool = false, axOnly: Bool = false)
+
+    /// Set the value of a text field or text area by label and/or role.
+    /// Defaults to `AXTextField`; pass `role: "AXTextArea"` for multi-line.
+    case setTextField(label: String? = nil, role: String = "AXTextField", value: String, app: AXAppScope = .frontmost, exact: Bool = false)
+
+    /// Select a menu item by hierarchical path, e.g. `["File", "Save As…"]`.
+    case selectMenuItem(path: [String], app: AXAppScope = .frontmost, exact: Bool = false)
+
+    /// Bring a window to the front by title.
+    case raiseWindow(title: String, app: AXAppScope = .frontmost, exact: Bool = false)
+
     // MARK: - AppleScript
-    
+
     /// Execute an AppleScript.
     case executeAppleScript(String)
     
@@ -353,6 +370,18 @@ public enum Action {
         case .password(let text, let title, let defaultAnswer, _):
             return SwiftAutoGUI.password(text, title: title, default: defaultAnswer)
             
+        case .pressButton(let label, let app, let exact, let axOnly):
+            return await SwiftAutoGUI.pressButton(label: label, app: app, exact: exact, axOnly: axOnly)
+
+        case .setTextField(let label, let role, let value, let app, let exact):
+            return SwiftAutoGUI.setTextField(label: label, role: role, value: value, app: app, exact: exact)
+
+        case .selectMenuItem(let path, let app, let exact):
+            return SwiftAutoGUI.selectMenuItem(path: path, app: app, exact: exact)
+
+        case .raiseWindow(let title, let app, let exact):
+            return SwiftAutoGUI.raiseWindow(title: title, app: app, exact: exact)
+
         case .executeAppleScript(let script):
             do {
                 return try SwiftAutoGUI.executeAppleScript(script)

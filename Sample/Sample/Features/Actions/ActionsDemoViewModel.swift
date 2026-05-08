@@ -184,6 +184,14 @@ class ActionsDemoViewModel {
             return "Execute AppleScript: \(script.prefix(30))..."
         case .executeAppleScriptFile(let path):
             return "Execute AppleScript file: \(path)"
+        case .pressButton(let label, _, _, _):
+            return "AX press button: \"\(label)\""
+        case .setTextField(let label, _, let value, _, _):
+            return "AX set text field \(label.map { "\"\($0)\"" } ?? "(role)") = \"\(value)\""
+        case .selectMenuItem(let path, _, _):
+            return "AX select menu: \(path.joined(separator: " > "))"
+        case .raiseWindow(let title, _, _):
+            return "AX raise window: \"\(title)\""
         case .wait(let interval):
             return "Wait \(interval)s"
         case .sequence(let actions):
