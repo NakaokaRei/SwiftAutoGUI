@@ -197,6 +197,14 @@ class AIGenerationDemoViewModel {
             return "Execute AppleScript: \(script.prefix(30))..."
         case .executeAppleScriptFile(let path):
             return "Execute AppleScript file: \(path)"
+        case .pressButton(let label, _, _, _):
+            return "Press button: \"\(label)\""
+        case .setTextField(let label, _, let value, _, _):
+            return "Set text field \(label.map { "\"\($0)\"" } ?? "(role)") = \"\(value)\""
+        case .selectMenuItem(let path, _, _):
+            return "Select menu item: \(path.joined(separator: " > "))"
+        case .raiseWindow(let title, _, _):
+            return "Raise window: \"\(title)\""
         case .wait(let duration):
             return "Wait \(duration)s"
         case .sequence(let actions):
