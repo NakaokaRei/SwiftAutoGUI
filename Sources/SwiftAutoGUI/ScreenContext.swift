@@ -270,6 +270,7 @@ extension ScreenContextProvider {
 
 extension ScreenContextProvider {
 
+    @MainActor
     private static func gatherAXTree(pid: Int32, options: Options, nodeCount: inout Int) -> AXNode? {
         let appElement = AXUIElementCreateApplication(pid)
 
@@ -290,6 +291,7 @@ extension ScreenContextProvider {
         return buildAXNode(from: axWindow, options: options, depth: 0, nodeCount: &nodeCount)
     }
 
+    @MainActor
     private static func buildAXNode(
         from element: AXUIElement,
         options: Options,
@@ -313,19 +315,13 @@ extension ScreenContextProvider {
             }
         }
 
-        let frame = axFrame(element)
+        let frame = CodableRect(axFrame(element) ?? .zero)
         let isEnabled = axBoolAttribute(element, kAXEnabledAttribute) ?? true
 
         // Get children if within depth limit
         let children: [AXNode]?
         if depth < options.maxDepth {
-            var childrenRef: CFTypeRef?
-            let result = AXUIElementCopyAttributeValue(
-                element,
-                kAXChildrenAttribute as CFString,
-                &childrenRef
-            )
-            if result == .success, let childArray = childrenRef as? [AXUIElement] {
+            if let childArray = axChildren(element) {
                 children = childArray.compactMap { child in
                     buildAXNode(from: child, options: options, depth: depth + 1, nodeCount: &nodeCount)
                 }
@@ -333,15 +329,9 @@ extension ScreenContextProvider {
                 children = []
             }
         } else {
-            // Check if there are children we're not traversing
-            var childCount: CFTypeRef?
-            let result = AXUIElementCopyAttributeValue(
-                element,
-                kAXChildrenAttribute as CFString,
-                &childCount
-            )
-            if result == .success, let arr = childCount as? [AnyObject], !arr.isEmpty {
-                children = nil // nil signals pruned subtree
+            // Pruned subtree: nil if children exist but were skipped, [] otherwise.
+            if let arr = axChildren(element), !arr.isEmpty {
+                children = nil
             } else {
                 children = []
             }
@@ -354,51 +344,6 @@ extension ScreenContextProvider {
             frame: frame,
             isEnabled: isEnabled,
             children: children
-        )
-    }
-
-    // MARK: AX Attribute Helpers
-
-    private static func axStringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
-        var value: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
-        guard result == .success else { return nil }
-        return value as? String
-    }
-
-    private static func axBoolAttribute(_ element: AXUIElement, _ attribute: String) -> Bool? {
-        var value: CFTypeRef?
-        let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
-        guard result == .success else { return nil }
-        return (value as? NSNumber)?.boolValue
-    }
-
-    private static func axFrame(_ element: AXUIElement) -> CodableRect {
-        var positionRef: CFTypeRef?
-        var sizeRef: CFTypeRef?
-
-        AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &positionRef)
-        AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeRef)
-
-        var position = CGPoint.zero
-        var size = CGSize.zero
-
-        if let positionRef = positionRef {
-            // AXValue contains a CGPoint
-            let axValue = positionRef as! AXValue
-            AXValueGetValue(axValue, .cgPoint, &position)
-        }
-
-        if let sizeRef = sizeRef {
-            let axValue = sizeRef as! AXValue
-            AXValueGetValue(axValue, .cgSize, &size)
-        }
-
-        return CodableRect(
-            x: Double(position.x),
-            y: Double(position.y),
-            width: Double(size.width),
-            height: Double(size.height)
         )
     }
 }

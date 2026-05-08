@@ -1306,4 +1306,146 @@ public class SwiftAutoGUI {
                             mouseCursorPosition: position, mouseButton: CGMouseButton.right)
         event?.post(tap: CGEventTapLocation.cghidEventTap)
     }
+
+    // MARK: - Accessibility (AX)
+
+    /// Presses a button by its label using the macOS accessibility API.
+    ///
+    /// Searches the AX tree of `app` (default: frontmost application) for a
+    /// button whose label matches `label`. Matching is case-insensitive
+    /// substring by default — pass `exact: true` for strict equality.
+    ///
+    /// If the AX press fails or is unsupported (common in Electron apps), this
+    /// falls back to a CGEvent click at the element's frame center. Pass
+    /// `axOnly: true` to skip the fallback and report failure instead.
+    ///
+    /// - Returns: `true` if the press (or fallback click) succeeded.
+    @MainActor
+    @discardableResult
+    public static func pressButton(
+        label: String,
+        app: AXAppScope = .frontmost,
+        exact: Bool = false,
+        axOnly: Bool = false
+    ) async -> Bool {
+        guard let element = AXSearch.findElement(
+            role: "AXButton", label: label, exact: exact, scope: app
+        ) else {
+            return false
+        }
+        return await invokePressOrFallback(element, axOnly: axOnly)
+    }
+
+    /// Sets the value of a text field or text area via the accessibility API.
+    ///
+    /// At least one of `label` or `role` must narrow the search. Defaults to
+    /// `role: "AXTextField"`; use `role: "AXTextArea"` for multi-line fields.
+    ///
+    /// - Returns: `true` if the value was set.
+    @MainActor
+    @discardableResult
+    public static func setTextField(
+        label: String? = nil,
+        role: String = "AXTextField",
+        value: String,
+        app: AXAppScope = .frontmost,
+        exact: Bool = false
+    ) -> Bool {
+        let options = AXMatchOptions(
+            labelMatch: label.map { exact ? .exact($0) : .containsCaseInsensitive($0) }
+        )
+        guard let element = AXSearch.findElement(role: role, options: options, scope: app) else {
+            return false
+        }
+        return AXAction.setValue(element, value: value)
+    }
+
+    /// Selects a menu item by hierarchical path, e.g. `["File", "Save As…"]`.
+    ///
+    /// - Returns: `true` if the menu item was found and the press succeeded.
+    @MainActor
+    @discardableResult
+    public static func selectMenuItem(
+        path: [String],
+        app: AXAppScope = .frontmost,
+        exact: Bool = false
+    ) -> Bool {
+        guard let item = AXSearch.findMenuItem(path: path, exact: exact, scope: app) else {
+            return false
+        }
+        // Try kAXPickAction first (correct for menu items); fall back to press.
+        if AXAction.availableActions(of: item).contains(kAXPickAction) {
+            if AXAction.pick(item) { return true }
+        }
+        return AXAction.press(item)
+    }
+
+    /// Brings a window to the front by title.
+    ///
+    /// - Returns: `true` if the raise succeeded.
+    @MainActor
+    @discardableResult
+    public static func raiseWindow(
+        title: String,
+        app: AXAppScope = .frontmost,
+        exact: Bool = false
+    ) -> Bool {
+        guard let window = AXSearch.findWindow(title: title, exact: exact, scope: app) else {
+            return false
+        }
+        return AXAction.raise(window)
+    }
+
+    /// Returns whether a matching element is enabled. `false` if no match was
+    /// found.
+    @MainActor
+    public static func isEnabled(
+        role: String,
+        label: String,
+        app: AXAppScope = .frontmost,
+        exact: Bool = false
+    ) -> Bool {
+        guard let element = AXSearch.findElement(
+            role: role, label: label, exact: exact, scope: app
+        ) else {
+            return false
+        }
+        return AXAction.isEnabled(element)
+    }
+
+    /// Returns the current value of a matching element, or nil if no match.
+    @MainActor
+    public static func getValue(
+        role: String,
+        label: String,
+        app: AXAppScope = .frontmost,
+        exact: Bool = false
+    ) -> String? {
+        guard let element = AXSearch.findElement(
+            role: role, label: label, exact: exact, scope: app
+        ) else {
+            return nil
+        }
+        return AXAction.value(of: element)
+    }
+
+    /// Tries `kAXPressAction`; on failure (or when the element doesn't
+    /// advertise press), falls back to a CGEvent click at the element's frame
+    /// center unless `axOnly` is true.
+    @MainActor
+    private static func invokePressOrFallback(
+        _ element: AXUIElement,
+        axOnly: Bool
+    ) async -> Bool {
+        let actions = AXAction.availableActions(of: element)
+        if actions.contains(kAXPressAction), AXAction.press(element) {
+            return true
+        }
+        if axOnly { return false }
+        guard let frame = AXAction.frame(of: element) else { return false }
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        await SwiftAutoGUI.move(to: center, duration: 0)
+        SwiftAutoGUI.leftClick()
+        return true
+    }
 }
