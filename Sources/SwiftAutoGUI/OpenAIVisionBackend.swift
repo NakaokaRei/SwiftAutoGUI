@@ -196,6 +196,14 @@ extension OpenAIVisionBackend {
         case .keyShortcut(let keys): return "keyShortcut(\(keys.joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             return "drag(\(Int(fromX)),\(Int(fromY)) -> \(Int(toX)),\(Int(toY)))"
+        case .pressButton(let label, let bundleID):
+            return "pressButton(\"\(label)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .setTextField(let label, let value, let bundleID):
+            return "setTextField(label:\"\(label)\", value:\"\(value)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .selectMenuItem(let path, let bundleID):
+            return "selectMenuItem(\(path.joined(separator: " > "))\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .raiseWindow(let title, let bundleID):
+            return "raiseWindow(\"\(title)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         }
     }
 }
@@ -224,6 +232,17 @@ extension OpenAIVisionBackend {
         "returnKey", "space", "delete", "tab", "escape", "upArrow", "downArrow", "leftArrow", "rightArrow", \
         "f1"-"f20".
         - drag: Drag mouse from one position to another. Parameters: fromX, fromY, toX, toY (numbers)
+        - pressButton: Press a button by accessibility label (semantic, no coordinates needed). \
+        Parameters: label (string, e.g. "OK"), bundleID (string, empty = frontmost app, otherwise e.g. "com.apple.calculator")
+        - setTextField: Set a text field's value via accessibility. \
+        Parameters: label (string, may be empty for role-only match), value (string), bundleID (string, empty = frontmost)
+        - selectMenuItem: Select a menu item by hierarchical path. \
+        Parameters: path (array of strings, e.g. ["File", "Save As…"]), bundleID (string, empty = frontmost)
+        - raiseWindow: Bring a window to the front by title. \
+        Parameters: title (string), bundleID (string, empty = frontmost)
+
+        Prefer the AX-based actions (pressButton, setTextField, selectMenuItem, raiseWindow) when the \
+        accessibility tree provides labels. They are more reliable than coordinate-based clicks.
 
         Instructions:
         1. Analyze the screenshot to understand the current screen state.
@@ -300,6 +319,23 @@ extension OpenAIVisionBackend {
             let toX = (dict["toX"] as? NSNumber)?.doubleValue ?? 0
             let toY = (dict["toY"] as? NSNumber)?.doubleValue ?? 0
             return .drag(fromX: fromX, fromY: fromY, toX: toX, toY: toY)
+        case "pressButton":
+            let label = dict["label"] as? String ?? ""
+            let bundleID = dict["bundleID"] as? String ?? ""
+            return .pressButton(label: label, bundleID: bundleID)
+        case "setTextField":
+            let label = dict["label"] as? String ?? ""
+            let value = dict["value"] as? String ?? ""
+            let bundleID = dict["bundleID"] as? String ?? ""
+            return .setTextField(label: label, value: value, bundleID: bundleID)
+        case "selectMenuItem":
+            let path = dict["path"] as? [String] ?? []
+            let bundleID = dict["bundleID"] as? String ?? ""
+            return .selectMenuItem(path: path, bundleID: bundleID)
+        case "raiseWindow":
+            let title = dict["title"] as? String ?? ""
+            let bundleID = dict["bundleID"] as? String ?? ""
+            return .raiseWindow(title: title, bundleID: bundleID)
         default:
             return nil
         }
@@ -382,7 +418,8 @@ extension OpenAIVisionBackend {
                 "type": "string",
                 "description": "The action type.",
                 "enum": ["write", "move", "leftClick", "rightClick", "doubleClick",
-                         "vscroll", "hscroll", "wait", "keyShortcut", "drag"]
+                         "vscroll", "hscroll", "wait", "keyShortcut", "drag",
+                         "pressButton", "setTextField", "selectMenuItem", "raiseWindow"]
             ] as [String: Any],
             "text": ["type": ["string", "null"], "description": "Text to type. Used with 'write' action."] as [String: Any],
             "x": ["type": ["number", "null"], "description": "X coordinate. Used with 'move' action."] as [String: Any],
@@ -394,8 +431,15 @@ extension OpenAIVisionBackend {
             "fromY": ["type": ["number", "null"], "description": "Start Y. Used with 'drag'."] as [String: Any],
             "toX": ["type": ["number", "null"], "description": "End X. Used with 'drag'."] as [String: Any],
             "toY": ["type": ["number", "null"], "description": "End Y. Used with 'drag'."] as [String: Any],
+            "label": ["type": ["string", "null"], "description": "Accessibility label. Used with 'pressButton' and 'setTextField'."] as [String: Any],
+            "value": ["type": ["string", "null"], "description": "New value. Used with 'setTextField'."] as [String: Any],
+            "path": ["type": ["array", "null"], "description": "Menu path components, e.g. [\"File\", \"Save As…\"]. Used with 'selectMenuItem'.", "items": ["type": "string"]] as [String: Any],
+            "title": ["type": ["string", "null"], "description": "Window title. Used with 'raiseWindow'."] as [String: Any],
+            "bundleID": ["type": ["string", "null"], "description": "Bundle identifier of the target app, or empty/null for frontmost. Used with all AX actions."] as [String: Any],
         ] as [String: Any],
-        "required": ["type", "text", "x", "y", "clicks", "duration", "keys", "fromX", "fromY", "toX", "toY"],
+        "required": ["type", "text", "x", "y", "clicks", "duration", "keys",
+                     "fromX", "fromY", "toX", "toY",
+                     "label", "value", "path", "title", "bundleID"],
         "additionalProperties": false
     ] as [String: Any]
 

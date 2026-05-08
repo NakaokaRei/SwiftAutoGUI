@@ -45,6 +45,20 @@ public enum BasicAction: Sendable, Codable {
     /// Drag mouse from one position to another.
     case drag(fromX: Double, fromY: Double, toX: Double, toY: Double)
 
+    /// Press a button by accessibility label. `bundleID` is empty to target the
+    /// frontmost app; otherwise pass a value like "com.apple.calculator".
+    case pressButton(label: String, bundleID: String)
+
+    /// Set a text field's value via the accessibility API.
+    /// `label` may be empty to match by role only. `bundleID` empty = frontmost.
+    case setTextField(label: String, value: String, bundleID: String)
+
+    /// Select a menu item by hierarchical path, e.g. `["File", "Save As…"]`.
+    case selectMenuItem(path: [String], bundleID: String)
+
+    /// Bring a window to the front by title.
+    case raiseWindow(title: String, bundleID: String)
+
     /// Convert to an executable ``Action``.
     public func toAction() -> Action {
         switch self {
@@ -70,7 +84,23 @@ public enum BasicAction: Sendable, Codable {
             return .keyShortcut(mapped)
         case .drag(let fromX, let fromY, let toX, let toY):
             return .drag(from: CGPoint(x: fromX, y: fromY), to: CGPoint(x: toX, y: toY))
+        case .pressButton(let label, let bundleID):
+            return .pressButton(label: label, app: scope(bundleID))
+        case .setTextField(let label, let value, let bundleID):
+            return .setTextField(
+                label: label.isEmpty ? nil : label,
+                value: value,
+                app: scope(bundleID)
+            )
+        case .selectMenuItem(let path, let bundleID):
+            return .selectMenuItem(path: path, app: scope(bundleID))
+        case .raiseWindow(let title, let bundleID):
+            return .raiseWindow(title: title, app: scope(bundleID))
         }
+    }
+
+    private func scope(_ bundleID: String) -> AXAppScope {
+        bundleID.isEmpty ? .frontmost : .bundleID(bundleID)
     }
 
     // MARK: - Tagged Union Codable
@@ -79,11 +109,13 @@ public enum BasicAction: Sendable, Codable {
         case type
         case text, x, y, clicks, duration, keys
         case fromX, fromY, toX, toY
+        case label, value, path, title, bundleID
     }
 
     private enum ActionType: String, Codable {
         case write, move, leftClick, rightClick, doubleClick
         case vscroll, hscroll, wait, keyShortcut, drag
+        case pressButton, setTextField, selectMenuItem, raiseWindow
     }
 
     public init(from decoder: Decoder) throws {
@@ -122,6 +154,23 @@ public enum BasicAction: Sendable, Codable {
             let toX = try container.decodeIfPresent(Double.self, forKey: .toX) ?? 0
             let toY = try container.decodeIfPresent(Double.self, forKey: .toY) ?? 0
             self = .drag(fromX: fromX, fromY: fromY, toX: toX, toY: toY)
+        case .pressButton:
+            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+            let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
+            self = .pressButton(label: label, bundleID: bundleID)
+        case .setTextField:
+            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
+            self = .setTextField(label: label, value: value, bundleID: bundleID)
+        case .selectMenuItem:
+            let path = try container.decodeIfPresent([String].self, forKey: .path) ?? []
+            let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
+            self = .selectMenuItem(path: path, bundleID: bundleID)
+        case .raiseWindow:
+            let title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+            let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
+            self = .raiseWindow(title: title, bundleID: bundleID)
         }
     }
 
@@ -160,6 +209,23 @@ public enum BasicAction: Sendable, Codable {
             try container.encode(fromY, forKey: .fromY)
             try container.encode(toX, forKey: .toX)
             try container.encode(toY, forKey: .toY)
+        case .pressButton(let label, let bundleID):
+            try container.encode(ActionType.pressButton, forKey: .type)
+            try container.encode(label, forKey: .label)
+            try container.encode(bundleID, forKey: .bundleID)
+        case .setTextField(let label, let value, let bundleID):
+            try container.encode(ActionType.setTextField, forKey: .type)
+            try container.encode(label, forKey: .label)
+            try container.encode(value, forKey: .value)
+            try container.encode(bundleID, forKey: .bundleID)
+        case .selectMenuItem(let path, let bundleID):
+            try container.encode(ActionType.selectMenuItem, forKey: .type)
+            try container.encode(path, forKey: .path)
+            try container.encode(bundleID, forKey: .bundleID)
+        case .raiseWindow(let title, let bundleID):
+            try container.encode(ActionType.raiseWindow, forKey: .type)
+            try container.encode(title, forKey: .title)
+            try container.encode(bundleID, forKey: .bundleID)
         }
     }
 }
