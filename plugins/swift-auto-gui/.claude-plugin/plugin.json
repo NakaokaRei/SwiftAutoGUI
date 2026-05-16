@@ -1,7 +1,7 @@
 {
   "name": "swift-auto-gui",
   "description": "Control macOS GUI applications via mouse, keyboard, screenshots, image recognition, and AppleScript using the sagui CLI.",
-  "version": "0.1.0",
+  "version": "0.21.0",
   "author": {
     "name": "NakaokaRei"
   },

@@ -74,3 +74,12 @@ Three subcommands: `KeyCommand`, `MouseCommand`, `ScreenCommand`, each in their 
 ## CI
 
 GitHub Actions workflow (`build.yml`) runs on `macos-26` with four parallel jobs: build, test, docs (xcodebuild docbuild), and sample app build. PRs get automated test result comments.
+
+## Releases
+
+When tagging a new SwiftAutoGUI version (e.g. `0.22.0`):
+
+1. Bump `plugins/swift-auto-gui/.claude-plugin/plugin.json` `version` to match the new git tag.
+2. Then create the git tag.
+
+The Claude Code plugin version is intentionally kept in sync with the library tag — if `plugin.json` `version` doesn't change between releases, existing marketplace users won't receive plugin updates (Claude Code caches by version string).
