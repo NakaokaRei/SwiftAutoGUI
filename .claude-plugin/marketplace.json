@@ -1,0 +1,19 @@
+{
+  "name": "swift-auto-gui",
+  "owner": {
+    "name": "NakaokaRei"
+  },
+  "description": "SwiftAutoGUI macOS automation plugin for Claude Code.",
+  "plugins": [
+    {
+      "name": "swift-auto-gui",
+      "source": "./plugins/swift-auto-gui",
+      "description": "Control macOS GUI applications via mouse, keyboard, screenshots, image recognition, and AppleScript using the sagui CLI.",
+      "homepage": "https://github.com/NakaokaRei/SwiftAutoGUI",
+      "repository": "https://github.com/NakaokaRei/SwiftAutoGUI",
+      "license": "MIT",
+      "keywords": ["macos", "automation", "gui", "mouse", "keyboard", "screenshot"],
+      "category": "automation"
+    }
+  ]
+}

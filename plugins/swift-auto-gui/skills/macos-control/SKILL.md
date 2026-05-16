@@ -1,5 +1,5 @@
 ---
-name: swift-auto-gui
+name: macos-control
 description: >
   Control macOS GUI applications via mouse automation, keyboard input, screenshots,
   image recognition, and AppleScript execution. Use when you need to interact with
@@ -7,14 +7,45 @@ description: >
   images on screen.
 ---
 
-# swift-auto-gui
+# macos-control
 
 The `sagui` CLI provides mouse control, keyboard input, screenshot capture, image recognition, and screen queries for macOS automation.
 
-## Prerequisites
+## Preflight: ensure `sagui` is installed
 
-- **Accessibility**: Required for mouse and keyboard commands. Enable in System Settings > Privacy & Security > Accessibility.
-- **Screen Recording**: Required for screenshot and image recognition commands. Enable in System Settings > Privacy & Security > Screen Recording.
+Before issuing any `sagui` command, run:
+
+```bash
+command -v sagui
+```
+
+If the command prints a path, you're ready — continue to the sections below.
+
+If it prints nothing (exit code 1), `sagui` is not installed. **Stop and ask the user for permission to install it** before doing anything else. Show them these steps and wait for confirmation:
+
+```bash
+# Prerequisite: Xcode / Swift 6.2+ toolchain (`swift --version` to verify)
+git clone https://github.com/NakaokaRei/SwiftAutoGUI.git /tmp/SwiftAutoGUI
+cd /tmp/SwiftAutoGUI
+swift build -c release
+# Copy the binary somewhere on $PATH. /usr/local/bin requires sudo:
+sudo cp .build/release/sagui /usr/local/bin/sagui
+# Or, no sudo, into a user dir already on PATH:
+# cp .build/release/sagui ~/.local/bin/sagui
+```
+
+After install, re-run `command -v sagui` to confirm the binary is reachable, then continue.
+
+## Permissions
+
+The first time `sagui` issues an event or screenshot, macOS will prompt for these permissions. Without them, commands silently fail or return blank screenshots.
+
+- **Accessibility** — required for `sagui key` and `sagui mouse`. Enable in System Settings → Privacy & Security → Accessibility for the app running Claude Code (Terminal.app, iTerm, etc.).
+- **Screen Recording** — required for `sagui screen screenshot`, `sagui screen pixel`, and `sagui screen locate*`. Enable in System Settings → Privacy & Security → Screen Recording for the same app.
+
+If a command unexpectedly fails or returns empty output, ask the user to verify both permissions are granted to their terminal app.
+
+This skill is **macOS-only** — `sagui` builds on CoreGraphics. On other platforms, tell the user the skill cannot run and stop.
 
 ## Coordinates
 

@@ -279,19 +279,29 @@ SwiftAutoGUI.resetLayoutToAutoDetect()
 let key = Key.from(character: "@", layout: .jis)  // .leftBracket
 ```
 
-# Claude Code Skill
+# Claude Code Plugin
 
-SwiftAutoGUI provides a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that enables Claude to control macOS GUI applications via the `sagui` CLI.
+SwiftAutoGUI ships as a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin so Claude can control macOS GUI applications via the `sagui` CLI — taking screenshots, clicking buttons, typing text, scrolling, and more.
 
-## Setup
+## Install from the marketplace
 
-1. Clone this repository or add it as a dependency
-2. Copy the `.claude/skills/swift-auto-gui/` directory into your project's `.claude/skills/` directory
-3. Grant Accessibility and Screen Recording permissions to the application running Claude Code (e.g., Terminal.app)
+Inside Claude Code:
 
-Claude Code will automatically discover the skill and use it when you ask it to interact with macOS applications — taking screenshots, clicking buttons, typing text, scrolling, and more.
+```text
+/plugin marketplace add NakaokaRei/SwiftAutoGUI
+/plugin install swift-auto-gui@swift-auto-gui
+```
 
-For details, see [`.claude/skills/swift-auto-gui/SKILL.md`](.claude/skills/swift-auto-gui/SKILL.md).
+This installs the `macos-control` skill, which is invoked as `/swift-auto-gui:macos-control`. The skill walks Claude through installing the `sagui` binary the first time it's needed (Swift 6.2+ toolchain required).
+
+## Permissions
+
+Grant the application running Claude Code (Terminal.app, iTerm, etc.) both:
+
+- **Accessibility** — System Settings → Privacy & Security → Accessibility
+- **Screen Recording** — System Settings → Privacy & Security → Screen Recording
+
+For full skill details, see [`plugins/swift-auto-gui/skills/macos-control/SKILL.md`](plugins/swift-auto-gui/skills/macos-control/SKILL.md).
 
 # Contributors
 
