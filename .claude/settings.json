@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "swift-concurrency@swift-concurrency-agent-skill": true
+  },
+  "extraKnownMarketplaces": {
+    "swift-concurrency-agent-skill": {
+      "source": {
+        "source": "github",
+        "repo": "AvdLee/Swift-Concurrency-Agent-Skill"
+      }
+    }
+  }
+}
