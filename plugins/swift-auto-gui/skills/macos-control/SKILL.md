@@ -21,10 +21,17 @@ command -v sagui
 
 If the command prints a path, you're ready — continue to the sections below.
 
-If it prints nothing (exit code 1), `sagui` is not installed. **Stop and ask the user for permission to install it** before doing anything else. Show them these steps and wait for confirmation:
+If it prints nothing (exit code 1), `sagui` is not installed. **Stop and ask the user for permission to install it** before doing anything else. Show them these options and wait for confirmation:
+
+**Recommended — Homebrew:**
 
 ```bash
-# Prerequisite: Xcode / Swift 6.2+ toolchain (`swift --version` to verify)
+brew install NakaokaRei/tap/sagui
+```
+
+**Fallback — build from source** (requires Xcode / Swift 6.2+ toolchain; verify with `swift --version`):
+
+```bash
 git clone https://github.com/NakaokaRei/SwiftAutoGUI.git /tmp/SwiftAutoGUI
 cd /tmp/SwiftAutoGUI
 swift build -c release

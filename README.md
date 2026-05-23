@@ -48,6 +48,17 @@ targets: [
 ]
 ```
 
+## Homebrew (sagui CLI)
+
+The `sagui` command-line tool is available via the [Homebrew tap](https://github.com/NakaokaRei/homebrew-tap):
+
+```bash
+brew install NakaokaRei/tap/sagui
+```
+
+After install, grant **Accessibility** permission to your terminal in
+System Settings → Privacy & Security → Accessibility.
+
 
 # Example Usage
 
