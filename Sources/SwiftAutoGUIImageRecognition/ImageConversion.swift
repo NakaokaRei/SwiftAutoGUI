@@ -4,7 +4,7 @@ import Foundation
 struct GrayscaleImage {
     let width: Int
     let height: Int
-    let pixels: [Float]
+    let pixels: [UInt8]
 
     init(cgImage: CGImage) throws {
         let imageWidth = cgImage.width
@@ -39,6 +39,6 @@ struct GrayscaleImage {
             throw TemplateMatcherError.imageConversionFailed
         }
 
-        pixels = bytes.map { Float($0) / 255 }
+        pixels = bytes
     }
 }

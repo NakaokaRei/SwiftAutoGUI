@@ -51,6 +51,76 @@ struct TemplateMatcherTests {
         #expect(matches.contains { $0.x == 5 && $0.y == 4 })
     }
 
+    @Test("Single match returns the top-left result when scores are equal")
+    func singleMatchTieBreaksByPosition() throws {
+        let template = [
+            UInt8(0), 40,
+            180, 255,
+        ]
+        var haystack = [UInt8](repeating: 90, count: 8 * 4)
+        insert(
+            template,
+            width: 2,
+            height: 2,
+            into: &haystack,
+            haystackWidth: 8,
+            x: 1,
+            y: 1
+        )
+        insert(
+            template,
+            width: 2,
+            height: 2,
+            into: &haystack,
+            haystackWidth: 8,
+            x: 5,
+            y: 1
+        )
+
+        let matches = try makeMatcher().match(
+            needle: makeImage(width: 2, height: 2, pixels: template),
+            in: makeImage(width: 8, height: 4, pixels: haystack),
+            threshold: 0.999,
+            findAll: false
+        )
+
+        #expect(matches.first?.x == 1)
+        #expect(matches.first?.y == 1)
+    }
+
+    @Test("Finds a match with a template larger than the tiled-kernel limit")
+    func largeTemplateMatch() throws {
+        let templateWidth = 65
+        let templateHeight = 65
+        let template = (0..<(templateWidth * templateHeight)).map {
+            UInt8(truncatingIfNeeded: $0 &* 31)
+        }
+        var haystack = [UInt8](repeating: 17, count: 70 * 70)
+        insert(
+            template,
+            width: templateWidth,
+            height: templateHeight,
+            into: &haystack,
+            haystackWidth: 70,
+            x: 3,
+            y: 2
+        )
+
+        let matches = try makeMatcher().match(
+            needle: makeImage(
+                width: templateWidth,
+                height: templateHeight,
+                pixels: template
+            ),
+            in: makeImage(width: 70, height: 70, pixels: haystack),
+            threshold: 0.999,
+            findAll: false
+        )
+
+        #expect(matches.first?.x == 3)
+        #expect(matches.first?.y == 2)
+    }
+
     @Test("Rejects images below the threshold")
     func noMatch() throws {
         let template = [

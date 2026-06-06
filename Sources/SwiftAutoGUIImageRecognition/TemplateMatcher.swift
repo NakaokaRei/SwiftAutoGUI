@@ -51,6 +51,7 @@ package final class TemplateMatcher: @unchecked Sendable {
     private let device: any MTLDevice
     private let commandQueue: any MTLCommandQueue
     private let pipeline: any MTLComputePipelineState
+    private let tiledPipeline: any MTLComputePipelineState
 
     package init() throws {
         guard let device = MTLCreateSystemDefaultDevice() else {
@@ -71,10 +72,16 @@ package final class TemplateMatcher: @unchecked Sendable {
         guard let function = library.makeFunction(name: "normalizedCrossCorrelation") else {
             throw TemplateMatcherError.shaderFunctionMissing
         }
+        guard let tiledFunction = library.makeFunction(
+            name: "tiledNormalizedCrossCorrelation"
+        ) else {
+            throw TemplateMatcherError.shaderFunctionMissing
+        }
 
         self.device = device
         self.commandQueue = commandQueue
         self.pipeline = try device.makeComputePipelineState(function: function)
+        self.tiledPipeline = try device.makeComputePipelineState(function: tiledFunction)
     }
 
     package func match(
@@ -102,10 +109,10 @@ package final class TemplateMatcher: @unchecked Sendable {
 
         guard let haystackBuffer = device.makeBuffer(
             bytes: haystackPixels.pixels,
-            length: haystackPixels.pixels.count * MemoryLayout<Float>.stride
+            length: haystackPixels.pixels.count
         ), let needleBuffer = device.makeBuffer(
             bytes: needlePixels.pixels,
-            length: needlePixels.pixels.count * MemoryLayout<Float>.stride
+            length: needlePixels.pixels.count
         ), let scoreBuffer = device.makeBuffer(
             length: outputCount * MemoryLayout<Float>.stride,
             options: .storageModeShared
@@ -115,9 +122,11 @@ package final class TemplateMatcher: @unchecked Sendable {
 
         var parameters = MatchParameters(
             imageWidth: UInt32(haystackPixels.width),
+            imageHeight: UInt32(haystackPixels.height),
             templateWidth: UInt32(needlePixels.width),
             templateHeight: UInt32(needlePixels.height),
             outputWidth: UInt32(outputWidth),
+            outputHeight: UInt32(outputHeight),
             templateMean: templateStatistics.mean,
             templateSumSquaredDeviations: templateStatistics.sumSquaredDeviations
         )
@@ -127,17 +136,37 @@ package final class TemplateMatcher: @unchecked Sendable {
             throw TemplateMatcherError.commandExecutionFailed("Could not create a command encoder.")
         }
 
-        encoder.setComputePipelineState(pipeline)
+        let threadgroupSize = MTLSize(width: 8, height: 8, depth: 1)
+        let tileWidth = needlePixels.width + threadgroupSize.width - 1
+        let tileHeight = needlePixels.height + threadgroupSize.height - 1
+        let tileByteCount = tileWidth * tileHeight
+        let canUseTiledPipeline =
+            needlePixels.width * needlePixels.height <= 4_096 &&
+            tileByteCount + tiledPipeline.staticThreadgroupMemoryLength
+                <= device.maxThreadgroupMemoryLength
+
+        encoder.setComputePipelineState(canUseTiledPipeline ? tiledPipeline : pipeline)
         encoder.setBuffer(haystackBuffer, offset: 0, index: 0)
         encoder.setBuffer(needleBuffer, offset: 0, index: 1)
         encoder.setBuffer(scoreBuffer, offset: 0, index: 2)
         encoder.setBytes(&parameters, length: MemoryLayout<MatchParameters>.stride, index: 3)
 
-        let threadgroupWidth = min(pipeline.maxTotalThreadsPerThreadgroup, outputCount)
-        encoder.dispatchThreads(
-            MTLSize(width: outputCount, height: 1, depth: 1),
-            threadsPerThreadgroup: MTLSize(width: threadgroupWidth, height: 1, depth: 1)
-        )
+        if canUseTiledPipeline {
+            encoder.setThreadgroupMemoryLength(tileByteCount, index: 0)
+            encoder.dispatchThreadgroups(
+                MTLSize(
+                    width: (outputWidth + threadgroupSize.width - 1) / threadgroupSize.width,
+                    height: (outputHeight + threadgroupSize.height - 1) / threadgroupSize.height,
+                    depth: 1
+                ),
+                threadsPerThreadgroup: threadgroupSize
+            )
+        } else {
+            encoder.dispatchThreads(
+                MTLSize(width: outputWidth, height: outputHeight, depth: 1),
+                threadsPerThreadgroup: threadgroupSize
+            )
+        }
         encoder.endEncoding()
 
         commandBuffer.commit()
@@ -152,9 +181,35 @@ package final class TemplateMatcher: @unchecked Sendable {
         let scores = scoreBuffer.contents()
             .bindMemory(to: Float.self, capacity: outputCount)
 
-        var matches: [ImageMatch] = []
-        matches.reserveCapacity(findAll ? min(outputCount, 64) : 1)
+        if !findAll {
+            var bestIndex: Int?
+            var bestScore = threshold
 
+            for index in 0..<outputCount {
+                let score = scores[index]
+                if score.isFinite,
+                   score >= threshold,
+                   bestIndex == nil || score > bestScore {
+                    bestIndex = index
+                    bestScore = score
+                }
+            }
+
+            return bestIndex.map {
+                [
+                    ImageMatch(
+                        x: $0 % outputWidth,
+                        y: $0 / outputWidth,
+                        width: needlePixels.width,
+                        height: needlePixels.height,
+                        score: bestScore
+                    )
+                ]
+            } ?? []
+        }
+
+        var matches: [ImageMatch] = []
+        matches.reserveCapacity(min(outputCount, 64))
         for index in 0..<outputCount {
             let score = scores[index]
             guard score.isFinite, score >= threshold else { continue }
@@ -177,10 +232,7 @@ package final class TemplateMatcher: @unchecked Sendable {
             return $0.score > $1.score
         }
 
-        if findAll {
-            return NonMaximumSuppression.apply(to: matches)
-        }
-        return matches.first.map { [$0] } ?? []
+        return NonMaximumSuppression.apply(to: matches)
     }
 }
 
@@ -188,11 +240,14 @@ private struct TemplateStatistics {
     let mean: Float
     let sumSquaredDeviations: Float
 
-    init(pixels: [Float]) {
-        let mean = pixels.reduce(0, +) / Float(pixels.count)
+    init(pixels: [UInt8]) {
+        let scale = 1 / Float(UInt8.max)
+        let mean = pixels.reduce(into: Float.zero) {
+            $0 += Float($1) * scale
+        } / Float(pixels.count)
         self.mean = mean
         self.sumSquaredDeviations = pixels.reduce(into: 0) { result, value in
-            let deviation = value - mean
+            let deviation = Float(value) * scale - mean
             result += deviation * deviation
         }
     }
@@ -200,9 +255,11 @@ private struct TemplateStatistics {
 
 private struct MatchParameters {
     let imageWidth: UInt32
+    let imageHeight: UInt32
     let templateWidth: UInt32
     let templateHeight: UInt32
     let outputWidth: UInt32
+    let outputHeight: UInt32
     let templateMean: Float
     let templateSumSquaredDeviations: Float
 }
