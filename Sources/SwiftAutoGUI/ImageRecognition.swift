@@ -13,7 +13,7 @@ extension SwiftAutoGUI {
     ///
     /// - Parameters:
     ///   - imagePath: Path to the image file to search for.
-    ///   - grayscale: Retained for API compatibility. Matching currently uses grayscale images.
+    ///   - grayscale: Skip color verification for faster matching.
     ///   - confidence: Matching confidence threshold from 0.0 to 1.0. Defaults to 0.95.
     ///   - region: Limit the search to a screen region in points.
     /// - Returns: The matching rectangle in screen points, or nil when no match is found.
@@ -23,9 +23,9 @@ extension SwiftAutoGUI {
         confidence: Double? = nil,
         region: CGRect? = nil
     ) async throws -> CGRect? {
-        _ = grayscale
         return try await locateMatches(
             imagePath,
+            grayscale: grayscale,
             confidence: confidence,
             region: region,
             findAll: false
@@ -58,9 +58,9 @@ extension SwiftAutoGUI {
         confidence: Double? = nil,
         region: CGRect? = nil
     ) async throws -> [CGRect] {
-        _ = grayscale
         return try await locateMatches(
             imagePath,
+            grayscale: grayscale,
             confidence: confidence,
             region: region,
             findAll: true
@@ -69,6 +69,7 @@ extension SwiftAutoGUI {
 
     private static func locateMatches(
         _ imagePath: String,
+        grayscale: Bool,
         confidence: Double?,
         region: CGRect?,
         findAll: Bool
@@ -104,7 +105,8 @@ extension SwiftAutoGUI {
             needle: needleCGImage,
             in: haystackCGImage,
             threshold: Float(confidence ?? 0.95),
-            findAll: findAll
+            findAll: findAll,
+            grayscale: grayscale
         )
 
         let scaleX = CGFloat(haystackCGImage.width) / screenshot.size.width

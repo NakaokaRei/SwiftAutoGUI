@@ -223,6 +223,62 @@ struct TemplateMatcherTests {
         #expect(grayscale.pixels[3] > grayscale.pixels[1])
     }
 
+    @Test("Color verification rejects a grayscale lookalike")
+    func colorVerificationRejectsGrayscaleLookalike() throws {
+        let rgba: [UInt8] = [
+            255, 0, 0, 255, 0, 255, 0, 255,
+            0, 0, 255, 255, 255, 255, 0, 255,
+            0, 255, 255, 255, 255, 0, 255, 255,
+            255, 128, 0, 255, 64, 32, 192, 255,
+        ]
+        let template = makeRGBAImage(width: 2, height: 4, pixels: rgba)
+        let grayscalePixels = try GrayscaleImage(cgImage: template).pixels
+        let grayscaleLookalike = makeImage(
+            width: 2,
+            height: 4,
+            pixels: grayscalePixels
+        )
+        let matcher = try makeMatcher()
+
+        let grayscaleMatches = try matcher.match(
+            needle: template,
+            in: grayscaleLookalike,
+            threshold: 0.99,
+            findAll: false,
+            grayscale: true
+        )
+        let colorMatches = try matcher.match(
+            needle: template,
+            in: grayscaleLookalike,
+            threshold: 0.99,
+            findAll: false,
+            grayscale: false
+        )
+
+        #expect(grayscaleMatches.count == 1)
+        #expect(colorMatches.isEmpty)
+    }
+
+    @Test("Color verification accepts an exact color match")
+    func colorVerificationAcceptsExactMatch() throws {
+        let rgba: [UInt8] = [
+            255, 0, 0, 255, 0, 255, 0, 255,
+            0, 0, 255, 255, 255, 255, 0, 255,
+        ]
+        let image = makeRGBAImage(width: 2, height: 2, pixels: rgba)
+
+        let matches = try makeMatcher().match(
+            needle: image,
+            in: image,
+            threshold: 0.999,
+            findAll: false,
+            grayscale: false
+        )
+
+        #expect(matches.count == 1)
+        #expect(matches.first?.score ?? 0 > 0.999)
+    }
+
     private func makeMatcher() throws -> TemplateMatcher {
         try TemplateMatcher()
     }

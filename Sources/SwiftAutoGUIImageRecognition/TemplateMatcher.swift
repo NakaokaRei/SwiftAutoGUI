@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import Metal
+import simd
 
 package struct ImageMatch: Sendable, Equatable {
     package let x: Int
@@ -88,7 +89,8 @@ package final class TemplateMatcher: @unchecked Sendable {
         needle: CGImage,
         in haystack: CGImage,
         threshold: Float,
-        findAll: Bool
+        findAll: Bool,
+        grayscale: Bool = true
     ) throws -> [ImageMatch] {
         let needlePixels = try GrayscaleImage(cgImage: needle)
         let haystackPixels = try GrayscaleImage(cgImage: haystack)
@@ -181,7 +183,7 @@ package final class TemplateMatcher: @unchecked Sendable {
         let scores = scoreBuffer.contents()
             .bindMemory(to: Float.self, capacity: outputCount)
 
-        if !findAll {
+        if !findAll, grayscale {
             var bestIndex: Int?
             var bestScore = threshold
 
@@ -232,7 +234,100 @@ package final class TemplateMatcher: @unchecked Sendable {
             return $0.score > $1.score
         }
 
+        if !grayscale {
+            let needleColor = try ColorImage(cgImage: needle)
+            let haystackColor = try ColorImage(cgImage: haystack)
+            matches = matches.compactMap {
+                let colorScore = ColorMatchVerifier.score(
+                    needle: needleColor,
+                    haystack: haystackColor,
+                    x: $0.x,
+                    y: $0.y
+                )
+                guard colorScore >= threshold else { return nil }
+                return ImageMatch(
+                    x: $0.x,
+                    y: $0.y,
+                    width: $0.width,
+                    height: $0.height,
+                    score: colorScore
+                )
+            }
+            matches.sort {
+                if $0.score == $1.score {
+                    return ($0.y, $0.x) < ($1.y, $1.x)
+                }
+                return $0.score > $1.score
+            }
+        }
+
+        if !findAll {
+            return matches.first.map { [$0] } ?? []
+        }
         return NonMaximumSuppression.apply(to: matches)
+    }
+}
+
+private enum ColorMatchVerifier {
+    static func score(
+        needle: ColorImage,
+        haystack: ColorImage,
+        x: Int,
+        y: Int
+    ) -> Float {
+        let pixelCount = needle.width * needle.height
+        var templateSums = SIMD3<Double>.zero
+        var imageSums = SIMD3<Double>.zero
+
+        for row in 0..<needle.height {
+            var templateIndex = row * needle.width * 4
+            var imageIndex = ((y + row) * haystack.width + x) * 4
+
+            for _ in 0..<needle.width {
+                templateSums += rgb(at: templateIndex, in: needle.pixels)
+                imageSums += rgb(at: imageIndex, in: haystack.pixels)
+                templateIndex += 4
+                imageIndex += 4
+            }
+        }
+
+        let templateMeans = templateSums / Double(pixelCount)
+        let imageMeans = imageSums / Double(pixelCount)
+        var numerator = 0.0
+        var templateVariance = 0.0
+        var imageVariance = 0.0
+
+        for row in 0..<needle.height {
+            var templateIndex = row * needle.width * 4
+            var imageIndex = ((y + row) * haystack.width + x) * 4
+
+            for _ in 0..<needle.width {
+                let templateDeviation =
+                    rgb(at: templateIndex, in: needle.pixels) - templateMeans
+                let imageDeviation =
+                    rgb(at: imageIndex, in: haystack.pixels) - imageMeans
+                numerator += simd_dot(templateDeviation, imageDeviation)
+                templateVariance += simd_dot(
+                    templateDeviation,
+                    templateDeviation
+                )
+                imageVariance += simd_dot(imageDeviation, imageDeviation)
+                templateIndex += 4
+                imageIndex += 4
+            }
+        }
+
+        let denominator = sqrt(templateVariance * imageVariance)
+        guard denominator > Double.ulpOfOne else { return -1 }
+        return Float(max(-1, min(1, numerator / denominator)))
+    }
+
+    private static func rgb(at index: Int, in pixels: [UInt8]) -> SIMD3<Double> {
+        SIMD3(
+            Double(pixels[index]),
+            Double(pixels[index + 1]),
+            Double(pixels[index + 2])
+        )
     }
 }
 

@@ -191,13 +191,13 @@ public enum Action {
     // MARK: - Image Recognition
     
     /// Locate an image on screen.
-    case locateOnScreen(String, grayscale: Bool = true, confidence: Double = 0.9, region: CGRect? = nil)
+    case locateOnScreen(String, grayscale: Bool = false, confidence: Double = 0.95, region: CGRect? = nil)
     
     /// Locate center of an image on screen.
-    case locateCenterOnScreen(String, grayscale: Bool = true, confidence: Double = 0.9, region: CGRect? = nil)
+    case locateCenterOnScreen(String, grayscale: Bool = false, confidence: Double = 0.95, region: CGRect? = nil)
     
     /// Locate all instances of an image on screen.
-    case locateAllOnScreen(String, grayscale: Bool = true, confidence: Double = 0.9, region: CGRect? = nil)
+    case locateAllOnScreen(String, grayscale: Bool = false, confidence: Double = 0.95, region: CGRect? = nil)
     
     // MARK: - Dialogs
     
