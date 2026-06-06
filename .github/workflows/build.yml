@@ -178,14 +178,7 @@ jobs:
       - name: Build documentation
         run: |
           set -o pipefail
-          # Generate documentation using xcodebuild to properly handle OpenCV dependency
-          xcodebuild docbuild \
-            -scheme SwiftAutoGUI \
-            -derivedDataPath ./DerivedData \
-            -destination 'platform=macOS' 2>&1 | xcbeautify
-
-          # Verify documentation was generated
-          ls -la ./DerivedData/Build/Products/Debug/SwiftAutoGUI.doccarchive
+          swift package generate-documentation --target SwiftAutoGUI 2>&1 | xcbeautify
 
   sample-app:
     name: Build Sample App

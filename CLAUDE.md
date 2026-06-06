@@ -15,6 +15,7 @@ swift build -c release         # Build in release mode
 swift test                     # Run all tests
 swift test --parallel          # Run tests in parallel (used in CI)
 swift test --filter KeyboardTests  # Run a single test suite
+scripts/build-metallib.sh       # Rebuild the bundled Metal shader library
 ```
 
 ### Documentation
@@ -55,7 +56,8 @@ Located at `Sample/Sample.xcodeproj`. Open in Xcode and run (⌘+R).
 
 **Utilities:**
 - `Screenshot.swift` — Screen capture functionality.
-- `ImageRecognition.swift` — Image matching using OpenCV.
+- `ImageRecognition.swift` — Screen-capture adapter for Metal-based image matching.
+- `SwiftAutoGUIImageRecognition` target — GPU template matching using normalized cross-correlation.
 - `AppleScript.swift` — AppleScript execution helpers.
 - `Dialog.swift` — System dialog interactions.
 
@@ -69,7 +71,7 @@ Three subcommands: `KeyCommand`, `MouseCommand`, `ScreenCommand`, each in their 
 - **Event Posting**: Uses `CGEventTapLocation.cghidEventTap` for event injection
 - **Coordinate System**: CGWindow coordinates (origin at top-left)
 - **Thread Safety**: `Thread.sleep(0.01)` after events for timing
-- **Dependencies**: opencv-spm (image recognition), MacPaw/OpenAI (AI backend), swift-argument-parser (CLI), swift-docc-plugin (docs)
+- **Dependencies**: swift-argument-parser (CLI), swift-docc-plugin (docs)
 
 ## CI
 

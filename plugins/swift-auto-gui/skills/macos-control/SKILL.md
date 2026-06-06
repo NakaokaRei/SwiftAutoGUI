@@ -154,7 +154,7 @@ sagui screen locate-center button.png                      # Find image center (
 | `locate` | `<image-path>` | `--confidence <0.0-1.0>` |
 | `locate-center` | `<image-path>` | `--confidence <0.0-1.0>` |
 
-**Image recognition** uses OpenCV template matching. Default confidence threshold is 0.95. Lower it for fuzzy matching.
+**Image recognition** uses Metal-accelerated normalized cross-correlation. Default confidence threshold is 0.95. Lower it for fuzzy matching.
 
 ### agent — AI-powered automation
 
