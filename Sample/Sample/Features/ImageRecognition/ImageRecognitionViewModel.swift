@@ -127,7 +127,10 @@ class ImageRecognitionViewModel {
         imageRecognitionResult = "Searching for all test images..."
         
         Task {
-            let allMatches = await Action.locateAllOnScreen(testImagePath, grayscale: true, confidence: 0.8).execute() as? [CGRect] ?? []
+            let allMatches = await Action.locateAllOnScreen(
+                testImagePath,
+                confidence: 0.95
+            ).execute() as? [CGRect] ?? []
             
             if !allMatches.isEmpty {
                 imageRecognitionResult = "Found \(allMatches.count) instances of the test image:\n"

@@ -14,15 +14,9 @@ jobs:
       - uses: actions/checkout@v6
       - name: build docc
         run: |
-          # Generate documentation using xcodebuild to properly handle OpenCV dependency
-          xcodebuild docbuild \
-          -scheme SwiftAutoGUI \
-          -derivedDataPath ./DerivedData \
-          -destination 'platform=macOS'
-          
-          # Transform the documentation archive for static hosting
-          $(xcrun --find docc) process-archive \
-          transform-for-static-hosting ./DerivedData/Build/Products/Debug/SwiftAutoGUI.doccarchive \
+          swift package --allow-writing-to-directory ./docs generate-documentation \
+          --target SwiftAutoGUI \
+          --transform-for-static-hosting \
           --hosting-base-path SwiftAutoGUI \
           --output-path ./docs
       - uses: actions/upload-pages-artifact@v5

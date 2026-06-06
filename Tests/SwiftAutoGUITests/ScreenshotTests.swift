@@ -9,7 +9,7 @@ struct ScreenshotTests {
     @Test("Full screen screenshot")
     func testFullScreenScreenshot() async throws {
         // Take a screenshot of the entire screen
-        let screenshot = try await SwiftAutoGUI.screenshot()
+        let screenshot = try? await SwiftAutoGUI.screenshot()
 
         // Verify screenshot was captured (may be nil if no screen access)
         if let screenshot = screenshot {
@@ -27,7 +27,7 @@ struct ScreenshotTests {
         let region = CGRect(x: 100, y: 100, width: 200, height: 200)
 
         // Take a screenshot of the region
-        let screenshot = try await SwiftAutoGUI.screenshot(region: region)
+        let screenshot = try? await SwiftAutoGUI.screenshot(region: region)
 
         // Verify screenshot was captured (may be nil if no screen access)
         if let screenshot = screenshot {
@@ -49,10 +49,10 @@ struct ScreenshotTests {
         try? FileManager.default.removeItem(atPath: testPath)
 
         // Take and save screenshot
-        let saved = try await SwiftAutoGUI.screenshot(imageFilename: testPath)
+        let saved = try? await SwiftAutoGUI.screenshot(imageFilename: testPath)
 
         // If saved successfully, verify file exists
-        if saved {
+        if saved == true {
             let fileExists = FileManager.default.fileExists(atPath: testPath)
             // Only check file exists if save reported success
             if fileExists {
@@ -80,10 +80,10 @@ struct ScreenshotTests {
             try? FileManager.default.removeItem(atPath: testPath)
 
             // Take and save screenshot
-            let saved = try await SwiftAutoGUI.screenshot(imageFilename: testPath)
+            let saved = try? await SwiftAutoGUI.screenshot(imageFilename: testPath)
 
             // If saved successfully, verify file exists
-            if saved {
+            if saved == true {
                 let fileExists = FileManager.default.fileExists(atPath: testPath)
                 if fileExists {
                     successCount += 1
@@ -116,10 +116,10 @@ struct ScreenshotTests {
     @Test("Pixel color function")
     func testPixelColor() async throws {
         // Test getting pixel color at origin
-        _ = try await SwiftAutoGUI.pixel(x: 0, y: 0)
+        _ = try? await SwiftAutoGUI.pixel(x: 0, y: 0)
 
         // Test getting pixel color at another point
-        _ = try await SwiftAutoGUI.pixel(x: 100, y: 100)
+        _ = try? await SwiftAutoGUI.pixel(x: 100, y: 100)
 
         // Colors may be nil if no screen access
         // Just verify the function can be called without crashing
@@ -136,10 +136,10 @@ struct ScreenshotTests {
         try? FileManager.default.removeItem(atPath: testPath)
 
         // Take and save region screenshot
-        let saved = try await SwiftAutoGUI.screenshot(imageFilename: testPath, region: region)
+        let saved = try? await SwiftAutoGUI.screenshot(imageFilename: testPath, region: region)
 
         // If saved successfully, verify file exists
-        if saved {
+        if saved == true {
             let fileExists = FileManager.default.fileExists(atPath: testPath)
             // Only check file exists if save reported success
             if fileExists {
