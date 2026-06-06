@@ -314,6 +314,16 @@ Grant the application running Claude Code (Terminal.app, iTerm, etc.) both:
 
 For full skill details, see [`plugins/swift-auto-gui/skills/macos-control/SKILL.md`](plugins/swift-auto-gui/skills/macos-control/SKILL.md).
 
+# Star History
+
+<a href="https://www.star-history.com/?repos=NakaokaRei%2FSwiftAutoGUI&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NakaokaRei/SwiftAutoGUI&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NakaokaRei/SwiftAutoGUI&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NakaokaRei/SwiftAutoGUI&type=date&legend=top-left" />
+ </picture>
+</a>
+
 # Contributors
 
 - [NakaokaRei](https://github.com/NakaokaRei)
