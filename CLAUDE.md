@@ -42,24 +42,17 @@ Located at `Sample/Sample.xcodeproj`. Open in Xcode and run (⌘+R).
 
 ### Core Library (`Sources/SwiftAutoGUI/`)
 
-**Input Control:**
-- `SwiftAutoGUI.swift` — Static methods for keyboard events, mouse events (move, click, drag, scroll), screenshots, and screen queries. Uses CoreGraphics CGEvent API.
-- `Keycode.swift` — `Key` enum mapping key names to CGKeyCode values and NX_KEYTYPE constants. US keyboard layout only.
-- `TweeningFunction.swift` — Easing functions for smooth mouse movement animations.
+- `Core/` — Main `SwiftAutoGUI` namespace and low-level mouse/keyboard operations.
+- `Input/` — Key codes, keyboard layouts, and tweening functions.
+- `Accessibility/` — Accessibility element lookup, attributes, actions, and matching types.
+- `Actions/` — Declarative actions and agent orchestration.
+- `AI/` — Action-generation protocols, model backends, and screen context.
+- `Screen/` — Screen capture and image-recognition integration.
+- `System/` — AppleScript and system-dialog helpers.
+- `Documentation.docc/` — DocC catalog for the library.
 
-**AI Action Generation:**
-- `Action.swift` — Declarative `Action` enum (move, click, write, scroll, wait, etc.) with `execute()` method.
-- `ActionGenerating.swift` — `ActionGenerating` protocol for backends that convert natural language → actions.
-- `ActionGenerator.swift` — `BasicAction` (a `@Generable` subset of Action for on-device model) and `ActionGenerator` orchestrator.
-- `FoundationModelsBackend.swift` — Default backend using Apple's on-device Foundation Models framework.
-- `OpenAIBackend.swift` — Alternative backend using the MacPaw/OpenAI SDK.
-
-**Utilities:**
-- `Screenshot.swift` — Screen capture functionality.
-- `ImageRecognition.swift` — Screen-capture adapter for Metal-based image matching.
-- `ImageRecognition` target — GPU template matching using normalized cross-correlation.
-- `AppleScript.swift` — AppleScript execution helpers.
-- `Dialog.swift` — System dialog interactions.
+The separate `ImageRecognition` target provides GPU template matching using
+normalized cross-correlation.
 
 ### CLI (`Sources/sagui/`)
 Three subcommands: `KeyCommand`, `MouseCommand`, `ScreenCommand`, each in their own file.
