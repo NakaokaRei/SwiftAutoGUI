@@ -7,10 +7,11 @@ struct BuildMetalLibraryPlugin: CommandPlugin {
         context: PluginContext,
         arguments: [String]
     ) async throws {
-        guard arguments.isEmpty else {
+        let unsupportedArguments = unsupportedArguments(in: arguments)
+        guard unsupportedArguments.isEmpty else {
             Diagnostics.error(
-                "build-metal-library does not accept arguments: "
-                    + arguments.joined(separator: " ")
+                "build-metal-library received unsupported arguments: "
+                    + unsupportedArguments.joined(separator: " ")
             )
             return
         }
@@ -59,6 +60,25 @@ struct BuildMetalLibraryPlugin: CommandPlugin {
         )
 
         print("Generated \(outputURL.path)")
+    }
+
+    private func unsupportedArguments(in arguments: [String]) -> [String] {
+        var unsupported: [String] = []
+        var index = 0
+
+        while index < arguments.count {
+            let argument = arguments[index]
+            if argument == "--target", index + 1 < arguments.count {
+                index += 2
+            } else if argument.hasPrefix("--target=") {
+                index += 1
+            } else {
+                unsupported.append(argument)
+                index += 1
+            }
+        }
+
+        return unsupported
     }
 
     private func runXcrun(
