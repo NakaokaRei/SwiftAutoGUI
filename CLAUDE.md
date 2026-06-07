@@ -16,8 +16,13 @@ swift test                     # Run safe tests (does not generate mouse/keyboar
 swift test --parallel          # Run safe tests in parallel (used in CI)
 SWIFTAUTOGUI_RUN_INPUT_TESTS=1 swift test  # Explicitly run tests that generate real input
 swift test --filter KeyboardTests  # Run safe tests in a single test suite
-scripts/build-metallib.sh       # Rebuild the bundled Metal shader library
+swift package --allow-writing-to-package-directory build-metal-library
+                               # Rebuild the bundled Metal shader library
 ```
+
+Rebuilding the Metal library requires Xcode's optional Metal Toolchain
+component. Package consumers use the committed `.metallib` and do not need the
+component installed.
 
 ### Documentation
 ```bash
