@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (for example: 0.24.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v6
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Validate version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Version must use semantic versioning, for example 0.24.0 or 0.24.0-beta.1."
+            exit 1
+          fi
+
+          if git rev-parse --verify --quiet "refs/tags/$VERSION"; then
+            echo "::error::Tag $VERSION already exists."
+            exit 1
+          fi
+
+          current_version="$(jq -r '.version' plugins/swift-auto-gui/.claude-plugin/plugin.json)"
+          if [[ "$current_version" == "$VERSION" ]]; then
+            echo "::error::Plugin version is already $VERSION."
+            exit 1
+          fi
+
+      - name: Update plugin version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          manifest="plugins/swift-auto-gui/.claude-plugin/plugin.json"
+          jq --arg version "$VERSION" '.version = $version' "$manifest" > "$manifest.tmp"
+          mv "$manifest.tmp" "$manifest"
+
+          test "$(jq -r '.version' "$manifest")" = "$VERSION"
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add plugins/swift-auto-gui/.claude-plugin/plugin.json
+          git commit -m "Bump plugin version to $VERSION"
+          git push origin HEAD:master
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: gh release create "$VERSION" --verify-tag --generate-notes --title "$VERSION"
