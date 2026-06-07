@@ -50,5 +50,20 @@ let package = Package(
         .testTarget(
             name: "ImageRecognitionTests",
             dependencies: ["ImageRecognition"]),
+        .plugin(
+            name: "BuildMetalLibraryPlugin",
+            capability: .command(
+                intent: .custom(
+                    verb: "build-metal-library",
+                    description: "Rebuild the bundled Metal shader library."
+                ),
+                permissions: [
+                    .writeToPackageDirectory(
+                        reason: "Update the bundled TemplateMatching.metallib resource."
+                    )
+                ]
+            ),
+            path: "PackagePlugins/BuildMetalLibraryPlugin"
+        ),
     ]
 )
