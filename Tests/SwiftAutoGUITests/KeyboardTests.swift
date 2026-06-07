@@ -312,7 +312,10 @@ struct KeyboardTests {
         }
     }
 
-    @Test("Keyboard event functions basic test")
+    @Test(
+        "Keyboard event functions basic test",
+        .enabled(if: InputTestConfiguration.isEnabled)
+    )
     func testKeyboardEventFunctions() async throws {
         // Note: These tests only verify that the functions can be called without crashing
         // Actual key event generation requires accessibility permissions and cannot be
@@ -333,7 +336,10 @@ struct KeyboardTests {
         #expect(true)
     }
 
-    @Test("Write function basic test")
+    @Test(
+        "Write function basic test",
+        .enabled(if: InputTestConfiguration.isEnabled)
+    )
     func testWriteFunction() async {
         // Note: This test only verifies that the write function can be called without crashing
         // Actual text typing requires accessibility permissions and cannot be fully tested in unit tests
@@ -360,7 +366,10 @@ struct KeyboardTests {
         #expect(true)
     }
 
-    @Test("Character to key mapping")
+    @Test(
+        "Character to key mapping",
+        .enabled(if: InputTestConfiguration.isEnabled)
+    )
     func testCharacterToKeyMapping() async {
         // Test that basic characters map correctly
         // Note: These are private functions, so we test indirectly through write

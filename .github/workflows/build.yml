@@ -48,6 +48,8 @@ jobs:
 
       - name: Run tests
         id: test
+        env:
+          SWIFTAUTOGUI_RUN_INPUT_TESTS: "1"
         run: |
           set +e
           set -o pipefail

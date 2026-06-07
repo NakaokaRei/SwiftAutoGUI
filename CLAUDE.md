@@ -12,9 +12,10 @@ SwiftAutoGUI is a Swift library for programmatically controlling the mouse and k
 ```bash
 swift build                    # Build the package
 swift build -c release         # Build in release mode
-swift test                     # Run all tests
-swift test --parallel          # Run tests in parallel (used in CI)
-swift test --filter KeyboardTests  # Run a single test suite
+swift test                     # Run safe tests (does not generate mouse/keyboard input)
+swift test --parallel          # Run safe tests in parallel (used in CI)
+SWIFTAUTOGUI_RUN_INPUT_TESTS=1 swift test  # Explicitly run tests that generate real input
+swift test --filter KeyboardTests  # Run safe tests in a single test suite
 scripts/build-metallib.sh       # Rebuild the bundled Metal shader library
 ```
 
