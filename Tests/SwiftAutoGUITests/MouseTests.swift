@@ -3,7 +3,11 @@ import CoreGraphics
 import Foundation
 @testable import SwiftAutoGUI
 
-@Suite("Mouse Tests", .serialized)
+@Suite(
+    "Mouse Tests",
+    .serialized,
+    .enabled(if: InputTestConfiguration.isEnabled)
+)
 struct MouseTests {
     
     @Test("Mouse position function")
