@@ -1,7 +1,7 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import SwiftAutoGUIImageRecognition
+import ImageRecognition
 
 private let imageTemplateMatcher = Result { try TemplateMatcher() }
 

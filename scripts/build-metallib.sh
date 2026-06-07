@@ -3,8 +3,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-source_file="$repo_root/Sources/SwiftAutoGUIImageRecognition/Shaders/TemplateMatching.metal"
-output_file="$repo_root/Sources/SwiftAutoGUIImageRecognition/Resources/TemplateMatching.metallib"
+source_file="$repo_root/Sources/ImageRecognition/Shaders/TemplateMatching.metal"
+output_file="$repo_root/Sources/ImageRecognition/Resources/TemplateMatching.metallib"
 temporary_directory="$(mktemp -d)"
 
 trap 'rm -rf "$temporary_directory"' EXIT

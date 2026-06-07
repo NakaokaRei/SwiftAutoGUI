@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import SwiftAutoGUIImageRecognition
+@testable import ImageRecognition
 
 @Suite("Metal Template Matcher Tests")
 struct TemplateMatcherTests {

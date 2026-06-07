@@ -57,7 +57,7 @@ Located at `Sample/Sample.xcodeproj`. Open in Xcode and run (⌘+R).
 **Utilities:**
 - `Screenshot.swift` — Screen capture functionality.
 - `ImageRecognition.swift` — Screen-capture adapter for Metal-based image matching.
-- `SwiftAutoGUIImageRecognition` target — GPU template matching using normalized cross-correlation.
+- `ImageRecognition` target — GPU template matching using normalized cross-correlation.
 - `AppleScript.swift` — AppleScript execution helpers.
 - `Dialog.swift` — System dialog interactions.
 
