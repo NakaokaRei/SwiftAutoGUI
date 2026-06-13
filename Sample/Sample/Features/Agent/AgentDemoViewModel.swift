@@ -133,6 +133,14 @@ class AgentDemoViewModel {
         case .keyShortcut(let keys): return "keyShortcut(\(keys.joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             return "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
+        case .openURL(let url):
+            return "openURL(\"\(url)\")"
+        case .activateApp(let name):
+            return "activateApp(\"\(name)\")"
+        case .quitApp(let name):
+            return "quitApp(\"\(name)\")"
+        case .getFrontmostApp:
+            return "getFrontmostApp"
         case .pressButton(let label, let bundleID):
             return "pressButton(\"\(label)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         case .setTextField(let label, let value, let bundleID):
