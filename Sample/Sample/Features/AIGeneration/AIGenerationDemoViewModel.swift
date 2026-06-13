@@ -197,6 +197,14 @@ class AIGenerationDemoViewModel {
             return "Execute AppleScript: \(script.prefix(30))..."
         case .executeAppleScriptFile(let path):
             return "Execute AppleScript file: \(path)"
+        case .openURL(let url):
+            return "Open URL: \(url.absoluteString)"
+        case .activateApp(let name):
+            return "Activate app: \(name)"
+        case .quitApp(let name):
+            return "Quit app: \(name)"
+        case .getFrontmostApp:
+            return "Get frontmost app"
         case .pressButton(let label, _, _, _):
             return "Press button: \"\(label)\""
         case .setTextField(let label, _, let value, _, _):

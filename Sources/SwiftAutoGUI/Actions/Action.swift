@@ -88,6 +88,12 @@ import AppKit
 /// - ``executeAppleScript(_:)``
 /// - ``executeAppleScriptFile(_:)``
 ///
+/// ### Application Control
+/// - ``openURL(_:)``
+/// - ``activateApp(name:)``
+/// - ``quitApp(name:)``
+/// - ``getFrontmostApp``
+///
 /// ### Control Flow Actions
 /// - ``wait(_:)``
 /// - ``sequence(_:)``
@@ -229,6 +235,20 @@ public enum Action {
 
     /// Bring a window to the front by title.
     case raiseWindow(title: String, app: AXAppScope = .frontmost, exact: Bool = false)
+
+    // MARK: - Application Control
+
+    /// Open a URL in its default application.
+    case openURL(URL)
+
+    /// Launch an application if needed and bring all of its windows forward.
+    case activateApp(name: String)
+
+    /// Gracefully terminate a running application.
+    case quitApp(name: String)
+
+    /// Get the localized name of the frontmost application.
+    case getFrontmostApp
 
     // MARK: - AppleScript
 
@@ -382,9 +402,21 @@ public enum Action {
         case .raiseWindow(let title, let app, let exact):
             return SwiftAutoGUI.raiseWindow(title: title, app: app, exact: exact)
 
+        case .openURL(let url):
+            return SwiftAutoGUI.openURL(url)
+
+        case .activateApp(let name):
+            return await SwiftAutoGUI.activateApp(named: name)
+
+        case .quitApp(let name):
+            return SwiftAutoGUI.quitApp(named: name)
+
+        case .getFrontmostApp:
+            return SwiftAutoGUI.frontmostAppName()
+
         case .executeAppleScript(let script):
             do {
-                return try SwiftAutoGUI.executeAppleScript(script)
+                return try await SwiftAutoGUI.executeAppleScriptAsync(script)
             } catch {
                 print("AppleScript execution failed: \(error)")
                 return nil
@@ -392,7 +424,7 @@ public enum Action {
             
         case .executeAppleScriptFile(let path):
             do {
-                return try SwiftAutoGUI.executeAppleScriptFile(path)
+                return try await SwiftAutoGUI.executeAppleScriptFileAsync(path)
             } catch {
                 print("AppleScript file execution failed: \(error)")
                 return nil

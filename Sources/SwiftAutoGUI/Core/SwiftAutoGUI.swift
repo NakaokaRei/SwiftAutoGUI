@@ -71,8 +71,16 @@ import AppKit
 ///
 /// ### AppleScript Execution
 /// - ``executeAppleScript(_:)``
+/// - ``executeAppleScriptAsync(_:)``
 /// - ``executeAppleScriptFile(_:)``
+/// - ``executeAppleScriptFileAsync(_:)``
 /// - ``AppleScriptError``
+///
+/// ### Application Control
+/// - ``openURL(_:)``
+/// - ``activateApp(named:)``
+/// - ``quitApp(named:)``
+/// - ``frontmostAppName()``
 public class SwiftAutoGUI {
 
     // MARK: Keyboard Layout
