@@ -60,7 +60,11 @@ import Foundation
 /// }
 /// ```
 extension SwiftAutoGUI {
-    
+
+    private static let appleScriptQueue = DispatchQueue(
+        label: "SwiftAutoGUI.AppleScript"
+    )
+
     /// Executes an AppleScript string and returns the result.
     ///
     /// This method executes the provided AppleScript code synchronously and returns
@@ -126,6 +130,22 @@ extension SwiftAutoGUI {
         
         return eventDescriptor.stringValue
     }
+
+    /// Executes AppleScript on a dedicated serial queue.
+    ///
+    /// Prefer this method from asynchronous or UI-driven code so a slow target
+    /// application does not block the main actor.
+    public static func executeAppleScriptAsync(_ script: String) async throws -> String? {
+        try await withCheckedThrowingContinuation { continuation in
+            appleScriptQueue.async {
+                do {
+                    continuation.resume(returning: try executeAppleScript(script))
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
     
     /// Executes an AppleScript from a file.
     ///
@@ -152,9 +172,24 @@ extension SwiftAutoGUI {
         let scriptContent = try String(contentsOf: fileURL, encoding: .utf8)
         return try executeAppleScript(scriptContent)
     }
+
+    /// Loads and executes an AppleScript file on a dedicated serial queue.
+    public static func executeAppleScriptFileAsync(_ filePath: String) async throws -> String? {
+        try await withCheckedThrowingContinuation { continuation in
+            appleScriptQueue.async {
+                do {
+                    continuation.resume(
+                        returning: try executeAppleScriptFile(filePath)
+                    )
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
     
     /// Represents errors that can occur during AppleScript execution.
-    public enum AppleScriptError: LocalizedError {
+    public enum AppleScriptError: LocalizedError, Sendable {
         case compilationFailed(String)
         case executionFailed(String)
         case fileNotFound(String)

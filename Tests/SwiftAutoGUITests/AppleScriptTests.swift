@@ -14,6 +14,15 @@ struct AppleScriptTests {
             _ = try SwiftAutoGUI.executeAppleScript(script)
         }
     }
+
+    @Test("Execute invalid AppleScript asynchronously throws error")
+    func testInvalidAppleScriptAsync() async {
+        let script = "this is not valid AppleScript"
+
+        await #expect(throws: SwiftAutoGUI.AppleScriptError.self) {
+            _ = try await SwiftAutoGUI.executeAppleScriptAsync(script)
+        }
+    }
     
     @Test("Execute AppleScript from non-existent file throws error")
     func testExecuteAppleScriptFileNotFound() {

@@ -171,6 +171,45 @@ struct ActionGeneratorTests {
             #expect(title == "Untitled")
             #expect(bundleID == "")
         }
+
+        @Test("openURL round-trip")
+        func openURLRoundTrip() throws {
+            let roundTripped = try roundTrip(.openURL(url: "https://example.com/path?q=swift"))
+            guard case .openURL(let url) = roundTripped else {
+                Issue.record("Expected .openURL, got \(roundTripped)")
+                return
+            }
+            #expect(url == "https://example.com/path?q=swift")
+        }
+
+        @Test("activateApp round-trip")
+        func activateAppRoundTrip() throws {
+            let roundTripped = try roundTrip(.activateApp(name: "Safari"))
+            guard case .activateApp(let name) = roundTripped else {
+                Issue.record("Expected .activateApp, got \(roundTripped)")
+                return
+            }
+            #expect(name == "Safari")
+        }
+
+        @Test("quitApp round-trip")
+        func quitAppRoundTrip() throws {
+            let roundTripped = try roundTrip(.quitApp(name: "Google Chrome"))
+            guard case .quitApp(let name) = roundTripped else {
+                Issue.record("Expected .quitApp, got \(roundTripped)")
+                return
+            }
+            #expect(name == "Google Chrome")
+        }
+
+        @Test("getFrontmostApp round-trip")
+        func getFrontmostAppRoundTrip() throws {
+            let roundTripped = try roundTrip(.getFrontmostApp)
+            guard case .getFrontmostApp = roundTripped else {
+                Issue.record("Expected .getFrontmostApp, got \(roundTripped)")
+                return
+            }
+        }
     }
 
     // MARK: - OpenAI JSON Response Parsing Tests
@@ -336,6 +375,70 @@ struct ActionGeneratorTests {
             #expect(path == ["File", "Save As…"])
             #expect(bundleID == "")
         }
+
+        @Test("parse Tier 1 app-control actions")
+        func parseAppControlActions() throws {
+            let json = """
+            {"actions": [
+                {"type": "openURL", "url": "https://example.com"},
+                {"type": "activateApp", "name": "Safari"},
+                {"type": "quitApp", "name": "TextEdit"},
+                {"type": "getFrontmostApp"}
+            ]}
+            """
+            let actions = try decodeActions(from: json)
+            #expect(actions.count == 4)
+
+            guard case .openURL(let url) = actions[0] else {
+                Issue.record("Expected .openURL")
+                return
+            }
+            #expect(url == "https://example.com")
+
+            guard case .activateApp(let activateName) = actions[1] else {
+                Issue.record("Expected .activateApp")
+                return
+            }
+            #expect(activateName == "Safari")
+
+            guard case .quitApp(let quitName) = actions[2] else {
+                Issue.record("Expected .quitApp")
+                return
+            }
+            #expect(quitName == "TextEdit")
+
+            guard case .getFrontmostApp = actions[3] else {
+                Issue.record("Expected .getFrontmostApp")
+                return
+            }
+        }
+
+        @Test("Vision parser supports Tier 1 app-control actions")
+        func visionParserSupportsAppControlActions() {
+            let dictionaries: [[String: Any]] = [
+                ["type": "openURL", "url": "https://example.com"],
+                ["type": "activateApp", "name": "Safari"],
+                ["type": "quitApp", "name": "TextEdit"],
+                ["type": "getFrontmostApp"]
+            ]
+            let actions = dictionaries.compactMap(OpenAIVisionBackend.parseAction)
+            #expect(actions.count == 4)
+
+            guard case .openURL(let url) = actions[0] else {
+                Issue.record("Expected .openURL")
+                return
+            }
+            #expect(url == "https://example.com")
+
+            guard case .activateApp(let activateName) = actions[1],
+                  case .quitApp(let quitName) = actions[2],
+                  case .getFrontmostApp = actions[3] else {
+                Issue.record("Expected all Tier 1 app-control actions")
+                return
+            }
+            #expect(activateName == "Safari")
+            #expect(quitName == "TextEdit")
+        }
     }
 
     // MARK: - BasicAction to Action Conversion Tests
@@ -458,6 +561,80 @@ struct ActionGeneratorTests {
             }
             #expect(title == "Untitled")
         }
+
+        @Test("openURL converts to native Action.openURL")
+        func openURLConversion() {
+            let action = BasicAction.openURL(url: "https://example.com/path?q=swift").toAction()
+            guard case .openURL(let url) = action else {
+                Issue.record("Expected Action.openURL")
+                return
+            }
+            #expect(url.absoluteString == "https://example.com/path?q=swift")
+        }
+
+        @Test("openURL rejects non-HTTP schemes")
+        func openURLRejectsUnsafeScheme() {
+            let action = BasicAction.openURL(url: "javascript:alert(1)").toAction()
+            guard case .wait(let duration) = action else {
+                Issue.record("Expected Action.wait for invalid URL")
+                return
+            }
+            #expect(duration == 0)
+        }
+
+        @Test("activateApp converts to native Action.activateApp")
+        func activateAppConversion() {
+            let action = BasicAction.activateApp(name: "Safari").toAction()
+            guard case .activateApp(let name) = action else {
+                Issue.record("Expected Action.activateApp")
+                return
+            }
+            #expect(name == "Safari")
+        }
+
+        @Test("quitApp converts to native Action.quitApp")
+        func quitAppConversion() {
+            let action = BasicAction.quitApp(name: "Google Chrome").toAction()
+            guard case .quitApp(let name) = action else {
+                Issue.record("Expected Action.quitApp")
+                return
+            }
+            #expect(name == "Google Chrome")
+        }
+
+        @Test("app names are passed as data without AppleScript interpolation")
+        func appNamesRemainData() {
+            let name = #"Example "App" & Tools"#
+
+            guard case .activateApp(let activatedName) =
+                    BasicAction.activateApp(name: name).toAction(),
+                  case .quitApp(let quitName) =
+                    BasicAction.quitApp(name: name).toAction() else {
+                Issue.record("Expected native app-control actions")
+                return
+            }
+            #expect(activatedName == name)
+            #expect(quitName == name)
+        }
+
+        @Test("app actions reject path traversal")
+        func appActionsRejectPathTraversal() {
+            let action = BasicAction.activateApp(name: "../Calculator").toAction()
+            guard case .wait(let duration) = action else {
+                Issue.record("Expected Action.wait for an invalid app path")
+                return
+            }
+            #expect(duration == 0)
+        }
+
+        @Test("getFrontmostApp converts to native action")
+        func getFrontmostAppConversion() {
+            let action = BasicAction.getFrontmostApp.toAction()
+            guard case .getFrontmostApp = action else {
+                Issue.record("Expected Action.getFrontmostApp")
+                return
+            }
+        }
     }
 
     // MARK: - Backend and API Tests
@@ -483,6 +660,24 @@ struct ActionGeneratorTests {
             let backend = OpenAIBackend(apiKey: "test-key")
             let generator = ActionGenerator(backend: backend)
             #expect(generator.backend.isAvailable)
+        }
+
+        @Test("OpenAI action schema includes Tier 1 app-control fields")
+        func actionSchemaIncludesAppControlFields() {
+            let schema = OpenAIVisionBackend.actionItemSchemaDict
+            let properties = schema["properties"] as? [String: Any]
+            let required = schema["required"] as? [String]
+            let typeProperty = properties?["type"] as? [String: Any]
+            let actionTypes = typeProperty?["enum"] as? [String]
+
+            #expect(properties?["url"] != nil)
+            #expect(properties?["name"] != nil)
+            #expect(required?.contains("url") == true)
+            #expect(required?.contains("name") == true)
+            #expect(actionTypes?.contains("openURL") == true)
+            #expect(actionTypes?.contains("activateApp") == true)
+            #expect(actionTypes?.contains("quitApp") == true)
+            #expect(actionTypes?.contains("getFrontmostApp") == true)
         }
     }
 }

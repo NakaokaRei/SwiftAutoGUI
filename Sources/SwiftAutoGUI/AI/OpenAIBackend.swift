@@ -144,9 +144,14 @@ extension OpenAIBackend {
         Parameters: path (array of strings, e.g. ["File", "Save As…"]), bundleID (string, empty = frontmost)
         - raiseWindow: Bring a window to the front by title. \
         Parameters: title (string), bundleID (string, empty = frontmost)
+        - openURL: Open an HTTP or HTTPS URL in the default browser. Parameters: url (string)
+        - activateApp: Launch an app if needed and bring it to the front. Parameters: name (string)
+        - quitApp: Gracefully quit an app. Parameters: name (string)
+        - getFrontmostApp: Get the name of the frontmost application. No additional parameters needed.
 
-        Prefer pressButton/setTextField/selectMenuItem/raiseWindow over coordinate-based actions \
-        when the user identifies a target by name — they are more reliable than guessing coordinates.
+        Prefer openURL/activateApp/quitApp and the AX-based actions \
+        (pressButton/setTextField/selectMenuItem/raiseWindow) over coordinate-based actions \
+        when applicable. They are more reliable than guessing coordinates.
 
         Respond with a JSON object containing an "actions" array. Each action must have a "type" field \
         and the relevant parameters for that type. For parameters not relevant to the action type, \

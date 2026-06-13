@@ -204,6 +204,14 @@ extension OpenAIVisionBackend {
             return "selectMenuItem(\(path.joined(separator: " > "))\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         case .raiseWindow(let title, let bundleID):
             return "raiseWindow(\"\(title)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .openURL(let url):
+            return "openURL(\"\(url)\")"
+        case .activateApp(let name):
+            return "activateApp(\"\(name)\")"
+        case .quitApp(let name):
+            return "quitApp(\"\(name)\")"
+        case .getFrontmostApp:
+            return "getFrontmostApp"
         }
     }
 }
@@ -240,9 +248,14 @@ extension OpenAIVisionBackend {
         Parameters: path (array of strings, e.g. ["File", "Save As…"]), bundleID (string, empty = frontmost)
         - raiseWindow: Bring a window to the front by title. \
         Parameters: title (string), bundleID (string, empty = frontmost)
+        - openURL: Open an HTTP or HTTPS URL in the default browser. Parameters: url (string)
+        - activateApp: Launch an app if needed and bring it to the front. Parameters: name (string)
+        - quitApp: Gracefully quit an app. Parameters: name (string)
+        - getFrontmostApp: Get the name of the frontmost application. No additional parameters needed.
 
-        Prefer the AX-based actions (pressButton, setTextField, selectMenuItem, raiseWindow) when the \
-        accessibility tree provides labels. They are more reliable than coordinate-based clicks.
+        Prefer openURL/activateApp/quitApp and the AX-based actions \
+        (pressButton, setTextField, selectMenuItem, raiseWindow) when applicable. \
+        They are more reliable than coordinate-based clicks.
 
         Instructions:
         1. Analyze the screenshot to understand the current screen state.
@@ -336,6 +349,17 @@ extension OpenAIVisionBackend {
             let title = dict["title"] as? String ?? ""
             let bundleID = dict["bundleID"] as? String ?? ""
             return .raiseWindow(title: title, bundleID: bundleID)
+        case "openURL":
+            let url = dict["url"] as? String ?? ""
+            return .openURL(url: url)
+        case "activateApp":
+            let name = dict["name"] as? String ?? ""
+            return .activateApp(name: name)
+        case "quitApp":
+            let name = dict["name"] as? String ?? ""
+            return .quitApp(name: name)
+        case "getFrontmostApp":
+            return .getFrontmostApp
         default:
             return nil
         }
@@ -419,7 +443,8 @@ extension OpenAIVisionBackend {
                 "description": "The action type.",
                 "enum": ["write", "move", "leftClick", "rightClick", "doubleClick",
                          "vscroll", "hscroll", "wait", "keyShortcut", "drag",
-                         "pressButton", "setTextField", "selectMenuItem", "raiseWindow"]
+                         "pressButton", "setTextField", "selectMenuItem", "raiseWindow",
+                         "openURL", "activateApp", "quitApp", "getFrontmostApp"]
             ] as [String: Any],
             "text": ["type": ["string", "null"], "description": "Text to type. Used with 'write' action."] as [String: Any],
             "x": ["type": ["number", "null"], "description": "X coordinate. Used with 'move' action."] as [String: Any],
@@ -436,10 +461,12 @@ extension OpenAIVisionBackend {
             "path": ["type": ["array", "null"], "description": "Menu path components, e.g. [\"File\", \"Save As…\"]. Used with 'selectMenuItem'.", "items": ["type": "string"]] as [String: Any],
             "title": ["type": ["string", "null"], "description": "Window title. Used with 'raiseWindow'."] as [String: Any],
             "bundleID": ["type": ["string", "null"], "description": "Bundle identifier of the target app, or empty/null for frontmost. Used with all AX actions."] as [String: Any],
+            "url": ["type": ["string", "null"], "description": "HTTP or HTTPS URL. Used with 'openURL'."] as [String: Any],
+            "name": ["type": ["string", "null"], "description": "Application name. Used with 'activateApp' and 'quitApp'."] as [String: Any],
         ] as [String: Any],
         "required": ["type", "text", "x", "y", "clicks", "duration", "keys",
                      "fromX", "fromY", "toX", "toY",
-                     "label", "value", "path", "title", "bundleID"],
+                     "label", "value", "path", "title", "bundleID", "url", "name"],
         "additionalProperties": false
     ] as [String: Any]
 

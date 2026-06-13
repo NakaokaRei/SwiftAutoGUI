@@ -59,6 +59,18 @@ public enum BasicAction: Sendable, Codable {
     /// Bring a window to the front by title.
     case raiseWindow(title: String, bundleID: String)
 
+    /// Open an HTTP or HTTPS URL in the default browser.
+    case openURL(url: String)
+
+    /// Launch an application if needed and bring it to the front.
+    case activateApp(name: String)
+
+    /// Gracefully quit an application.
+    case quitApp(name: String)
+
+    /// Get the name of the frontmost application.
+    case getFrontmostApp
+
     /// Convert to an executable ``Action``.
     public func toAction() -> Action {
         switch self {
@@ -96,11 +108,46 @@ public enum BasicAction: Sendable, Codable {
             return .selectMenuItem(path: path, app: scope(bundleID))
         case .raiseWindow(let title, let bundleID):
             return .raiseWindow(title: title, app: scope(bundleID))
+        case .openURL(let url):
+            guard let url = validatedHTTPURL(url) else { return .wait(0) }
+            return .openURL(url)
+        case .activateApp(let name):
+            guard let name = normalizedAppName(name) else { return .wait(0) }
+            return .activateApp(name: name)
+        case .quitApp(let name):
+            guard let name = normalizedAppName(name) else { return .wait(0) }
+            return .quitApp(name: name)
+        case .getFrontmostApp:
+            return .getFrontmostApp
         }
     }
 
     private func scope(_ bundleID: String) -> AXAppScope {
         bundleID.isEmpty ? .frontmost : .bundleID(bundleID)
+    }
+
+    private func validatedHTTPURL(_ value: String) -> URL? {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard value.count <= 2_048,
+              let components = URLComponents(string: value),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              components.host != nil,
+              let url = components.url else {
+            return nil
+        }
+        return url
+    }
+
+    private func normalizedAppName(_ value: String) -> String? {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty,
+              value.count <= 128,
+              !value.contains("/"),
+              !value.contains("\0") else {
+            return nil
+        }
+        return value
     }
 
     // MARK: - Tagged Union Codable
@@ -110,12 +157,14 @@ public enum BasicAction: Sendable, Codable {
         case text, x, y, clicks, duration, keys
         case fromX, fromY, toX, toY
         case label, value, path, title, bundleID
+        case url, name
     }
 
     private enum ActionType: String, Codable {
         case write, move, leftClick, rightClick, doubleClick
         case vscroll, hscroll, wait, keyShortcut, drag
         case pressButton, setTextField, selectMenuItem, raiseWindow
+        case openURL, activateApp, quitApp, getFrontmostApp
     }
 
     public init(from decoder: Decoder) throws {
@@ -171,6 +220,17 @@ public enum BasicAction: Sendable, Codable {
             let title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .raiseWindow(title: title, bundleID: bundleID)
+        case .openURL:
+            let url = try container.decodeIfPresent(String.self, forKey: .url) ?? ""
+            self = .openURL(url: url)
+        case .activateApp:
+            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            self = .activateApp(name: name)
+        case .quitApp:
+            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            self = .quitApp(name: name)
+        case .getFrontmostApp:
+            self = .getFrontmostApp
         }
     }
 
@@ -226,6 +286,17 @@ public enum BasicAction: Sendable, Codable {
             try container.encode(ActionType.raiseWindow, forKey: .type)
             try container.encode(title, forKey: .title)
             try container.encode(bundleID, forKey: .bundleID)
+        case .openURL(let url):
+            try container.encode(ActionType.openURL, forKey: .type)
+            try container.encode(url, forKey: .url)
+        case .activateApp(let name):
+            try container.encode(ActionType.activateApp, forKey: .type)
+            try container.encode(name, forKey: .name)
+        case .quitApp(let name):
+            try container.encode(ActionType.quitApp, forKey: .type)
+            try container.encode(name, forKey: .name)
+        case .getFrontmostApp:
+            try container.encode(ActionType.getFrontmostApp, forKey: .type)
         }
     }
 }
