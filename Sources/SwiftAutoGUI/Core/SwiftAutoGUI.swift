@@ -465,6 +465,7 @@ public class SwiftAutoGUI {
         let startPosition = position()
         let deltaX = to.x - startPosition.x
         let deltaY = to.y - startPosition.y
+        let source = CGEventSource(stateID: .hidSystemState)
         
         let frameInterval = 1.0 / fps
         let totalFrames = max(1, Int(duration * fps))
@@ -476,12 +477,20 @@ public class SwiftAutoGUI {
             let currentX = startPosition.x + deltaX * easedProgress
             let currentY = startPosition.y + deltaY * easedProgress
             
-            InputEvent.postMouseMoved(at: CGPoint(x: currentX, y: currentY))
+            InputEvent.postMouseMoved(
+                at: CGPoint(x: currentX, y: currentY),
+                source: source
+            )
             
             if frame < totalFrames {
                 try? await Task.sleep(nanoseconds: UInt64(frameInterval * 1_000_000_000))
             }
         }
+
+        // CGEvent posting is asynchronous. Give WindowServer a chance to apply the
+        // final event before callers observe the cursor position.
+        try? await Task.sleep(for: .milliseconds(10))
+        withExtendedLifetime(source) {}
     }
 
     /// Performs a left mouse button click at the current cursor position.
