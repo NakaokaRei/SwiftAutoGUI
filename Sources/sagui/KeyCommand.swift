@@ -27,12 +27,32 @@ import SwiftAutoGUI
 /// - ``Down``
 /// - ``Up``
 /// - ``TypeText``
+/// - ``ListKeys``
 struct KeyCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "key",
         abstract: "Keyboard control commands.",
-        subcommands: [Shortcut.self, Down.self, Up.self, TypeText.self]
+        subcommands: [Shortcut.self, Down.self, Up.self, TypeText.self, ListKeys.self]
     )
+}
+
+enum KeyNameResolver {
+    static let aliases: [String: Key] = [
+        "backspace": .delete,
+        "return": .returnKey,
+    ]
+
+    static var names: [String] {
+        Set(Key.allCases.map(\.rawValue) + aliases.keys).sorted()
+    }
+
+    static func resolve(_ name: String) -> Key? {
+        aliases[name] ?? Key(rawValue: name)
+    }
+
+    static func validationError(for name: String) -> ValidationError {
+        ValidationError("Unknown key: '\(name)'. Run 'sagui key list' to see valid key names.")
+    }
 }
 
 extension KeyCommand {
@@ -57,8 +77,8 @@ extension KeyCommand {
 
         func run() async throws {
             let mapped = try keys.map { name -> Key in
-                guard let key = Key(rawValue: name) else {
-                    throw ValidationError("Unknown key: '\(name)'. Examples: a, command, shift, leftArrow, space, f1")
+                guard let key = KeyNameResolver.resolve(name) else {
+                    throw KeyNameResolver.validationError(for: name)
                 }
                 return key
             }
@@ -83,8 +103,8 @@ extension KeyCommand {
         var key: String
 
         func run() async throws {
-            guard let k = Key(rawValue: key) else {
-                throw ValidationError("Unknown key: '\(key)'. Examples: a, command, shift, leftArrow, space, f1")
+            guard let k = KeyNameResolver.resolve(key) else {
+                throw KeyNameResolver.validationError(for: key)
             }
             await SwiftAutoGUI.keyDown(k)
         }
@@ -106,8 +126,8 @@ extension KeyCommand {
         var key: String
 
         func run() async throws {
-            guard let k = Key(rawValue: key) else {
-                throw ValidationError("Unknown key: '\(key)'. Examples: a, command, shift, leftArrow, space, f1")
+            guard let k = KeyNameResolver.resolve(key) else {
+                throw KeyNameResolver.validationError(for: key)
             }
             await SwiftAutoGUI.keyUp(k)
         }
@@ -137,6 +157,20 @@ extension KeyCommand {
         @MainActor
         func run() async throws {
             await SwiftAutoGUI.write(text, interval: interval)
+        }
+    }
+
+    /// List every accepted key name, including aliases.
+    struct ListKeys: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "list",
+            abstract: "List all valid key names."
+        )
+
+        func run() async throws {
+            for name in KeyNameResolver.names {
+                print(name)
+            }
         }
     }
 }

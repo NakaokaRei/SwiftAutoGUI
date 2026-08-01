@@ -298,6 +298,7 @@ import SwiftAutoGUI
 Task {
     await SwiftAutoGUI.move(to: CGPoint(x: 100, y: 200), duration: 0)
     SwiftAutoGUI.leftClick()
+    SwiftAutoGUI.click(at: CGPoint(x: 300, y: 200), button: .right)
     SwiftAutoGUI.vscroll(clicks: 10)
 }
 

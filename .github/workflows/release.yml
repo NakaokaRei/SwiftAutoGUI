@@ -48,6 +48,12 @@ jobs:
             exit 1
           fi
 
+          cli_version="$(sed -n 's/.*static let current = "\([^"]*\)"/\1/p' Sources/sagui/SaguiVersion.swift)"
+          if [[ "$cli_version" == "$VERSION" ]]; then
+            echo "::error::CLI version is already $VERSION."
+            exit 1
+          fi
+
       - name: Update plugin version
         env:
           VERSION: ${{ inputs.version }}
@@ -58,7 +64,11 @@ jobs:
           jq --arg version "$VERSION" '.version = $version' "$manifest" > "$manifest.tmp"
           mv "$manifest.tmp" "$manifest"
 
+          cli_version_file="Sources/sagui/SaguiVersion.swift"
+          sed -i "s/static let current = \"[^\"]*\"/static let current = \"$VERSION\"/" "$cli_version_file"
+
           test "$(jq -r '.version' "$manifest")" = "$VERSION"
+          test "$(sed -n 's/.*static let current = "\([^"]*\)"/\1/p' "$cli_version_file")" = "$VERSION"
 
       - name: Commit version bump
         env:
@@ -68,7 +78,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add plugins/swift-auto-gui/.claude-plugin/plugin.json
+          git add plugins/swift-auto-gui/.claude-plugin/plugin.json Sources/sagui/SaguiVersion.swift
           git commit -m "Bump plugin version to $VERSION"
           git push origin HEAD:master
 
