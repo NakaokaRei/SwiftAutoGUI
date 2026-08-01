@@ -34,6 +34,7 @@ import AppKit
 /// - ``TweeningFunction``
 ///
 /// ### Mouse Clicks
+/// - ``click(at:button:)``
 /// - ``leftClick()``
 /// - ``rightClick()``
 /// - ``doubleClick(button:)``
@@ -165,12 +166,44 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.sendKeyShortcut([.command, .space])
     /// ```
     public static func sendKeyShortcut(_ keys: [Key]) async {
+        let source = CGEventSource(stateID: .hidSystemState)
+        var flags = InputEvent.currentFlags()
+
         for key in keys {
-            await keyDown(key)
+            if let keycode = key.normalKeycode {
+                let event = InputEvent.keyboardEvent(
+                    for: key,
+                    keycode: keycode,
+                    down: true,
+                    currentFlags: flags,
+                    source: source
+                )
+                flags = event?.flags ?? flags
+                event?.post(tap: .cghidEventTap)
+                try? await Task.sleep(nanoseconds: 10_000_000)
+            } else if let specialKeycode = key.specialKeycode {
+                await specialKeyEvent(specialKeycode, down: true)
+            }
         }
+
         for key in keys.reversed() {
-            await keyUp(key)
+            if let keycode = key.normalKeycode {
+                let event = InputEvent.keyboardEvent(
+                    for: key,
+                    keycode: keycode,
+                    down: false,
+                    currentFlags: flags,
+                    source: source
+                )
+                flags = event?.flags ?? flags
+                event?.post(tap: .cghidEventTap)
+                try? await Task.sleep(nanoseconds: 10_000_000)
+            } else if let specialKeycode = key.specialKeycode {
+                await specialKeyEvent(specialKeycode, down: false)
+            }
         }
+
+        _ = source?.sourceStateID
     }
 
     /// Simulates pressing down a key without releasing it with async delay.
@@ -200,7 +233,7 @@ public class SwiftAutoGUI {
     /// ```
     public static func keyDown(_ key: Key) async {
         if let normalKeycode = key.normalKeycode {
-            await normalKeyEvent(normalKeycode, down: true)
+            await normalKeyEvent(key, keycode: normalKeycode, down: true)
         } else if let specialKeycode = key.specialKeycode {
             await specialKeyEvent(specialKeycode, down: true)
         }
@@ -230,7 +263,7 @@ public class SwiftAutoGUI {
     /// ```
     public static func keyUp(_ key: Key) async {
         if let normalKeycode = key.normalKeycode {
-            await normalKeyEvent(normalKeycode, down: false)
+            await normalKeyEvent(key, keycode: normalKeycode, down: false)
         } else if let specialKeycode = key.specialKeycode {
             await specialKeyEvent(specialKeycode, down: false)
         }
@@ -239,13 +272,16 @@ public class SwiftAutoGUI {
     /// Simulates a normal key event (press or release) with async delay.
     ///
     /// - Parameters:
-    ///   - key: The CGKeyCode value for the key
+    ///   - key: The key to send
+    ///   - keycode: The CGKeyCode value for the key
     ///   - down: true for key press, false for key release
-    private static func normalKeyEvent(_ key: CGKeyCode, down: Bool) async {
-        let source = CGEventSource(stateID: .hidSystemState)
-        let event = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: down)
+    private static func normalKeyEvent(_ key: Key, keycode: CGKeyCode, down: Bool) async {
+        let event = InputEvent.keyboardEvent(for: key, keycode: keycode, down: down)
         event?.post(tap: .cghidEventTap)
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        let delay: UInt64 = InputEvent.modifierFlag(for: key) == nil ? 10_000_000 : 100_000_000
+        try? await Task.sleep(nanoseconds: delay)
+        // Keep the event and its source alive until WindowServer commits modifier state.
+        _ = event?.type
     }
 
     /// Simulates a special key event (press or release) for media and function keys with async delay.
@@ -384,7 +420,7 @@ public class SwiftAutoGUI {
     public static func moveMouse(dx: CGFloat, dy: CGFloat) async {
         let mouseLoc = position()
         let newLoc = CGPoint(x: mouseLoc.x + dx, y: mouseLoc.y + dy)
-        CGDisplayMoveCursorToPoint(0, newLoc)
+        InputEvent.postMouseMoved(at: newLoc)
         try? await Task.sleep(for: .milliseconds(10))
     }
 
@@ -420,21 +456,27 @@ public class SwiftAutoGUI {
     /// }), fps: 24)
     /// ```
     public static func move(to: CGPoint, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
+        guard duration > 0, fps > 0 else {
+            InputEvent.postMouseMoved(at: to)
+            try? await Task.sleep(for: .milliseconds(10))
+            return
+        }
+
         let startPosition = position()
         let deltaX = to.x - startPosition.x
         let deltaY = to.y - startPosition.y
         
         let frameInterval = 1.0 / fps
-        let totalFrames = Int(duration * fps)
+        let totalFrames = max(1, Int(duration * fps))
         
-        for frame in 0...totalFrames {
+        for frame in 1...totalFrames {
             let progress = Double(frame) / Double(totalFrames)
             let easedProgress = tweening.apply(progress)
             
             let currentX = startPosition.x + deltaX * easedProgress
             let currentY = startPosition.y + deltaY * easedProgress
             
-            CGDisplayMoveCursorToPoint(0, CGPoint(x: currentX, y: currentY))
+            InputEvent.postMouseMoved(at: CGPoint(x: currentX, y: currentY))
             
             if frame < totalFrames {
                 try? await Task.sleep(nanoseconds: UInt64(frameInterval * 1_000_000_000))
@@ -465,10 +507,7 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.leftClick()
     /// ```
     public static func leftClick() {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
-        leftClickDown(position: mouseLoc)
-        leftClickUp(position: mouseLoc)
+        click(at: position())
     }
 
     /// Performs a right mouse button click at the current cursor position.
@@ -492,10 +531,21 @@ public class SwiftAutoGUI {
     /// Thread.sleep(forTimeInterval: 0.5)
     /// ```
     public static func rightClick() {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc = CGPoint(x: mouseLoc.x, y: NSHeight(NSScreen.screens[0].frame) - mouseLoc.y)
-        rightClickDown(position: mouseLoc)
-        rightClickUp(position: mouseLoc)
+        click(at: position(), button: .right)
+    }
+
+    /// Performs a mouse click at a given position.
+    ///
+    /// - Parameters:
+    ///   - position: The position to click in CGWindow coordinates (origin at top-left).
+    ///   - button: The mouse button to click (default: `.left`).
+    public static func click(at position: CGPoint, button: MouseButton = .left) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        InputEvent.postMouseMoved(at: position, source: source)
+        clickDown(position: position, button: button, clickCount: 1, source: source)
+        Thread.sleep(forTimeInterval: Double(InputEvent.clickDelayNanoseconds) / 1_000_000_000)
+        clickUp(position: position, button: button, clickCount: 1, source: source)
+        withExtendedLifetime(source) {}
     }
 
     /// Performs a drag operation by holding the left mouse button from one position to another.
@@ -526,12 +576,18 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.leftDragged(to: CGPoint(x: 200, y: 300), from: CGPoint(x: 100, y: 100))
     /// ```
     public static func leftDragged(to: CGPoint, from: CGPoint) {
-        leftClickDown(position: from)
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDragged,
-                            mouseCursorPosition: to, mouseButton: CGMouseButton.left)
+        let source = CGEventSource(stateID: .hidSystemState)
+        InputEvent.postMouseMoved(at: from, source: source)
+        clickDown(position: from, button: .left, clickCount: 1, source: source)
+        let event = InputEvent.mouseEvent(
+            type: .leftMouseDragged,
+            position: to,
+            button: .left,
+            source: source
+        )
         event?.post(tap: CGEventTapLocation.cghidEventTap)
-        leftClickUp(position: to)
+        clickUp(position: to, button: .left, clickCount: 1, source: source)
+        withExtendedLifetime(source) {}
     }
 
     /// Scrolls the mouse wheel vertically by the specified number of clicks.
@@ -562,27 +618,7 @@ public class SwiftAutoGUI {
     /// }
     /// ```
     public static func vscroll(clicks: Int) {
-        for _ in 0...Int(abs(clicks) / 10) {
-            let scrollEvent = CGEvent(
-                scrollWheelEvent2Source: nil,
-                units: .line,
-                wheelCount: 1,
-                wheel1: clicks >= 0 ? 10 : -10,
-                wheel2: 0,
-                wheel3: 0
-            )
-            scrollEvent?.post(tap: .cghidEventTap)
-        }
-
-        let scrollEvent = CGEvent(
-            scrollWheelEvent2Source: nil,
-            units: .line,
-            wheelCount: 1,
-            wheel1: Int32(clicks >= 0 ? clicks % 10 : -1 * (-clicks % 10)),
-            wheel2: 0,
-            wheel3: 0
-        )
-        scrollEvent?.post(tap: .cghidEventTap)
+        postScroll(clicks: clicks, vertical: true)
     }
     
     /// Scrolls the mouse wheel vertically with animated movement over a specified duration.
@@ -617,8 +653,13 @@ public class SwiftAutoGUI {
     /// }))
     /// ```
     public static func vscroll(clicks: Int, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
+        guard duration > 0, fps > 0 else {
+            vscroll(clicks: clicks)
+            return
+        }
+
         let frameInterval = 1.0 / fps
-        let totalFrames = Int(duration * fps)
+        let totalFrames = max(1, Int(duration * fps))
         let totalClicks = Double(clicks)
         var accumulatedClicks = 0.0
         
@@ -671,27 +712,7 @@ public class SwiftAutoGUI {
     /// SwiftAutoGUI.leftClick()
     /// ```
     public static func hscroll(clicks: Int) {
-        for _ in 0...Int(abs(clicks) / 10) {
-            let scrollEvent = CGEvent(
-                scrollWheelEvent2Source: nil,
-                units: .line,
-                wheelCount: 2,
-                wheel1: 0,
-                wheel2: clicks >= 0 ? 10 : -10,
-                wheel3: 0
-            )
-            scrollEvent?.post(tap: .cghidEventTap)
-        }
-
-        let scrollEvent = CGEvent(
-            scrollWheelEvent2Source: nil,
-            units: .line,
-            wheelCount: 2,
-            wheel1: 0,
-            wheel2: Int32(clicks >= 0 ? clicks % 10 : -1 * (-clicks % 10)),
-            wheel3: 0
-        )
-        scrollEvent?.post(tap: .cghidEventTap)
+        postScroll(clicks: clicks, vertical: false)
     }
     
     /// Scrolls the mouse wheel horizontally with animated movement over a specified duration.
@@ -726,8 +747,13 @@ public class SwiftAutoGUI {
     /// }))
     /// ```
     public static func hscroll(clicks: Int, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
+        guard duration > 0, fps > 0 else {
+            hscroll(clicks: clicks)
+            return
+        }
+
         let frameInterval = 1.0 / fps
-        let totalFrames = Int(duration * fps)
+        let totalFrames = max(1, Int(duration * fps))
         let totalClicks = Double(clicks)
         var accumulatedClicks = 0.0
         
@@ -774,9 +800,7 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.doubleClick(button: .right)
     /// ```
     public static func doubleClick(button: MouseButton = .left) async {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
-        await doubleClick(at: mouseLoc, button: button)
+        await doubleClick(at: position(), button: button)
     }
     
     /// Performs a double-click with the specified mouse button at a given position with async delay.
@@ -806,33 +830,7 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.doubleClick()
     /// ```
     public static func doubleClick(at position: CGPoint, button: MouseButton = .left) async {
-        let source = CGEventSource(stateID: .hidSystemState)
-        
-        // Create mouse down and up events with click count set to 2
-        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
-        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
-        
-        // First click
-        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
-                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        firstDown?.post(tap: .cghidEventTap)
-        
-        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
-                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        firstUp?.post(tap: .cghidEventTap)
-        
-        // Second click with click count = 2
-        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
-                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
-        secondDown?.post(tap: .cghidEventTap)
-        
-        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
-                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
-        secondUp?.post(tap: .cghidEventTap)
-        
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        await click(at: position, button: button, count: 2)
     }
     
     /// Performs a triple-click with the specified mouse button at the current cursor position with async delay.
@@ -854,9 +852,7 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.tripleClick(button: .right)
     /// ```
     public static func tripleClick(button: MouseButton = .left) async {
-        var mouseLoc = NSEvent.mouseLocation
-        mouseLoc.y = NSHeight(NSScreen.screens[0].frame) - mouseLoc.y
-        await tripleClick(at: mouseLoc, button: button)
+        await tripleClick(at: position(), button: button)
     }
     
     /// Performs a triple-click with the specified mouse button at a given position with async delay.
@@ -884,72 +880,81 @@ public class SwiftAutoGUI {
     /// await SwiftAutoGUI.tripleClick(at: CGPoint(x: 100, y: 200), button: .right)
     /// ```
     public static func tripleClick(at position: CGPoint, button: MouseButton = .left) async {
+        await click(at: position, button: button, count: 3)
+    }
+
+    private static func click(at position: CGPoint, button: MouseButton, count: Int) async {
         let source = CGEventSource(stateID: .hidSystemState)
-        
-        // Create mouse down and up events
-        let mouseDownType: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
-        let mouseUpType: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
-        
-        // First click
-        let firstDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
-                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        firstDown?.post(tap: .cghidEventTap)
-        
-        let firstUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
-                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        firstUp?.post(tap: .cghidEventTap)
-        
-        // Second click with click count = 2
-        let secondDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
-                                mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        secondDown?.setIntegerValueField(.mouseEventClickState, value: 2)
-        secondDown?.post(tap: .cghidEventTap)
-        
-        let secondUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
-                              mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        secondUp?.setIntegerValueField(.mouseEventClickState, value: 2)
-        secondUp?.post(tap: .cghidEventTap)
-        
-        // Third click with click count = 3
-        let thirdDown = CGEvent(mouseEventSource: source, mouseType: mouseDownType,
-                               mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        thirdDown?.setIntegerValueField(.mouseEventClickState, value: 3)
-        thirdDown?.post(tap: .cghidEventTap)
-        
-        let thirdUp = CGEvent(mouseEventSource: source, mouseType: mouseUpType,
-                             mouseCursorPosition: position, mouseButton: button.cgMouseButton)
-        thirdUp?.setIntegerValueField(.mouseEventClickState, value: 3)
-        thirdUp?.post(tap: .cghidEventTap)
-        
-        try? await Task.sleep(nanoseconds: 10_000_000) // 10ms
+        InputEvent.postMouseMoved(at: position, source: source)
+        for clickCount in 1...count {
+            clickDown(
+                position: position,
+                button: button,
+                clickCount: Int64(clickCount),
+                source: source
+            )
+            try? await Task.sleep(nanoseconds: InputEvent.clickDelayNanoseconds)
+            clickUp(
+                position: position,
+                button: button,
+                clickCount: Int64(clickCount),
+                source: source
+            )
+            if clickCount < count {
+                try? await Task.sleep(nanoseconds: InputEvent.clickDelayNanoseconds)
+            }
+        }
+        _ = source?.sourceStateID
     }
 
-    private static func leftClickDown(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseDown,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
+    private static func clickDown(
+        position: CGPoint,
+        button: MouseButton,
+        clickCount: Int64,
+        source: CGEventSource?
+    ) {
+        let type: CGEventType = button == .left ? .leftMouseDown : .rightMouseDown
+        InputEvent.mouseEvent(
+            type: type,
+            position: position,
+            button: button.cgMouseButton,
+            clickCount: clickCount,
+            source: source
+        )?.post(tap: .cghidEventTap)
     }
 
-    private static func leftClickUp(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.leftMouseUp,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.left)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
+    private static func clickUp(
+        position: CGPoint,
+        button: MouseButton,
+        clickCount: Int64,
+        source: CGEventSource?
+    ) {
+        let type: CGEventType = button == .left ? .leftMouseUp : .rightMouseUp
+        InputEvent.mouseEvent(
+            type: type,
+            position: position,
+            button: button.cgMouseButton,
+            clickCount: clickCount,
+            source: source
+        )?.post(tap: .cghidEventTap)
     }
 
-    private static func rightClickDown(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.rightMouseDown,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.right)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
-    }
+    private static func postScroll(clicks: Int, vertical: Bool) {
+        let deltas = InputEvent.scrollDeltas(clicks: clicks)
+        guard !deltas.isEmpty else { return }
 
-    private static func rightClickUp(position: CGPoint) {
-        let source = CGEventSource(stateID: CGEventSourceStateID.hidSystemState)
-        let event = CGEvent(mouseEventSource: source, mouseType: CGEventType.rightMouseUp,
-                            mouseCursorPosition: position, mouseButton: CGMouseButton.right)
-        event?.post(tap: CGEventTapLocation.cghidEventTap)
+        let source = CGEventSource(stateID: .hidSystemState)
+        let mousePosition = position()
+        InputEvent.postMouseMoved(at: mousePosition, source: source)
+        for delta in deltas {
+            InputEvent.scrollEvent(
+                vertical: vertical ? delta : 0,
+                horizontal: vertical ? 0 : delta,
+                at: mousePosition,
+                source: source
+            )?.post(tap: .cghidEventTap)
+        }
+        withExtendedLifetime(source) {}
     }
 
     // MARK: - Accessibility (AX)

@@ -75,6 +75,9 @@ sagui key down shift                     # Press key without releasing
 sagui key up shift                       # Release a held key
 sagui key type "Hello, World!"           # Type text character by character
 sagui key type "slow" --interval 0.1     # Type with delay between keystrokes
+sagui key shortcut return                # Return key (alias for returnKey)
+sagui key shortcut backspace             # Backspace (alias for delete)
+sagui key list                           # List every valid key name
 ```
 
 | Subcommand | Arguments | Optional |
@@ -83,6 +86,7 @@ sagui key type "slow" --interval 0.1     # Type with delay between keystrokes
 | `down` | `<key>` | |
 | `up` | `<key>` | |
 | `type` | `<text>` | `--interval <seconds>` (default: 0) |
+| `list` | | |
 
 #### Supported key names
 
@@ -98,7 +102,7 @@ sagui key type "slow" --interval 0.1     # Type with delay between keystrokes
 
 **Navigation**: `home`, `end`, `pageUp`, `pageDown`, `help`
 
-**Special**: `returnKey`, `enter`, `tab`, `space`, `escape`, `delete`, `forwardDelete`
+**Special**: `return`, `returnKey`, `enter`, `tab`, `space`, `escape`, `backspace`, `delete`, `forwardDelete`
 
 **Keypad**: `keypad0`-`keypad9`, `keypadDecimal`, `keypadMultiply`, `keypadPlus`, `keypadMinus`, `keypadDivide`, `keypadEnter`, `keypadClear`, `keypadEquals`
 
@@ -118,6 +122,8 @@ sagui mouse click                                                     # Left cli
 sagui mouse click --right                                             # Right click
 sagui mouse click --double                                            # Double-click
 sagui mouse click --triple                                            # Triple-click
+sagui mouse click --x 500 --y 300                                    # Click an exact position
+sagui mouse click --right --x 500 --y 300                            # Right-click an exact position
 sagui mouse drag --from-x 100 --from-y 100 --to-x 400 --to-y 400    # Drag
 sagui mouse scroll --vertical 5                                       # Scroll up
 sagui mouse scroll --vertical -3                                      # Scroll down
@@ -129,7 +135,7 @@ sagui mouse scroll --horizontal 2                                     # Scroll l
 | `position` | | |
 | `move` | `--x`, `--y` | |
 | `move-relative` | `--dx`, `--dy` | |
-| `click` | | `--right`, `--double`, `--triple` |
+| `click` | | `--x <point>` and `--y <point>`, `--right`, `--double`, `--triple` |
 | `drag` | `--from-x`, `--from-y`, `--to-x`, `--to-y` | |
 | `scroll` | | `--vertical <clicks>`, `--horizontal <clicks>` |
 
@@ -175,19 +181,19 @@ sagui agent "Fill in the form" --model gpt-5.4 --max-iterations 10
 1. `sagui screen size` — get screen dimensions.
 2. `sagui screen screenshot --output /tmp/screen.png` — capture current state.
 3. Read the screenshot image to identify target coordinates.
-4. `sagui mouse move --x <x> --y <y>` and `sagui mouse click` — interact.
+4. `sagui mouse click --x <x> --y <y>` — interact at the identified position.
 5. `sagui key type "text"` or `sagui key shortcut command a` — keyboard input.
 6. `sagui screen screenshot --output /tmp/verify.png` — verify result.
 
 ### Image-based interaction
 
 1. `sagui screen locate-center target.png` — find element position.
-2. `sagui mouse move --x <x> --y <y>` — move to found coordinates.
-3. `sagui mouse click` — click the element.
+2. `sagui mouse click --x <x> --y <y>` — click the found coordinates atomically.
 
 ## Notes
 
 - All mouse and keyboard commands require Accessibility permissions.
+- Use `sagui --version` when reporting issues or checking a CI environment.
 - Screenshot and image recognition commands require Screen Recording permissions.
 - `key type` supports any Unicode character. Use `key shortcut` with modifier keys for keyboard shortcuts.
 - Scroll: positive vertical = up, negative = down; positive horizontal = left, negative = right.

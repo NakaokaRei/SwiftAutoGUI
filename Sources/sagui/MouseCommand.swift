@@ -109,7 +109,7 @@ extension MouseCommand {
         }
     }
 
-    /// Click the mouse at the current cursor position.
+    /// Click the mouse at the current cursor position or at explicit coordinates.
     ///
     /// Supports left click (default), right click, double-click, and triple-click.
     ///
@@ -118,10 +118,11 @@ extension MouseCommand {
     /// sagui mouse click --right      # Right click
     /// sagui mouse click --double     # Double click
     /// sagui mouse click --triple     # Triple click
+    /// sagui mouse click --x 100 --y 200
     /// ```
     struct Click: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
-            abstract: "Click the mouse at the current position."
+            abstract: "Click the mouse at the current position or explicit coordinates."
         )
 
         @Flag(help: "Use right mouse button.")
@@ -133,13 +134,36 @@ extension MouseCommand {
         @Flag(name: .long, help: "Perform a triple-click.")
         var triple = false
 
+        @Option(help: "X coordinate. Must be used with --y.")
+        var x: Double?
+
+        @Option(help: "Y coordinate. Must be used with --x.")
+        var y: Double?
+
+        func validate() throws {
+            if (x == nil) != (y == nil) {
+                throw ValidationError("Specify both --x and --y, or omit both.")
+            }
+        }
+
         func run() async throws {
             let button: SwiftAutoGUI.MouseButton = right ? .right : .left
+            let target = x.flatMap { x in y.map { CGPoint(x: x, y: $0) } }
 
             if triple {
-                await SwiftAutoGUI.tripleClick(button: button)
+                if let target {
+                    await SwiftAutoGUI.tripleClick(at: target, button: button)
+                } else {
+                    await SwiftAutoGUI.tripleClick(button: button)
+                }
             } else if double {
-                await SwiftAutoGUI.doubleClick(button: button)
+                if let target {
+                    await SwiftAutoGUI.doubleClick(at: target, button: button)
+                } else {
+                    await SwiftAutoGUI.doubleClick(button: button)
+                }
+            } else if let target {
+                SwiftAutoGUI.click(at: target, button: button)
             } else {
                 if right {
                     SwiftAutoGUI.rightClick()

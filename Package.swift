@@ -48,6 +48,9 @@ let package = Package(
             name: "SwiftAutoGUITests",
             dependencies: ["SwiftAutoGUI"]),
         .testTarget(
+            name: "SaguiTests",
+            dependencies: ["sagui"]),
+        .testTarget(
             name: "ImageRecognitionTests",
             dependencies: ["ImageRecognition"]),
         .plugin(

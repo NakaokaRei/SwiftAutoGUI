@@ -59,6 +59,14 @@ brew install NakaokaRei/tap/sagui
 After install, grant **Accessibility** permission to your terminal in
 System Settings → Privacy & Security → Accessibility.
 
+```bash
+sagui --version
+sagui key list
+sagui key shortcut return
+sagui mouse click --x 100 --y 200
+sagui mouse click --right --x 100 --y 200
+```
+
 
 # Example Usage
 
