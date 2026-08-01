@@ -184,6 +184,7 @@ enum InputEvent {
     }
 
     static func postMouseMoved(at position: CGPoint, source: CGEventSource? = nil) {
+        CGWarpMouseCursorPosition(position)
         mouseMovedEvent(at: position, source: source)?.post(tap: .cghidEventTap)
     }
 }
