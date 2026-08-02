@@ -11,6 +11,7 @@ enum DemoTab: String, CaseIterable {
     case keyboard
     case keyboardLayout
     case mouse
+    case inputObserver
     case textTyping
     case screenshot
     case imageRecognition
@@ -28,6 +29,7 @@ enum DemoTab: String, CaseIterable {
         case .keyboard: return "Keyboard"
         case .keyboardLayout: return "KB Layout"
         case .mouse: return "Mouse"
+        case .inputObserver: return "Observer"
         case .textTyping: return "Text Typing"
         case .screenshot: return "Screenshot"
         case .imageRecognition: return "Image Recognition"
@@ -47,6 +49,7 @@ enum DemoTab: String, CaseIterable {
         case .keyboard: return "keyboard"
         case .keyboardLayout: return "globe"
         case .mouse: return "cursorarrow"
+        case .inputObserver: return "waveform.path.ecg"
         case .textTyping: return "text.cursor"
         case .screenshot: return "camera.viewfinder"
         case .imageRecognition: return "eye"

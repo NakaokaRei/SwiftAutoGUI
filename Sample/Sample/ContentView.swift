@@ -88,6 +88,8 @@ struct ContentView: View {
                             KeyboardLayoutView()
                         case .mouse:
                             MouseControlView()
+                        case .inputObserver:
+                            InputEventObserverView()
                         case .textTyping:
                             TextTypingView()
                         case .screenshot:
