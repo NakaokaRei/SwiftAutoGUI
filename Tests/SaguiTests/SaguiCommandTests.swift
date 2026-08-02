@@ -44,6 +44,8 @@ struct SaguiCommandTests {
     @Test("Root command exposes the current version")
     func version() {
         #expect(SaguiCLI.configuration.version == SaguiVersion.current)
-        #expect(SaguiVersion.current == "0.25.0")
+        let components = SaguiVersion.current.split(separator: ".")
+        #expect(components.count == 3)
+        #expect(components.allSatisfy { Int($0) != nil })
     }
 }

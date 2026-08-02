@@ -420,8 +420,10 @@ public class SwiftAutoGUI {
     public static func moveMouse(dx: CGFloat, dy: CGFloat) async {
         let mouseLoc = position()
         let newLoc = CGPoint(x: mouseLoc.x + dx, y: mouseLoc.y + dy)
-        InputEvent.postMouseMoved(at: newLoc)
-        try? await Task.sleep(for: .milliseconds(10))
+        let source = CGEventSource(stateID: .hidSystemState)
+        InputEvent.postMouseMoved(at: newLoc, source: source)
+        try? await Task.sleep(nanoseconds: InputEvent.mouseMoveSettleNanoseconds)
+        withExtendedLifetime(source) {}
     }
 
     /// Moves the mouse cursor to an absolute position with animated movement.
@@ -457,8 +459,10 @@ public class SwiftAutoGUI {
     /// ```
     public static func move(to: CGPoint, duration: TimeInterval, tweening: TweeningFunction = .linear, fps: Double = 60.0) async {
         guard duration > 0, fps > 0 else {
-            InputEvent.postMouseMoved(at: to)
-            try? await Task.sleep(for: .milliseconds(10))
+            let source = CGEventSource(stateID: .hidSystemState)
+            InputEvent.postMouseMoved(at: to, source: source)
+            try? await Task.sleep(nanoseconds: InputEvent.mouseMoveSettleNanoseconds)
+            withExtendedLifetime(source) {}
             return
         }
 
@@ -487,9 +491,9 @@ public class SwiftAutoGUI {
             }
         }
 
-        // CGEvent posting is asynchronous. Give WindowServer a chance to apply the
-        // final event before callers observe the cursor position.
-        try? await Task.sleep(for: .milliseconds(10))
+        // CGEvent posting is asynchronous. Keep the source alive while WindowServer
+        // applies the final event so callers can immediately observe the destination.
+        try? await Task.sleep(nanoseconds: InputEvent.mouseMoveSettleNanoseconds)
         withExtendedLifetime(source) {}
     }
 
@@ -551,9 +555,11 @@ public class SwiftAutoGUI {
     public static func click(at position: CGPoint, button: MouseButton = .left) {
         let source = CGEventSource(stateID: .hidSystemState)
         InputEvent.postMouseMoved(at: position, source: source)
+        Thread.sleep(forTimeInterval: Double(InputEvent.mouseMoveSettleNanoseconds) / 1_000_000_000)
         clickDown(position: position, button: button, clickCount: 1, source: source)
         Thread.sleep(forTimeInterval: Double(InputEvent.clickDelayNanoseconds) / 1_000_000_000)
         clickUp(position: position, button: button, clickCount: 1, source: source)
+        Thread.sleep(forTimeInterval: Double(InputEvent.eventDeliverySettleNanoseconds) / 1_000_000_000)
         withExtendedLifetime(source) {}
     }
 
@@ -587,6 +593,7 @@ public class SwiftAutoGUI {
     public static func leftDragged(to: CGPoint, from: CGPoint) {
         let source = CGEventSource(stateID: .hidSystemState)
         InputEvent.postMouseMoved(at: from, source: source)
+        Thread.sleep(forTimeInterval: Double(InputEvent.mouseMoveSettleNanoseconds) / 1_000_000_000)
         clickDown(position: from, button: .left, clickCount: 1, source: source)
         let event = InputEvent.mouseEvent(
             type: .leftMouseDragged,
@@ -596,6 +603,7 @@ public class SwiftAutoGUI {
         )
         event?.post(tap: CGEventTapLocation.cghidEventTap)
         clickUp(position: to, button: .left, clickCount: 1, source: source)
+        Thread.sleep(forTimeInterval: Double(InputEvent.eventDeliverySettleNanoseconds) / 1_000_000_000)
         withExtendedLifetime(source) {}
     }
 
@@ -895,6 +903,7 @@ public class SwiftAutoGUI {
     private static func click(at position: CGPoint, button: MouseButton, count: Int) async {
         let source = CGEventSource(stateID: .hidSystemState)
         InputEvent.postMouseMoved(at: position, source: source)
+        try? await Task.sleep(nanoseconds: InputEvent.mouseMoveSettleNanoseconds)
         for clickCount in 1...count {
             clickDown(
                 position: position,
@@ -913,6 +922,7 @@ public class SwiftAutoGUI {
                 try? await Task.sleep(nanoseconds: InputEvent.clickDelayNanoseconds)
             }
         }
+        try? await Task.sleep(nanoseconds: InputEvent.eventDeliverySettleNanoseconds)
         _ = source?.sourceStateID
     }
 
@@ -963,6 +973,7 @@ public class SwiftAutoGUI {
                 source: source
             )?.post(tap: .cghidEventTap)
         }
+        Thread.sleep(forTimeInterval: Double(InputEvent.eventDeliverySettleNanoseconds) / 1_000_000_000)
         withExtendedLifetime(source) {}
     }
 

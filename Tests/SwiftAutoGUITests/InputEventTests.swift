@@ -114,6 +114,18 @@ struct InputEventTests {
         #expect(event.getIntegerValueField(.mouseEventClickState) == 2)
     }
 
+    @Test("Mouse movement is represented by a positioned CGEvent")
+    func mouseMovedEvent() throws {
+        let point = CGPoint(x: 321, y: 654)
+        let event = try #require(InputEvent.mouseMovedEvent(
+            at: point,
+            flags: [.maskShift]
+        ))
+        #expect(event.type == .mouseMoved)
+        #expect(event.location == point)
+        #expect(event.flags.contains(.maskShift))
+    }
+
     @Test("Scroll events include location, flags, and axes")
     func scrollEvent() throws {
         let point = CGPoint(x: 50, y: 75)

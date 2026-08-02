@@ -1,7 +1,9 @@
 import CoreGraphics
 
 enum InputEvent {
-    static let clickDelayNanoseconds: UInt64 = 60_000_000
+    static let mouseMoveSettleNanoseconds: UInt64 = 120_000_000
+    static let clickDelayNanoseconds: UInt64 = 80_000_000
+    static let eventDeliverySettleNanoseconds: UInt64 = 20_000_000
 
     static func currentFlags() -> CGEventFlags {
         CGEventSource.flagsState(.hidSystemState)
@@ -184,7 +186,6 @@ enum InputEvent {
     }
 
     static func postMouseMoved(at position: CGPoint, source: CGEventSource? = nil) {
-        CGWarpMouseCursorPosition(position)
         mouseMovedEvent(at: position, source: source)?.post(tap: .cghidEventTap)
     }
 }
