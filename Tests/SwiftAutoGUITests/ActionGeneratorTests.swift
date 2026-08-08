@@ -642,6 +642,18 @@ struct ActionGeneratorTests {
     @Suite("Backend and API")
     struct BackendTests {
 
+        @Test("Vision backend defaults to the current flagship model")
+        func visionBackendDefaults() {
+            #expect(OpenAIVisionBackend.defaultModel == "gpt-5.6-sol")
+            #expect(OpenAIVisionBackend.defaultReasoningEffort == "low")
+        }
+
+        @Test("Text backend defaults to the efficient model")
+        func textBackendDefaults() {
+            #expect(OpenAIBackend.defaultModel == "gpt-5.6-luna")
+            #expect(OpenAIBackend.defaultReasoningEffort == "none")
+        }
+
         @Test("OpenAIBackend is always available")
         func openAIBackendAvailable() {
             let backend = OpenAIBackend(apiKey: "test-key")

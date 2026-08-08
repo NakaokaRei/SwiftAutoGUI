@@ -79,12 +79,23 @@ SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason 
 ```swift
 import SwiftAutoGUI
 
-let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
+let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
 let agent = Agent(backend: backend, maxIterations: 15)
 
 let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
 ```
+
+The CLI prints the effective reasoning effort when it starts and the model-provided
+reasoning summary for every agent step:
+
+```bash
+sagui agent "Open Safari and search for Swift" --reasoning-effort low
+```
+
+`--reasoning-effort` accepts `none`, `low`, `medium`, `high`, `xhigh`, or `max`.
+It defaults to `low` for GPT-5.6 models. The per-step `Reasoning:` line is the
+agent's concise explanation of its chosen actions, not the model's hidden chain of thought.
 
 ## Basic Usage
 

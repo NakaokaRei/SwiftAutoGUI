@@ -11,9 +11,20 @@ import SwiftAutoGUI
 ///
 /// ```bash
 /// sagui agent "Open Safari and search for Swift" --api-key sk-...
-/// sagui agent "Click the trash icon" --model gpt-4o --max-iterations 15
+/// sagui agent "Click the trash icon" --model gpt-5.6-sol --reasoning-effort low --max-iterations 15
 /// ```
 struct AgentCommand: AsyncParsableCommand {
+    enum ReasoningEffort: String, CaseIterable, ExpressibleByArgument {
+        case none
+        case low
+        case medium
+        case high
+        case xhigh
+        case max
+    }
+
+    static let defaultModel = OpenAIVisionBackend.defaultModel
+
     static let configuration = CommandConfiguration(
         commandName: "agent",
         abstract: "Run an AI agent to accomplish a goal using screen observation."
@@ -26,7 +37,10 @@ struct AgentCommand: AsyncParsableCommand {
     var apiKey: String?
 
     @Option(help: "Vision model to use.")
-    var model: String = "gpt-5.4"
+    var model: String = Self.defaultModel
+
+    @Option(help: "Reasoning effort: none, low, medium, high, xhigh, or max. Defaults to low for GPT-5.6 models.")
+    var reasoningEffort: ReasoningEffort?
 
     @Option(help: "Maximum number of iterations.")
     var maxIterations: Int = 20
@@ -44,7 +58,11 @@ struct AgentCommand: AsyncParsableCommand {
             throw ValidationError("Provide --api-key or set OPENAI_API_KEY environment variable.")
         }
 
-        let backend = OpenAIVisionBackend(apiKey: key, model: model)
+        let backend = OpenAIVisionBackend(
+            apiKey: key,
+            model: model,
+            reasoningEffort: reasoningEffort?.rawValue
+        )
         let contextOptions: ScreenContextProvider.Options? = noScreenContext ? nil : ScreenContextProvider.Options()
         let agent = Agent(
             backend: backend,
@@ -54,7 +72,9 @@ struct AgentCommand: AsyncParsableCommand {
         )
 
         print("Agent starting with goal: \"\(goal)\"")
-        print("Model: \(model), Max iterations: \(maxIterations), Delay: \(delay)s, Screen context: \(!noScreenContext)")
+        print("Model: \(model)")
+        print("Reasoning effort: \(effectiveReasoningEffort)")
+        print("Max iterations: \(maxIterations), Delay: \(delay)s, Screen context: \(!noScreenContext)")
         print("---")
 
         let result = try await agent.run(goal: goal) { step in
@@ -62,7 +82,7 @@ struct AgentCommand: AsyncParsableCommand {
                 from: step.timestamp, dateStyle: .none, timeStyle: .medium
             )
             let actionSummary = step.actions.map { "\($0)" }.joined(separator: ", ")
-            print("[\(timestamp)] \(step.reasoning)")
+            print("[\(timestamp)] Reasoning: \(step.reasoning)")
             print("  Actions: \(actionSummary)")
             print("---")
         }
@@ -70,5 +90,15 @@ struct AgentCommand: AsyncParsableCommand {
         print("Agent finished.")
         print("Completed: \(result.completed)")
         print("Iterations used: \(result.iterationsUsed)")
+    }
+
+    var effectiveReasoningEffort: String {
+        if let reasoningEffort {
+            return reasoningEffort.rawValue
+        }
+        if model.hasPrefix("gpt-5.6") {
+            return OpenAIVisionBackend.defaultReasoningEffort
+        }
+        return "model default"
     }
 }

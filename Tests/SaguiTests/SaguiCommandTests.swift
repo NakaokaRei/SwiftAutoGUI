@@ -48,4 +48,44 @@ struct SaguiCommandTests {
         #expect(components.count == 3)
         #expect(components.allSatisfy { Int($0) != nil })
     }
+
+    @Test("Agent defaults to the current flagship model")
+    func agentDefaultModel() throws {
+        let command = try AgentCommand.parse(["Inspect the frontmost app"])
+        #expect(command.model == "gpt-5.6-sol")
+        #expect(command.reasoningEffort == nil)
+        #expect(command.effectiveReasoningEffort == "low")
+    }
+
+    @Test("Agent accepts an explicit model override")
+    func agentModelOverride() throws {
+        let command = try AgentCommand.parse([
+            "Inspect the frontmost app",
+            "--model", "gpt-5.6-terra",
+        ])
+        #expect(command.model == "gpt-5.6-terra")
+    }
+
+    @Test(
+        "Agent accepts every GPT-5.6 reasoning effort",
+        arguments: AgentCommand.ReasoningEffort.allCases
+    )
+    func agentReasoningEffort(effort: AgentCommand.ReasoningEffort) throws {
+        let command = try AgentCommand.parse([
+            "Inspect the frontmost app",
+            "--reasoning-effort", effort.rawValue,
+        ])
+        #expect(command.reasoningEffort == effort)
+        #expect(command.effectiveReasoningEffort == effort.rawValue)
+    }
+
+    @Test("Agent rejects an unknown reasoning effort")
+    func agentRejectsUnknownReasoningEffort() {
+        #expect(throws: (any Error).self) {
+            try AgentCommand.parse([
+                "Inspect the frontmost app",
+                "--reasoning-effort", "extreme",
+            ])
+        }
+    }
 }

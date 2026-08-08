@@ -29,19 +29,35 @@ import Foundation
 /// ```
 public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 
+    /// The default OpenAI model used for vision-based agent actions.
+    public static let defaultModel = "gpt-5.6-sol"
+
+    /// The reasoning effort used by default for GPT-5.6 models.
+    public static let defaultReasoningEffort = "low"
+
     private let apiKey: String
     private let model: String
+    private let reasoningEffort: String?
     private let baseURL: String
 
     /// Creates an OpenAI vision backend.
     ///
     /// - Parameters:
     ///   - apiKey: Your OpenAI API key.
-    ///   - model: The vision-capable model to use (default: `gpt-4o`).
+    ///   - model: The vision-capable model to use (default: `gpt-5.6-sol`).
+    ///   - reasoningEffort: Optional reasoning effort sent to the Responses API. When omitted,
+    ///     GPT-5.6 models use `low` to balance agent planning quality and latency.
     ///   - baseURL: The API base URL (default: OpenAI).
-    public init(apiKey: String, model: String = "gpt-4o", baseURL: String = "https://api.openai.com/v1") {
+    public init(
+        apiKey: String,
+        model: String = OpenAIVisionBackend.defaultModel,
+        reasoningEffort: String? = nil,
+        baseURL: String = "https://api.openai.com/v1"
+    ) {
         self.apiKey = apiKey
         self.model = model
+        self.reasoningEffort = reasoningEffort
+            ?? (model.hasPrefix("gpt-5.6") ? Self.defaultReasoningEffort : nil)
         self.baseURL = baseURL
     }
 
@@ -78,7 +94,7 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
             screenContext: screenContext
         )
 
-        let requestBody: [String: Any] = [
+        var requestBody: [String: Any] = [
             "model": model,
             "instructions": Self.buildSystemPrompt(screenSize: screenSize, hasScreenContext: screenContext != nil),
             "input": input,
@@ -91,6 +107,9 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
                 ] as [String: Any]
             ] as [String: Any]
         ]
+        if let reasoningEffort {
+            requestBody["reasoning"] = ["effort": reasoningEffort]
+        }
 
         let requestData = try JSONSerialization.data(withJSONObject: requestBody)
 

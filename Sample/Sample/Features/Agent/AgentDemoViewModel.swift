@@ -16,12 +16,15 @@ class AgentDemoViewModel {
     // MARK: - Backend Settings
 
     var openAIKey: String = ""
-    var openAIModel: String = "gpt-5.4"
+    var openAIModel: String = OpenAIVisionBackend.defaultModel
     var maxIterations: Int = 20
     var delayBetweenSteps: Double = 1.0
     var useScreenContext: Bool = true
 
     static let availableModels = [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
         "gpt-5.4",
         "gpt-5.4-mini",
         "gpt-5.4-nano",
