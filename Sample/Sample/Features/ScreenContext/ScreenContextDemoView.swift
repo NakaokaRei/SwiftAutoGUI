@@ -27,6 +27,7 @@ struct ScreenContextDemoView: View {
                     HStack(spacing: 12) {
                         badge("\(context.visibleWindows.count) windows", icon: "macwindow")
                         badge("\(viewModel.nodeCount) nodes", icon: "list.bullet.indent")
+                        badge("\(viewModel.actionableElementCount) actionable", icon: "scope")
                     }
                 }
             }
@@ -81,7 +82,10 @@ struct ScreenContextDemoView: View {
             if viewModel.formattedOutput.isEmpty {
                 emptyState
             } else {
-                contextDisplay
+                VStack(alignment: .leading, spacing: 12) {
+                    elementActionObserver
+                    contextDisplay
+                }
             }
         }
     }
@@ -144,6 +148,57 @@ struct ScreenContextDemoView: View {
     }
 
     // MARK: - Context Display
+
+    private var elementActionObserver: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Element Action Observer", systemImage: "scope")
+                    .font(.headline)
+                Spacer()
+                if viewModel.isExecuting { ProgressView().scaleEffect(0.7) }
+            }
+
+            Text("Choose a [#N] identifier from the AX tree below. Actions are resolved against the captured hierarchy and rejected if the element became stale.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                Text("Element #")
+                    .font(.caption)
+                TextField("ID", value: $viewModel.selectedElementID, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 60)
+                Button("Press") { viewModel.pressSelectedElement() }
+                    .disabled(viewModel.isExecuting)
+
+                Divider().frame(height: 20)
+
+                TextField("Value", text: $viewModel.elementValue)
+                    .textFieldStyle(.roundedBorder)
+                Button("Set Value") { viewModel.setSelectedElementValue() }
+                    .disabled(viewModel.isExecuting)
+            }
+
+            Text(viewModel.executionLog)
+                .font(.system(.caption2, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(colorScheme == .dark ? Color.black.opacity(0.3) : Color.gray.opacity(0.06))
+                )
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.teal.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.teal.opacity(0.25), lineWidth: 1)
+        )
+    }
 
     private var contextDisplay: some View {
         VStack(alignment: .leading, spacing: 12) {

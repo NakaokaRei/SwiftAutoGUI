@@ -86,6 +86,22 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
         history: [AgentStep],
         screenContext: ScreenContext?
     ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: Optional(screenshot),
+            screenSize: screenSize,
+            history: history,
+            screenContext: screenContext
+        )
+    }
+
+    public func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        screenContext: ScreenContext?
+    ) async throws -> AgentResponse {
         let input = buildInput(
             goal: goal,
             screenshot: screenshot,
@@ -96,7 +112,11 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 
         var requestBody: [String: Any] = [
             "model": model,
-            "instructions": Self.buildSystemPrompt(screenSize: screenSize, hasScreenContext: screenContext != nil),
+            "instructions": Self.buildSystemPrompt(
+                screenSize: screenSize,
+                hasScreenContext: screenContext != nil,
+                hasScreenshot: screenshot != nil
+            ),
             "input": input,
             "text": [
                 "format": [
@@ -157,7 +177,7 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
 extension OpenAIVisionBackend {
     private func buildInput(
         goal: String,
-        screenshot: Data,
+        screenshot: Data?,
         screenSize: CGSize,
         history: [AgentStep],
         screenContext: ScreenContext? = nil
@@ -167,14 +187,18 @@ extension OpenAIVisionBackend {
         // History steps
         for (index, step) in history.enumerated() {
             let actionSummary = step.actions.map { describeBasicAction($0) }.joined(separator: ", ")
+            let resultSummary = step.executionResults.map { result in
+                let status = result.succeeded ? "succeeded" : "failed"
+                let change = result.screenChanged ? ", UI changed" : ""
+                let reason = result.failureReason.map { ", reason: \($0)" } ?? ""
+                return "\(status) via \(result.method.rawValue)\(change)\(reason)"
+            }.joined(separator: "; ")
             input.append([
                 "role": "assistant",
-                "content": "Step \(index + 1): \(step.reasoning)\nActions executed: \(actionSummary)"
+                "content": "Step \(index + 1): \(step.reasoning)\nActions executed: \(actionSummary)" +
+                    (resultSummary.isEmpty ? "" : "\nExecution results: \(resultSummary)")
             ])
         }
-
-        // Current screenshot + goal + screen context
-        let base64 = screenshot.base64EncodedString()
 
         var userText = "Goal: \(goal)\n"
         if let context = screenContext {
@@ -182,21 +206,26 @@ extension OpenAIVisionBackend {
             userText += context.formatted()
             userText += "\n--- End Screen Context ---\n"
         }
-        userText += "\nThis is the current screenshot. What actions should I take next?"
+        userText += screenshot == nil
+            ? "\nUse the structured screen context to decide what actions to take next."
+            : "\nThis is the current screenshot. What actions should I take next?"
+
+        var content: [[String: Any]] = []
+        if let screenshot {
+            content.append([
+                "type": "input_image",
+                "image_url": "data:image/jpeg;base64,\(screenshot.base64EncodedString())",
+                "detail": "low"
+            ])
+        }
+        content.append([
+            "type": "input_text",
+            "text": userText
+        ])
 
         input.append([
             "role": "user",
-            "content": [
-                [
-                    "type": "input_image",
-                    "image_url": "data:image/jpeg;base64,\(base64)",
-                    "detail": "low"
-                ] as [String: Any],
-                [
-                    "type": "input_text",
-                    "text": userText
-                ] as [String: Any]
-            ] as [[String: Any]]
+            "content": content
         ] as [String: Any])
 
         return input
@@ -217,8 +246,12 @@ extension OpenAIVisionBackend {
             return "drag(\(Int(fromX)),\(Int(fromY)) -> \(Int(toX)),\(Int(toY)))"
         case .pressButton(let label, let bundleID):
             return "pressButton(\"\(label)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .pressElement(let elementID):
+            return "pressElement(#\(elementID))"
         case .setTextField(let label, let value, let bundleID):
             return "setTextField(label:\"\(label)\", value:\"\(value)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .setElementValue(let elementID, let value):
+            return "setElementValue(#\(elementID), value:\"\(value)\")"
         case .selectMenuItem(let path, let bundleID):
             return "selectMenuItem(\(path.joined(separator: " > "))\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         case .raiseWindow(let title, let bundleID):
@@ -238,10 +271,14 @@ extension OpenAIVisionBackend {
 // MARK: - System Prompt
 
 extension OpenAIVisionBackend {
-    static func buildSystemPrompt(screenSize: CGSize, hasScreenContext: Bool = false) -> String {
+    static func buildSystemPrompt(
+        screenSize: CGSize,
+        hasScreenContext: Bool = false,
+        hasScreenshot: Bool = true
+    ) -> String {
         var prompt = """
         You are an AI agent controlling a macOS computer to achieve a user's goal. \
-        You will receive screenshots of the current screen state and must decide what actions to take.
+        You will receive a current screen observation and must decide what actions to take.
 
         Screen size: \(Int(screenSize.width)) x \(Int(screenSize.height)) pixels (origin at top-left).
 
@@ -261,8 +298,12 @@ extension OpenAIVisionBackend {
         - drag: Drag mouse from one position to another. Parameters: fromX, fromY, toX, toY (numbers)
         - pressButton: Press a button by accessibility label (semantic, no coordinates needed). \
         Parameters: label (string, e.g. "OK"), bundleID (string, empty = frontmost app, otherwise e.g. "com.apple.calculator")
+        - pressElement: Press an actionable element from the current AX tree. \
+        Parameters: elementID (integer from a [#N] marker in the current screen context)
         - setTextField: Set a text field's value via accessibility. \
         Parameters: label (string, may be empty for role-only match), value (string), bundleID (string, empty = frontmost)
+        - setElementValue: Set the value of an actionable element from the current AX tree. \
+        Parameters: elementID (integer from a [#N] marker), value (string)
         - selectMenuItem: Select a menu item by hierarchical path. \
         Parameters: path (array of strings, e.g. ["File", "Save As…"]), bundleID (string, empty = frontmost)
         - raiseWindow: Bring a window to the front by title. \
@@ -273,25 +314,29 @@ extension OpenAIVisionBackend {
         - getFrontmostApp: Get the name of the frontmost application. No additional parameters needed.
 
         Prefer openURL/activateApp/quitApp and the AX-based actions \
-        (pressButton, setTextField, selectMenuItem, raiseWindow) when applicable. \
+        (pressElement, setElementValue, pressButton, setTextField, selectMenuItem, raiseWindow) when applicable. \
         They are more reliable than coordinate-based clicks.
 
         Instructions:
-        1. Analyze the screenshot to understand the current screen state.
+        1. Analyze the current observation to understand the screen state.
         2. Decide the next action(s) to move toward the goal.
         3. Set isDone to true ONLY when the goal has been fully achieved.
         4. Provide brief reasoning about what you see and why you chose these actions.
-        5. Use move + leftClick to click on UI elements. First move to the element, then click.
+        5. When no semantic element action is available, use move + leftClick. First move to the element, then click.
         6. Keep action sequences short (1-3 actions per step) to allow re-observation.
 
         Respond with a JSON object containing "reasoning", "isDone", and "actions" fields.
         """
 
+        if !hasScreenshot {
+            prompt += "\n\nNo screenshot is included in this step. Use only the structured screen context and prior execution results."
+        }
+
         if hasScreenContext {
             prompt += """
 
 
-            You will also receive structured screen context alongside the screenshot. This includes:
+            You will also receive structured screen context in the observation. This includes:
             - The frontmost application name and bundle identifier
             - The current keyboard input source / IME mode (e.g., "U.S.", "日本語ローマ字")
             - A list of visible windows with their titles, owning apps, and screen bounds
@@ -301,6 +346,9 @@ extension OpenAIVisionBackend {
             give exact coordinates you can use with move/click actions. Prefer using accessibility tree \
             coordinates over guessing positions from the screenshot when available. \
             The accessibility tree may be truncated ([...]) for deeply nested elements.
+
+            Actionable AX elements are marked [#N] and list their supported actions. Prefer pressElement \
+            and setElementValue with these step-local IDs. Never reuse an element ID from an older step.
 
             When the keyboard input source indicates a non-ASCII input mode (e.g., Japanese), \
             consider switching to an ASCII-capable source before using the 'write' action for English text. \
@@ -355,11 +403,18 @@ extension OpenAIVisionBackend {
             let label = dict["label"] as? String ?? ""
             let bundleID = dict["bundleID"] as? String ?? ""
             return .pressButton(label: label, bundleID: bundleID)
+        case "pressElement":
+            let elementID = (dict["elementID"] as? NSNumber)?.intValue ?? 0
+            return .pressElement(elementID: elementID)
         case "setTextField":
             let label = dict["label"] as? String ?? ""
             let value = dict["value"] as? String ?? ""
             let bundleID = dict["bundleID"] as? String ?? ""
             return .setTextField(label: label, value: value, bundleID: bundleID)
+        case "setElementValue":
+            let elementID = (dict["elementID"] as? NSNumber)?.intValue ?? 0
+            let value = dict["value"] as? String ?? ""
+            return .setElementValue(elementID: elementID, value: value)
         case "selectMenuItem":
             let path = dict["path"] as? [String] ?? []
             let bundleID = dict["bundleID"] as? String ?? ""
@@ -462,7 +517,7 @@ extension OpenAIVisionBackend {
                 "description": "The action type.",
                 "enum": ["write", "move", "leftClick", "rightClick", "doubleClick",
                          "vscroll", "hscroll", "wait", "keyShortcut", "drag",
-                         "pressButton", "setTextField", "selectMenuItem", "raiseWindow",
+                         "pressButton", "pressElement", "setTextField", "setElementValue", "selectMenuItem", "raiseWindow",
                          "openURL", "activateApp", "quitApp", "getFrontmostApp"]
             ] as [String: Any],
             "text": ["type": ["string", "null"], "description": "Text to type. Used with 'write' action."] as [String: Any],
@@ -480,12 +535,13 @@ extension OpenAIVisionBackend {
             "path": ["type": ["array", "null"], "description": "Menu path components, e.g. [\"File\", \"Save As…\"]. Used with 'selectMenuItem'.", "items": ["type": "string"]] as [String: Any],
             "title": ["type": ["string", "null"], "description": "Window title. Used with 'raiseWindow'."] as [String: Any],
             "bundleID": ["type": ["string", "null"], "description": "Bundle identifier of the target app, or empty/null for frontmost. Used with all AX actions."] as [String: Any],
+            "elementID": ["type": ["integer", "null"], "description": "Step-local [#N] element identifier. Used with element actions."] as [String: Any],
             "url": ["type": ["string", "null"], "description": "HTTP or HTTPS URL. Used with 'openURL'."] as [String: Any],
             "name": ["type": ["string", "null"], "description": "Application name. Used with 'activateApp' and 'quitApp'."] as [String: Any],
         ] as [String: Any],
         "required": ["type", "text", "x", "y", "clicks", "duration", "keys",
                      "fromX", "fromY", "toX", "toY",
-                     "label", "value", "path", "title", "bundleID", "url", "name"],
+                     "label", "value", "path", "title", "bundleID", "elementID", "url", "name"],
         "additionalProperties": false
     ] as [String: Any]
 

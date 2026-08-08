@@ -43,6 +43,9 @@ public struct Agent: Sendable {
     /// Set to `nil` to disable screen context gathering entirely.
     public let screenContextOptions: ScreenContextProvider.Options?
 
+    /// Controls whether screenshots accompany structured screen context.
+    public let visionMode: AgentVisionMode
+
     /// Creates an agent with the specified configuration.
     ///
     /// - Parameters:
@@ -51,16 +54,19 @@ public struct Agent: Sendable {
     ///   - delayBetweenSteps: Seconds to wait between steps (default: 1.0).
     ///   - screenContextOptions: Options for screen context gathering (default: enabled with defaults).
     ///     Pass `nil` to disable.
+    ///   - visionMode: Controls when screenshots are included (default: ``AgentVisionMode/always``).
     public init(
         backend: any VisionActionGenerating,
         maxIterations: Int = 20,
         delayBetweenSteps: TimeInterval = 1.0,
-        screenContextOptions: ScreenContextProvider.Options? = ScreenContextProvider.Options()
+        screenContextOptions: ScreenContextProvider.Options? = ScreenContextProvider.Options(),
+        visionMode: AgentVisionMode = .always
     ) {
         self.backend = backend
         self.maxIterations = maxIterations
         self.delayBetweenSteps = delayBetweenSteps
         self.screenContextOptions = screenContextOptions
+        self.visionMode = visionMode
     }
 
     /// Runs the agent loop to achieve the given goal.
@@ -86,19 +92,34 @@ public struct Agent: Sendable {
         for _ in 0..<maxIterations {
             try Task.checkCancellation()
 
-            // 1. Observe: take screenshot
-            guard let screenshot = try await SwiftAutoGUI.screenshot(),
-                  let jpegData = screenshot.jpegData(compressionFactor: 0.5) else {
-                throw ActionGeneratorError.invalidResponse(detail: "Failed to capture screenshot")
+            // 1. Observe structured screen state first.
+            let screenContext: ScreenContext? = screenContextOptions.map { options in
+                ScreenContextProvider.gather(options: options)
+            }
+
+            let includeScreenshot: Bool
+            switch visionMode {
+            case .always:
+                includeScreenshot = true
+            case .automatic:
+                includeScreenshot = screenContext?.actionableElementCount == 0
+            case .never:
+                includeScreenshot = false
+            }
+
+            let jpegData: Data?
+            if includeScreenshot {
+                guard let screenshot = try await SwiftAutoGUI.screenshot(),
+                      let data = screenshot.jpegData(compressionFactor: 0.5) else {
+                    throw ActionGeneratorError.invalidResponse(detail: "Failed to capture screenshot")
+                }
+                jpegData = data
+            } else {
+                jpegData = nil
             }
 
             let screenSize = SwiftAutoGUI.size()
             let screenCGSize = CGSize(width: screenSize.width, height: screenSize.height)
-
-            // 1b. Gather screen context (if enabled)
-            let screenContext: ScreenContext? = screenContextOptions.map { options in
-                ScreenContextProvider.gather(options: options)
-            }
 
             // 2. Think: send to backend
             let response = try await backend.generateActions(
@@ -109,14 +130,31 @@ public struct Agent: Sendable {
                 screenContext: screenContext
             )
 
-            // 3. Act: execute actions
-            let actions = response.actions.map { $0.toAction() }
-            await actions.execute()
+            // 3. Act: execute against the observation used by the model. Stop
+            // as soon as the UI changes or an action fails, then re-observe.
+            var currentContext = screenContext
+            var executedActions: [BasicAction] = []
+            var executionResults: [ActionExecutionResult] = []
+            for action in response.actions {
+                let execution = await AgentActionExecutor.execute(
+                    action,
+                    in: currentContext,
+                    screenContextOptions: screenContextOptions
+                )
+                executedActions.append(action)
+                executionResults.append(execution.result)
+                currentContext = execution.screenContext
+
+                if !execution.result.succeeded || execution.result.screenChanged {
+                    break
+                }
+            }
 
             // 4. Record step
             let step = AgentStep(
-                actions: response.actions,
-                reasoning: response.reasoning
+                actions: executedActions,
+                reasoning: response.reasoning,
+                executionResults: executionResults
             )
             steps.append(step)
             onStep?(step)

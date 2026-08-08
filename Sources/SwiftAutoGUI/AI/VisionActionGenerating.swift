@@ -76,6 +76,39 @@ extension VisionActionGenerating {
             history: history
         )
     }
+
+    /// Generates actions when a screenshot may be omitted. Backends that can
+    /// operate from structured context alone should override this overload.
+    public func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        screenContext: ScreenContext?
+    ) async throws -> AgentResponse {
+        guard let screenshot else {
+            throw ActionGeneratorError.invalidResponse(
+                detail: "This vision backend requires a screenshot. Use AgentVisionMode.always."
+            )
+        }
+        return try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history,
+            screenContext: screenContext
+        )
+    }
+}
+
+/// Controls when ``Agent`` includes a screenshot in an observation.
+public enum AgentVisionMode: String, Sendable, Codable, CaseIterable {
+    /// Always capture a screenshot. This preserves the original Agent behavior.
+    case always
+    /// Omit the screenshot when actionable AX elements are available.
+    case automatic
+    /// Use structured screen context without a screenshot.
+    case never
 }
 
 // MARK: - Agent Types
@@ -88,12 +121,21 @@ public struct AgentStep: Sendable {
     /// The LLM's reasoning about what it observed and decided.
     public let reasoning: String
 
+    /// Structured outcomes for the actions that were actually executed.
+    public let executionResults: [ActionExecutionResult]
+
     /// When this step occurred.
     public let timestamp: Date
 
-    public init(actions: [BasicAction], reasoning: String, timestamp: Date = Date()) {
+    public init(
+        actions: [BasicAction],
+        reasoning: String,
+        executionResults: [ActionExecutionResult] = [],
+        timestamp: Date = Date()
+    ) {
         self.actions = actions
         self.reasoning = reasoning
+        self.executionResults = executionResults
         self.timestamp = timestamp
     }
 }
