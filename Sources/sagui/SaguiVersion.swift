@@ -1,3 +1,3 @@
 enum SaguiVersion {
-    static let current = "0.27.0"
+    static let current = "0.28.0"
 }
