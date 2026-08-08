@@ -46,7 +46,7 @@ SwiftAutoGUI includes an ``Agent`` that can autonomously observe the screen, rea
 ```swift
 import SwiftAutoGUI
 
-let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-4o")
+let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
 let agent = Agent(backend: backend, maxIterations: 15)
 
 let result = try await agent.run(goal: "Open Safari and search for Swift")
@@ -90,12 +90,17 @@ struct MyBackend: VisionActionGenerating {
 sagui agent "Open Safari and search for Swift" --api-key sk-...
 
 # With options
-sagui agent "Click the trash icon" --model gpt-4o --max-iterations 15 --delay 2.0
+sagui agent "Click the trash icon" --model gpt-5.6-sol --reasoning-effort low --max-iterations 15 --delay 2.0
 
 # Using environment variable for the API key
 export OPENAI_API_KEY=sk-...
 sagui agent "Open Terminal"
 ```
+
+The command prints the effective reasoning effort at startup and a `Reasoning:`
+summary for each step. `--reasoning-effort` accepts `none`, `low`, `medium`,
+`high`, `xhigh`, or `max`, and defaults to `low` for GPT-5.6 models. The step
+summary explains the selected actions; it is not the model's hidden chain of thought.
 
 ## Action Pattern
 

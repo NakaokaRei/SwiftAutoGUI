@@ -165,14 +165,18 @@ sagui screen locate-center button.png                      # Find image center (
 ### agent — AI-powered automation
 
 ```bash
-sagui agent "Open Safari and search for Swift"                    # Run with on-device model
+sagui agent "Open Safari and search for Swift"                    # Uses OPENAI_API_KEY and default model
 sagui agent "Click the submit button" --api-key sk-...            # Run with OpenAI
-sagui agent "Fill in the form" --model gpt-5.4 --max-iterations 10
+sagui agent "Fill in the form" --model gpt-5.6-sol --reasoning-effort low --max-iterations 10
 ```
 
 | Required | Optional |
 |---|---|
-| `<goal>` (string) | `--api-key <key>` (or `OPENAI_API_KEY` env), `--model <model>` (default: `gpt-5.4`), `--max-iterations <n>` (default: 20), `--delay <seconds>` (default: 1.0), `--no-screen-context` |
+| `<goal>` (string) | `--api-key <key>` (or `OPENAI_API_KEY` env), `--model <model>` (default: `gpt-5.6-sol`), `--reasoning-effort <none|low|medium|high|xhigh|max>` (default: `low` for GPT-5.6), `--max-iterations <n>` (default: 20), `--delay <seconds>` (default: 1.0), `--no-screen-context` |
+
+The command prints the effective reasoning effort at startup and a concise
+`Reasoning:` summary for every step. This summary explains the selected actions;
+it is not the model's hidden chain of thought.
 
 ## Workflow
 

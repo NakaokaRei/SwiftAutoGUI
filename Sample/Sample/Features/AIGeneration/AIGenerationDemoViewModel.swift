@@ -27,9 +27,12 @@ class AIGenerationDemoViewModel {
 
     var selectedBackend: Backend = .foundationModels
     var openAIKey: String = ""
-    var openAIModel: String = "gpt-4.1-nano"
+    var openAIModel: String = OpenAIBackend.defaultModel
 
     static let availableOpenAIModels = [
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
         "gpt-4.1-nano",
         "gpt-4.1-mini",
         "gpt-4.1",

@@ -20,7 +20,7 @@ import Foundation
 /// await action.execute()
 ///
 /// // With a specific model
-/// let backend = OpenAIBackend(apiKey: "sk-...", model: "gpt-4o")
+/// let backend = OpenAIBackend(apiKey: "sk-...", model: "gpt-5.6-terra")
 /// ```
 ///
 /// ## Security
@@ -28,19 +28,35 @@ import Foundation
 /// Never hard-code API keys in source code. Use environment variables or secure storage.
 public struct OpenAIBackend: ActionGenerating, Sendable {
 
+    /// The default OpenAI model used for text-to-action generation.
+    public static let defaultModel = "gpt-5.6-luna"
+
+    /// The reasoning effort used by default for GPT-5.6 models.
+    public static let defaultReasoningEffort = "none"
+
     private let apiKey: String
     private let model: String
+    private let reasoningEffort: String?
     private let baseURL: String
 
     /// Creates an OpenAI backend.
     ///
     /// - Parameters:
     ///   - apiKey: Your OpenAI API key.
-    ///   - model: The model to use (default: `gpt-4.1-nano`).
+    ///   - model: The model to use (default: `gpt-5.6-luna`).
+    ///   - reasoningEffort: Optional reasoning effort sent to the Responses API. When omitted,
+    ///     GPT-5.6 models use `none` for low-latency action conversion.
     ///   - baseURL: The API base URL (default: OpenAI).
-    public init(apiKey: String, model: String = "gpt-4.1-nano", baseURL: String = "https://api.openai.com/v1") {
+    public init(
+        apiKey: String,
+        model: String = OpenAIBackend.defaultModel,
+        reasoningEffort: String? = nil,
+        baseURL: String = "https://api.openai.com/v1"
+    ) {
         self.apiKey = apiKey
         self.model = model
+        self.reasoningEffort = reasoningEffort
+            ?? (model.hasPrefix("gpt-5.6") ? Self.defaultReasoningEffort : nil)
         self.baseURL = baseURL
     }
 
@@ -56,7 +72,7 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
     }
 
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
-        let requestBody: [String: Any] = [
+        var requestBody: [String: Any] = [
             "model": model,
             "instructions": Self.systemPrompt,
             "input": prompt,
@@ -69,6 +85,9 @@ public struct OpenAIBackend: ActionGenerating, Sendable {
                 ] as [String: Any]
             ] as [String: Any]
         ]
+        if let reasoningEffort {
+            requestBody["reasoning"] = ["effort": reasoningEffort]
+        }
 
         let requestData = try JSONSerialization.data(withJSONObject: requestBody)
 

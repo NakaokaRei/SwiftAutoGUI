@@ -360,9 +360,18 @@ public struct ActionGenerator: Sendable {
     ///
     /// - Parameters:
     ///   - openAIKey: Your OpenAI API key.
-    ///   - model: The model to use (default: `gpt-4.1-nano`).
-    public init(openAIKey: String, model: String = "gpt-4.1-nano") {
-        self.backend = OpenAIBackend(apiKey: openAIKey, model: model)
+    ///   - model: The model to use (default: `gpt-5.6-luna`).
+    ///   - reasoningEffort: Optional reasoning effort sent to the Responses API.
+    public init(
+        openAIKey: String,
+        model: String = OpenAIBackend.defaultModel,
+        reasoningEffort: String? = nil
+    ) {
+        self.backend = OpenAIBackend(
+            apiKey: openAIKey,
+            model: model,
+            reasoningEffort: reasoningEffort
+        )
     }
 
     // MARK: - Instance Methods
