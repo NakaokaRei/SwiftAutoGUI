@@ -49,6 +49,11 @@ class ImageRecognitionViewModel {
         context.flushGraphics()
         NSGraphicsContext.restoreGraphicsState()
 
+        // Preserve the 64x64 pixel template while displaying it at 32 points.
+        // On a 2x Retina display, Preview then renders it as 64x64 screen pixels,
+        // matching the pixel dimensions used by template matching.
+        bitmapImage.size = NSSize(width: 32, height: 32)
+
         let documents = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
@@ -64,6 +69,7 @@ class ImageRecognitionViewModel {
                 imageRecognitionResult = """
                     Tiled matcher test image created at: \(path)
                     Pixel size: \(bitmapImage.pixelsWide)x\(bitmapImage.pixelsHigh)
+                    Display size: \(Int(bitmapImage.size.width))x\(Int(bitmapImage.size.height)) points
                     Open this image in a separate Preview window, then try to locate it.
                     """
             } catch {
