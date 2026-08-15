@@ -64,6 +64,23 @@ struct ScreenContextTests {
     @Suite("ScreenContext Formatting")
     struct FormattingTests {
 
+        @Test("decodes AX nodes written before semantic identifiers existed")
+        func legacyAXNodeDecoding() throws {
+            let json = """
+            {
+              "role": "AXButton",
+              "label": "OK",
+              "frame": {"x": 1, "y": 2, "width": 3, "height": 4},
+              "isEnabled": true,
+              "children": []
+            }
+            """
+            let node = try JSONDecoder().decode(AXNode.self, from: Data(json.utf8))
+            #expect(node.elementID == nil)
+            #expect(node.path.isEmpty)
+            #expect(node.actions.isEmpty)
+        }
+
         @Test("formats frontmost app")
         func frontmostApp() {
             let context = ScreenContext(
@@ -190,6 +207,61 @@ struct ScreenContextTests {
             )
             let output = context.formatted()
             #expect(output.contains("AXTextField \"Search\" value=\"hello world\" {100,50 200x22}"))
+        }
+
+        @Test("formats and resolves actionable element identifiers")
+        func actionableElementIdentifiers() {
+            let button = AXNode(
+                role: "AXButton",
+                label: "Save",
+                value: nil,
+                frame: CodableRect(x: 10, y: 20, width: 80, height: 30),
+                isEnabled: true,
+                children: [],
+                elementID: 7,
+                path: [0, 2],
+                actions: ["AXPress"]
+            )
+            let tree = AXNode(
+                role: "AXWindow",
+                label: "Document",
+                value: nil,
+                frame: CodableRect(x: 0, y: 0, width: 500, height: 400),
+                isEnabled: true,
+                children: [button]
+            )
+            let context = ScreenContext(
+                frontmostApp: nil,
+                visibleWindows: [],
+                focusedWindowAXTree: tree
+            )
+
+            #expect(context.formatted().contains("[#7] AXButton \"Save\""))
+            #expect(context.formatted().contains("actions=[AXPress]"))
+            #expect(context.actionableElementCount == 1)
+            #expect(tree.node(withID: 7)?.path == [0, 2])
+            #expect(tree.node(withID: 999) == nil)
+        }
+
+        @Test("fingerprint changes with semantic UI state")
+        func semanticFingerprint() {
+            func context(value: String) -> ScreenContext {
+                ScreenContext(
+                    frontmostApp: AppInfo(name: "Example", bundleIdentifier: "com.example", pid: 1),
+                    visibleWindows: [],
+                    focusedWindowAXTree: AXNode(
+                        role: "AXTextField",
+                        label: "Name",
+                        value: value,
+                        frame: CodableRect(x: 0, y: 0, width: 100, height: 20),
+                        isEnabled: true,
+                        children: []
+                    )
+                )
+            }
+
+            #expect(context(value: "before").stateFingerprint != context(value: "after").stateFingerprint)
+            #expect(context(value: "same").stateFingerprint == context(value: "same").stateFingerprint)
         }
 
         @Test("formats pruned subtree with [...]")

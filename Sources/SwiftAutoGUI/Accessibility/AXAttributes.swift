@@ -79,3 +79,9 @@ internal func axActionNames(_ element: AXUIElement) -> [String] {
     guard result == .success, let names = namesRef as? [String] else { return [] }
     return names
 }
+
+internal func axIsAttributeSettable(_ element: AXUIElement, _ attribute: String) -> Bool {
+    var settable = DarwinBoolean(false)
+    let result = AXUIElementIsAttributeSettable(element, attribute as CFString, &settable)
+    return result == .success && settable.boolValue
+}

@@ -23,6 +23,12 @@ struct AgentCommand: AsyncParsableCommand {
         case max
     }
 
+    enum VisionMode: String, CaseIterable, ExpressibleByArgument {
+        case always
+        case automatic
+        case never
+    }
+
     static let defaultModel = OpenAIVisionBackend.defaultModel
 
     static let configuration = CommandConfiguration(
@@ -51,6 +57,9 @@ struct AgentCommand: AsyncParsableCommand {
     @Flag(help: "Disable screen context (accessibility tree and window info).")
     var noScreenContext: Bool = false
 
+    @Option(help: "Screenshot mode: always, automatic, or never.")
+    var visionMode: VisionMode = .always
+
     @MainActor
     func run() async throws {
         let key = apiKey ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
@@ -68,13 +77,15 @@ struct AgentCommand: AsyncParsableCommand {
             backend: backend,
             maxIterations: maxIterations,
             delayBetweenSteps: delay,
-            screenContextOptions: contextOptions
+            screenContextOptions: contextOptions,
+            visionMode: AgentVisionMode(rawValue: visionMode.rawValue) ?? .always
         )
 
         print("Agent starting with goal: \"\(goal)\"")
         print("Model: \(model)")
         print("Reasoning effort: \(effectiveReasoningEffort)")
         print("Max iterations: \(maxIterations), Delay: \(delay)s, Screen context: \(!noScreenContext)")
+        print("Vision mode: \(visionMode.rawValue)")
         print("---")
 
         let result = try await agent.run(goal: goal) { step in
@@ -84,6 +95,12 @@ struct AgentCommand: AsyncParsableCommand {
             let actionSummary = step.actions.map { "\($0)" }.joined(separator: ", ")
             print("[\(timestamp)] Reasoning: \(step.reasoning)")
             print("  Actions: \(actionSummary)")
+            for result in step.executionResults {
+                let status = result.succeeded ? "succeeded" : "failed"
+                let change = result.screenChanged ? ", UI changed" : ""
+                let reason = result.failureReason.map { ", \($0)" } ?? ""
+                print("  Result: \(status) via \(result.method.rawValue)\(change)\(reason)")
+            }
             print("---")
         }
 

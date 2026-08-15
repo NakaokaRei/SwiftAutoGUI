@@ -25,14 +25,39 @@ public struct ScreenContext: Sendable, Codable {
     /// The accessibility tree of the focused window (nil if unavailable).
     public let focusedWindowAXTree: AXNode?
 
+    /// The element that currently owns keyboard focus, if exposed by Accessibility.
+    public let focusedElement: FocusedElementInfo?
+
     /// The current keyboard input source / IME mode (nil if unavailable).
     public let keyboardInputSource: InputSourceInfo?
 
-    public init(frontmostApp: AppInfo?, visibleWindows: [WindowInfo], focusedWindowAXTree: AXNode?, keyboardInputSource: InputSourceInfo? = nil) {
+    public init(
+        frontmostApp: AppInfo?,
+        visibleWindows: [WindowInfo],
+        focusedWindowAXTree: AXNode?,
+        keyboardInputSource: InputSourceInfo? = nil,
+        focusedElement: FocusedElementInfo? = nil
+    ) {
         self.frontmostApp = frontmostApp
         self.visibleWindows = visibleWindows
         self.focusedWindowAXTree = focusedWindowAXTree
         self.keyboardInputSource = keyboardInputSource
+        self.focusedElement = focusedElement
+    }
+}
+
+/// Compact identity of the UI element that currently owns keyboard focus.
+public struct FocusedElementInfo: Sendable, Codable, Equatable {
+    public let role: String
+    public let label: String?
+    public let value: String?
+    public let frame: CodableRect
+
+    public init(role: String, label: String?, value: String?, frame: CodableRect) {
+        self.role = role
+        self.label = label
+        self.value = value
+        self.frame = frame
     }
 }
 
@@ -85,6 +110,20 @@ public struct WindowInfo: Sendable, Codable {
 /// Represents a single UI element with its role, label, value, position, and children.
 /// The tree is depth- and node-limited to control token usage when sent to an LLM.
 public struct AXNode: Sendable, Codable {
+    private enum CodingKeys: String, CodingKey {
+        case elementID, path, actions, role, label, value, frame, isEnabled, children
+    }
+    /// Step-local identifier used by an agent to target this element.
+    /// Only actionable elements receive an identifier.
+    public let elementID: Int?
+
+    /// Child-index path from the focused window, used to resolve a live element.
+    public let path: [Int]
+
+    /// Accessibility actions advertised by the element. `AXSetValue` is added
+    /// when the value attribute is writable.
+    public let actions: [String]
+
     /// The accessibility role (e.g. "AXButton", "AXTextField", "AXWindow").
     public let role: String
 
@@ -104,13 +143,39 @@ public struct AXNode: Sendable, Codable {
     /// An empty array means the element genuinely has no children.
     public let children: [AXNode]?
 
-    public init(role: String, label: String?, value: String?, frame: CodableRect, isEnabled: Bool, children: [AXNode]?) {
+    public init(
+        role: String,
+        label: String?,
+        value: String?,
+        frame: CodableRect,
+        isEnabled: Bool,
+        children: [AXNode]?,
+        elementID: Int? = nil,
+        path: [Int] = [],
+        actions: [String] = []
+    ) {
+        self.elementID = elementID
+        self.path = path
+        self.actions = actions
         self.role = role
         self.label = label
         self.value = value
         self.frame = frame
         self.isEnabled = isEnabled
         self.children = children
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        elementID = try container.decodeIfPresent(Int.self, forKey: .elementID)
+        path = try container.decodeIfPresent([Int].self, forKey: .path) ?? []
+        actions = try container.decodeIfPresent([String].self, forKey: .actions) ?? []
+        role = try container.decode(String.self, forKey: .role)
+        label = try container.decodeIfPresent(String.self, forKey: .label)
+        value = try container.decodeIfPresent(String.self, forKey: .value)
+        frame = try container.decode(CodableRect.self, forKey: .frame)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        children = try container.decodeIfPresent([AXNode].self, forKey: .children)
     }
 }
 
@@ -179,16 +244,25 @@ public struct ScreenContextProvider: Sendable {
         let inputSource = gatherKeyboardInputSource()
 
         var axTree: AXNode?
+        var focusedElement: FocusedElementInfo?
         if options.includeAXTree, let app = frontmostApp {
             var nodeCount = 0
-            axTree = gatherAXTree(pid: app.pid, options: options, nodeCount: &nodeCount)
+            var nextElementID = 1
+            axTree = gatherAXTree(
+                pid: app.pid,
+                options: options,
+                nodeCount: &nodeCount,
+                nextElementID: &nextElementID
+            )
+            focusedElement = gatherFocusedElement(pid: app.pid, maxValueLength: options.maxValueLength)
         }
 
         return ScreenContext(
             frontmostApp: frontmostApp,
             visibleWindows: visibleWindows,
             focusedWindowAXTree: axTree,
-            keyboardInputSource: inputSource
+            keyboardInputSource: inputSource,
+            focusedElement: focusedElement
         )
     }
 }
@@ -271,7 +345,12 @@ extension ScreenContextProvider {
 extension ScreenContextProvider {
 
     @MainActor
-    private static func gatherAXTree(pid: Int32, options: Options, nodeCount: inout Int) -> AXNode? {
+    private static func gatherAXTree(
+        pid: Int32,
+        options: Options,
+        nodeCount: inout Int,
+        nextElementID: inout Int
+    ) -> AXNode? {
         let appElement = AXUIElementCreateApplication(pid)
 
         // Get the focused window
@@ -288,7 +367,38 @@ extension ScreenContextProvider {
 
         // The CFTypeRef is actually an AXUIElement
         let axWindow = windowElement as! AXUIElement
-        return buildAXNode(from: axWindow, options: options, depth: 0, nodeCount: &nodeCount)
+        return buildAXNode(
+            from: axWindow,
+            options: options,
+            depth: 0,
+            path: [],
+            nodeCount: &nodeCount,
+            nextElementID: &nextElementID
+        )
+    }
+
+    @MainActor
+    private static func gatherFocusedElement(pid: Int32, maxValueLength: Int) -> FocusedElementInfo? {
+        let appElement = AXUIElementCreateApplication(pid)
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            appElement,
+            kAXFocusedUIElementAttribute as CFString,
+            &value
+        ) == .success, let value else { return nil }
+
+        let element = value as! AXUIElement
+        let rawValue = axStringAttribute(element, kAXValueAttribute)
+        let truncated = rawValue.map {
+            $0.count > maxValueLength ? String($0.prefix(maxValueLength)) + "..." : $0
+        }
+        return FocusedElementInfo(
+            role: axStringAttribute(element, kAXRoleAttribute) ?? "AXUnknown",
+            label: axStringAttribute(element, kAXTitleAttribute)
+                ?? axStringAttribute(element, kAXDescriptionAttribute),
+            value: truncated,
+            frame: CodableRect(axFrame(element) ?? .zero)
+        )
     }
 
     @MainActor
@@ -296,7 +406,9 @@ extension ScreenContextProvider {
         from element: AXUIElement,
         options: Options,
         depth: Int,
-        nodeCount: inout Int
+        path: [Int],
+        nodeCount: inout Int,
+        nextElementID: inout Int
     ) -> AXNode? {
         guard nodeCount < options.maxNodes else { return nil }
         nodeCount += 1
@@ -317,13 +429,31 @@ extension ScreenContextProvider {
 
         let frame = CodableRect(axFrame(element) ?? .zero)
         let isEnabled = axBoolAttribute(element, kAXEnabledAttribute) ?? true
+        var actions = axActionNames(element).sorted()
+        if axIsAttributeSettable(element, kAXValueAttribute), !actions.contains("AXSetValue") {
+            actions.append("AXSetValue")
+        }
+        let elementID: Int?
+        if !actions.isEmpty {
+            elementID = nextElementID
+            nextElementID += 1
+        } else {
+            elementID = nil
+        }
 
         // Get children if within depth limit
         let children: [AXNode]?
         if depth < options.maxDepth {
             if let childArray = axChildren(element) {
-                children = childArray.compactMap { child in
-                    buildAXNode(from: child, options: options, depth: depth + 1, nodeCount: &nodeCount)
+                children = childArray.enumerated().compactMap { index, child in
+                    buildAXNode(
+                        from: child,
+                        options: options,
+                        depth: depth + 1,
+                        path: path + [index],
+                        nodeCount: &nodeCount,
+                        nextElementID: &nextElementID
+                    )
                 }
             } else {
                 children = []
@@ -343,7 +473,10 @@ extension ScreenContextProvider {
             value: value,
             frame: frame,
             isEnabled: isEnabled,
-            children: children
+            children: children,
+            elementID: elementID,
+            path: path,
+            actions: actions
         )
     }
 }
@@ -369,6 +502,11 @@ extension ScreenContext {
             lines.append("Keyboard input source: \(inputSource.localizedName) (\(inputSource.id))")
         }
 
+        if let focusedElement {
+            let label = focusedElement.label.map { " \"\($0)\"" } ?? ""
+            lines.append("Focused element: \(focusedElement.role)\(label)")
+        }
+
         // Visible windows
         if !visibleWindows.isEmpty {
             lines.append("Visible windows:")
@@ -392,7 +530,11 @@ extension ScreenContext {
 extension AXNode {
     func appendFormatted(to lines: inout [String], indent: Int) {
         let prefix = String(repeating: "  ", count: indent)
-        var parts: [String] = [role]
+        var parts: [String] = []
+        if let elementID {
+            parts.append("[#\(elementID)]")
+        }
+        parts.append(role)
 
         if let label = label, !label.isEmpty {
             parts.append("\"\(label)\"")
@@ -411,6 +553,10 @@ extension AXNode {
             parts.append("disabled")
         }
 
+        if !actions.isEmpty {
+            parts.append("actions=[\(actions.joined(separator: ","))]")
+        }
+
         lines.append(prefix + parts.joined(separator: " "))
 
         if let children = children {
@@ -421,5 +567,85 @@ extension AXNode {
             // nil children means pruned
             lines.append(prefix + "  [...]")
         }
+    }
+
+
+    /// Returns the actionable node with the given step-local identifier.
+    public func node(withID id: Int) -> AXNode? {
+        if elementID == id { return self }
+        for child in children ?? [] {
+            if let match = child.node(withID: id) { return match }
+        }
+        return nil
+    }
+}
+
+extension ScreenContext {
+    /// A deterministic summary used to detect meaningful UI changes between actions.
+    public var stateFingerprint: String {
+        var lines: [String] = []
+        if let app = frontmostApp {
+            lines.append("app:\(app.pid):\(app.bundleIdentifier ?? app.name)")
+        }
+        focusedWindowAXTree?.appendFingerprint(to: &lines)
+        return lines.joined(separator: "\n")
+    }
+
+    /// Number of elements that can be targeted by an element-ID action.
+    public var actionableElementCount: Int {
+        focusedWindowAXTree?.actionableElementCount ?? 0
+    }
+}
+
+private extension AXNode {
+    var actionableElementCount: Int {
+        (elementID == nil ? 0 : 1) + (children ?? []).reduce(0) { $0 + $1.actionableElementCount }
+    }
+
+    func appendFingerprint(to lines: inout [String]) {
+        lines.append("\(path):\(role):\(label ?? ""):\(value ?? ""):\(isEnabled):\(Int(frame.x)),\(Int(frame.y)),\(Int(frame.width)),\(Int(frame.height))")
+        for child in children ?? [] { child.appendFingerprint(to: &lines) }
+    }
+}
+
+extension ScreenContextProvider {
+    /// Resolves a step-local element ID against the current live AX hierarchy.
+    /// Returns `nil` if the hierarchy changed or the resolved element no longer
+    /// matches the observed role and label.
+    @MainActor
+    public static func resolveElement(id: Int, in context: ScreenContext) -> AXUIElement? {
+        guard let observed = context.focusedWindowAXTree?.node(withID: id),
+              let pid = context.frontmostApp?.pid,
+              NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return nil }
+
+        let app = AXUIElementCreateApplication(pid)
+        var windowValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            app,
+            kAXFocusedWindowAttribute as CFString,
+            &windowValue
+        ) == .success, let windowValue else { return nil }
+
+        var current = windowValue as! AXUIElement
+        for index in observed.path {
+            guard let children = axChildren(current), children.indices.contains(index) else { return nil }
+            current = children[index]
+        }
+
+        let currentRole = axStringAttribute(current, kAXRoleAttribute) ?? "AXUnknown"
+        let currentLabel = axStringAttribute(current, kAXTitleAttribute)
+            ?? axStringAttribute(current, kAXDescriptionAttribute)
+        guard currentRole == observed.role, currentLabel == observed.label else { return nil }
+
+        if observed.frame.width > 0 || observed.frame.height > 0 {
+            guard let currentFrame = axFrame(current),
+                  abs(currentFrame.minX - observed.frame.cgRect.minX) <= 2,
+                  abs(currentFrame.minY - observed.frame.cgRect.minY) <= 2,
+                  abs(currentFrame.width - observed.frame.cgRect.width) <= 2,
+                  abs(currentFrame.height - observed.frame.cgRect.height) <= 2 else {
+                return nil
+            }
+        }
+        return current
     }
 }

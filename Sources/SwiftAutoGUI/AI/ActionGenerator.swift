@@ -49,9 +49,15 @@ public enum BasicAction: Sendable, Codable {
     /// frontmost app; otherwise pass a value like "com.apple.calculator".
     case pressButton(label: String, bundleID: String)
 
+    /// Press a step-local element from the current screen observation.
+    case pressElement(elementID: Int)
+
     /// Set a text field's value via the accessibility API.
     /// `label` may be empty to match by role only. `bundleID` empty = frontmost.
     case setTextField(label: String, value: String, bundleID: String)
+
+    /// Set the value of a step-local element from the current observation.
+    case setElementValue(elementID: Int, value: String)
 
     /// Select a menu item by hierarchical path, e.g. `["File", "Save As…"]`.
     case selectMenuItem(path: [String], bundleID: String)
@@ -98,12 +104,18 @@ public enum BasicAction: Sendable, Codable {
             return .drag(from: CGPoint(x: fromX, y: fromY), to: CGPoint(x: toX, y: toY))
         case .pressButton(let label, let bundleID):
             return .pressButton(label: label, app: scope(bundleID))
+        case .pressElement:
+            // Element IDs require the ScreenContext captured by Agent and are
+            // executed by AgentActionExecutor. A standalone conversion is a no-op.
+            return .wait(0)
         case .setTextField(let label, let value, let bundleID):
             return .setTextField(
                 label: label.isEmpty ? nil : label,
                 value: value,
                 app: scope(bundleID)
             )
+        case .setElementValue:
+            return .wait(0)
         case .selectMenuItem(let path, let bundleID):
             return .selectMenuItem(path: path, app: scope(bundleID))
         case .raiseWindow(let title, let bundleID):
@@ -156,14 +168,14 @@ public enum BasicAction: Sendable, Codable {
         case type
         case text, x, y, clicks, duration, keys
         case fromX, fromY, toX, toY
-        case label, value, path, title, bundleID
+        case label, value, path, title, bundleID, elementID
         case url, name
     }
 
     private enum ActionType: String, Codable {
         case write, move, leftClick, rightClick, doubleClick
         case vscroll, hscroll, wait, keyShortcut, drag
-        case pressButton, setTextField, selectMenuItem, raiseWindow
+        case pressButton, pressElement, setTextField, setElementValue, selectMenuItem, raiseWindow
         case openURL, activateApp, quitApp, getFrontmostApp
     }
 
@@ -207,11 +219,18 @@ public enum BasicAction: Sendable, Codable {
             let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .pressButton(label: label, bundleID: bundleID)
+        case .pressElement:
+            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
+            self = .pressElement(elementID: elementID)
         case .setTextField:
             let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
             let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .setTextField(label: label, value: value, bundleID: bundleID)
+        case .setElementValue:
+            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
+            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            self = .setElementValue(elementID: elementID, value: value)
         case .selectMenuItem:
             let path = try container.decodeIfPresent([String].self, forKey: .path) ?? []
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
@@ -273,11 +292,18 @@ public enum BasicAction: Sendable, Codable {
             try container.encode(ActionType.pressButton, forKey: .type)
             try container.encode(label, forKey: .label)
             try container.encode(bundleID, forKey: .bundleID)
+        case .pressElement(let elementID):
+            try container.encode(ActionType.pressElement, forKey: .type)
+            try container.encode(elementID, forKey: .elementID)
         case .setTextField(let label, let value, let bundleID):
             try container.encode(ActionType.setTextField, forKey: .type)
             try container.encode(label, forKey: .label)
             try container.encode(value, forKey: .value)
             try container.encode(bundleID, forKey: .bundleID)
+        case .setElementValue(let elementID, let value):
+            try container.encode(ActionType.setElementValue, forKey: .type)
+            try container.encode(elementID, forKey: .elementID)
+            try container.encode(value, forKey: .value)
         case .selectMenuItem(let path, let bundleID):
             try container.encode(ActionType.selectMenuItem, forKey: .type)
             try container.encode(path, forKey: .path)

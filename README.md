@@ -80,7 +80,11 @@ SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason 
 import SwiftAutoGUI
 
 let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
-let agent = Agent(backend: backend, maxIterations: 15)
+let agent = Agent(
+    backend: backend,
+    maxIterations: 15,
+    visionMode: .automatic
+)
 
 let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
@@ -91,11 +95,23 @@ reasoning summary for every agent step:
 
 ```bash
 sagui agent "Open Safari and search for Swift" --reasoning-effort low
+sagui agent "Press the Save button" --vision-mode automatic
 ```
 
 `--reasoning-effort` accepts `none`, `low`, `medium`, `high`, `xhigh`, or `max`.
 It defaults to `low` for GPT-5.6 models. The per-step `Reasoning:` line is the
 agent's concise explanation of its chosen actions, not the model's hidden chain of thought.
+
+When screen context is enabled, actionable Accessibility elements receive step-local
+identifiers such as `[#12]`. The agent can target these identifiers directly, resolves
+them again immediately before execution, and rejects stale elements safely. Each action
+returns a structured result describing the execution method, failure, UI change, and
+focus change. If an action changes the UI, the remaining batch is stopped and the agent
+observes the new state before continuing.
+
+`--vision-mode` accepts `always`, `automatic`, or `never`. `automatic` omits the
+screenshot when actionable Accessibility elements are available; `always` preserves
+the original behavior and remains the default.
 
 ## Basic Usage
 

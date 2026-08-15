@@ -88,4 +88,26 @@ struct SaguiCommandTests {
             ])
         }
     }
+
+    @Test(
+        "Agent accepts every vision mode",
+        arguments: AgentCommand.VisionMode.allCases
+    )
+    func agentVisionMode(mode: AgentCommand.VisionMode) throws {
+        let command = try AgentCommand.parse([
+            "Inspect the frontmost app",
+            "--vision-mode", mode.rawValue,
+        ])
+        #expect(command.visionMode == mode)
+    }
+
+    @Test("Agent rejects an unknown vision mode")
+    func agentRejectsUnknownVisionMode() {
+        #expect(throws: (any Error).self) {
+            try AgentCommand.parse([
+                "Inspect the frontmost app",
+                "--vision-mode", "sometimes",
+            ])
+        }
+    }
 }

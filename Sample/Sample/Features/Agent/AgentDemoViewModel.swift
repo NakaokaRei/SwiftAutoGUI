@@ -88,10 +88,14 @@ class AgentDemoViewModel {
                     guard let self else { return }
                     Task { @MainActor in
                         let actionSummary = step.actions.map { self.describeAction($0) }.joined(separator: ", ")
+                        let resultSummary = step.executionResults.map { result in
+                            "\(result.succeeded ? "✓" : "✗") \(result.method.rawValue)" +
+                                (result.screenChanged ? " (UI changed)" : "")
+                        }.joined(separator: ", ")
                         self.steps.append(StepDisplay(
                             number: self.steps.count + 1,
                             reasoning: step.reasoning,
-                            actions: actionSummary,
+                            actions: actionSummary + (resultSummary.isEmpty ? "" : "\n\(resultSummary)"),
                             timestamp: step.timestamp
                         ))
                     }
@@ -146,8 +150,12 @@ class AgentDemoViewModel {
             return "getFrontmostApp"
         case .pressButton(let label, let bundleID):
             return "pressButton(\"\(label)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .pressElement(let elementID):
+            return "pressElement(#\(elementID))"
         case .setTextField(let label, let value, let bundleID):
             return "setTextField(label:\"\(label)\", value:\"\(value)\"\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
+        case .setElementValue(let elementID, let value):
+            return "setElementValue(#\(elementID), value:\"\(value)\")"
         case .selectMenuItem(let path, let bundleID):
             return "selectMenuItem(\(path.joined(separator: " > "))\(bundleID.isEmpty ? "" : " in \(bundleID)"))"
         case .raiseWindow(let title, let bundleID):

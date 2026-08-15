@@ -47,7 +47,7 @@ SwiftAutoGUI includes an ``Agent`` that can autonomously observe the screen, rea
 import SwiftAutoGUI
 
 let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
-let agent = Agent(backend: backend, maxIterations: 15)
+let agent = Agent(backend: backend, maxIterations: 15, visionMode: .automatic)
 
 let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
@@ -92,6 +92,9 @@ sagui agent "Open Safari and search for Swift" --api-key sk-...
 # With options
 sagui agent "Click the trash icon" --model gpt-5.6-sol --reasoning-effort low --max-iterations 15 --delay 2.0
 
+# Use AX-only observation when actionable elements are available
+sagui agent "Press the Save button" --vision-mode automatic
+
 # Using environment variable for the API key
 export OPENAI_API_KEY=sk-...
 sagui agent "Open Terminal"
@@ -101,6 +104,16 @@ The command prints the effective reasoning effort at startup and a `Reasoning:`
 summary for each step. `--reasoning-effort` accepts `none`, `low`, `medium`,
 `high`, `xhigh`, or `max`, and defaults to `low` for GPT-5.6 models. The step
 summary explains the selected actions; it is not the model's hidden chain of thought.
+
+With screen context enabled, actionable AX elements are formatted with step-local
+identifiers such as `[#12]`. Element actions are resolved against the live hierarchy
+immediately before execution, so stale targets fail safely. ``AgentStep`` includes
+structured execution results, and the Agent re-observes as soon as an action changes
+the UI instead of continuing a batch generated for the old state.
+
+`--vision-mode` accepts `always`, `automatic`, or `never`. The `automatic` mode
+omits screenshots when actionable AX elements are available. The default is `always`
+for backward compatibility.
 
 ## Action Pattern
 

@@ -691,6 +691,56 @@ struct ActionGeneratorTests {
             #expect(actionTypes?.contains("quitApp") == true)
             #expect(actionTypes?.contains("getFrontmostApp") == true)
         }
+
+        @Test("semantic element actions round-trip and parse")
+        func semanticElementActions() throws {
+            let press = try roundTrip(.pressElement(elementID: 12))
+            let setValue = try roundTrip(.setElementValue(elementID: 13, value: "Swift"))
+
+            guard case .pressElement(let pressID) = press,
+                  case .setElementValue(let valueID, let value) = setValue else {
+                Issue.record("Expected semantic element actions")
+                return
+            }
+            #expect(pressID == 12)
+            #expect(valueID == 13)
+            #expect(value == "Swift")
+
+            let parsedPress = OpenAIVisionBackend.parseAction(["type": "pressElement", "elementID": 21])
+            guard case .pressElement(let parsedID) = parsedPress else {
+                Issue.record("Expected parsed pressElement")
+                return
+            }
+            #expect(parsedID == 21)
+        }
+
+        @Test("OpenAI schema exposes semantic element fields")
+        func schemaIncludesSemanticElements() {
+            let schema = OpenAIVisionBackend.actionItemSchemaDict
+            let properties = schema["properties"] as? [String: Any]
+            let required = schema["required"] as? [String]
+            let typeProperty = properties?["type"] as? [String: Any]
+            let actionTypes = typeProperty?["enum"] as? [String]
+
+            #expect(properties?["elementID"] != nil)
+            #expect(required?.contains("elementID") == true)
+            #expect(actionTypes?.contains("pressElement") == true)
+            #expect(actionTypes?.contains("setElementValue") == true)
+        }
+
+        @Test("semantic action without an observation fails safely")
+        @MainActor
+        func semanticActionRequiresObservation() async {
+            let execution = await AgentActionExecutor.execute(
+                .pressElement(elementID: 1),
+                in: nil,
+                screenContextOptions: nil,
+                observationDelay: 0
+            )
+            #expect(!execution.result.succeeded)
+            #expect(execution.result.method == .none)
+            #expect(execution.result.failureReason?.contains("not present") == true)
+        }
     }
 }
 
