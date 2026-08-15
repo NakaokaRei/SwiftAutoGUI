@@ -142,9 +142,10 @@ package final class TemplateMatcher: @unchecked Sendable {
         let tileWidth = needlePixels.width + threadgroupSize.width - 1
         let tileHeight = needlePixels.height + threadgroupSize.height - 1
         let tileByteCount = tileWidth * tileHeight
+        let threadgroupMemoryLength = Self.alignedThreadgroupMemoryLength(tileByteCount)
         let canUseTiledPipeline =
             needlePixels.width * needlePixels.height <= 4_096 &&
-            tileByteCount + tiledPipeline.staticThreadgroupMemoryLength
+            threadgroupMemoryLength + tiledPipeline.staticThreadgroupMemoryLength
                 <= device.maxThreadgroupMemoryLength
 
         encoder.setComputePipelineState(canUseTiledPipeline ? tiledPipeline : pipeline)
@@ -154,7 +155,7 @@ package final class TemplateMatcher: @unchecked Sendable {
         encoder.setBytes(&parameters, length: MemoryLayout<MatchParameters>.stride, index: 3)
 
         if canUseTiledPipeline {
-            encoder.setThreadgroupMemoryLength(tileByteCount, index: 0)
+            encoder.setThreadgroupMemoryLength(threadgroupMemoryLength, index: 0)
             encoder.dispatchThreadgroups(
                 MTLSize(
                     width: (outputWidth + threadgroupSize.width - 1) / threadgroupSize.width,
@@ -265,6 +266,12 @@ package final class TemplateMatcher: @unchecked Sendable {
             return matches.first.map { [$0] } ?? []
         }
         return NonMaximumSuppression.apply(to: matches)
+    }
+
+    static func alignedThreadgroupMemoryLength(_ byteCount: Int) -> Int {
+        let alignment = 16
+        let remainder = byteCount % alignment
+        return remainder == 0 ? byteCount : byteCount + alignment - remainder
     }
 }
 
