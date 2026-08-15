@@ -5,6 +5,18 @@ import Testing
 
 @Suite("Metal Template Matcher Tests")
 struct TemplateMatcherTests {
+    @Test(
+        "Aligns dynamic threadgroup memory to Metal's 16-byte requirement",
+        arguments: [0, 1, 15, 16, 17, 90, 5_041]
+    )
+    func threadgroupMemoryAlignment(byteCount: Int) {
+        let alignedLength = TemplateMatcher.alignedThreadgroupMemoryLength(byteCount)
+
+        #expect(alignedLength >= byteCount)
+        #expect(alignedLength % 16 == 0)
+        #expect(alignedLength - byteCount < 16)
+    }
+
     @Test("Finds an exact match at a known offset")
     func exactMatch() throws {
         let template = [
