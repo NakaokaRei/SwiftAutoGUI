@@ -18,6 +18,10 @@ struct ImageRecognitionView: View {
             Button("Create Test Image") {
                 viewModel.createTestImageForRecognition()
             }
+
+            Button("Create Tiled Matcher Test Image") {
+                viewModel.createTiledTestImageForRecognition()
+            }
             
             Button("Locate Test Image on Screen") {
                 viewModel.locateTestImage()

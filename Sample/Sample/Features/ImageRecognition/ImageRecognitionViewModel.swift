@@ -13,6 +13,64 @@ import SwiftAutoGUI
 class ImageRecognitionViewModel {
     var imageRecognitionResult: String = ""
     var testImagePath: String = ""
+
+    func createTiledTestImageForRecognition() {
+        guard let bitmapImage = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: 64,
+            pixelsHigh: 64,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ), let context = NSGraphicsContext(bitmapImageRep: bitmapImage) else {
+            imageRecognitionResult = "Failed to create 64x64 test image bitmap"
+            return
+        }
+
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+
+        NSColor.systemBlue.setFill()
+        NSRect(x: 0, y: 0, width: 64, height: 64).fill()
+
+        NSColor.white.setFill()
+        NSRect(x: 12, y: 12, width: 40, height: 40).fill()
+
+        NSColor.systemRed.setFill()
+        NSRect(x: 19, y: 19, width: 26, height: 26).fill()
+
+        NSColor.systemYellow.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 26, y: 26, width: 12, height: 12)).fill()
+
+        context.flushGraphics()
+        NSGraphicsContext.restoreGraphicsState()
+
+        let documents = FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first!
+        let path = documents.appendingPathComponent(
+            "tiled_test_recognition_image.png"
+        ).path
+
+        if let pngData = bitmapImage.representation(using: .png, properties: [:]) {
+            do {
+                try pngData.write(to: URL(fileURLWithPath: path))
+                testImagePath = path
+                imageRecognitionResult = """
+                    Tiled matcher test image created at: \(path)
+                    Pixel size: \(bitmapImage.pixelsWide)x\(bitmapImage.pixelsHigh)
+                    Open this image in a separate Preview window, then try to locate it.
+                    """
+            } catch {
+                imageRecognitionResult = "Failed to create tiled test image: \(error)"
+            }
+        }
+    }
     
     func createTestImageForRecognition() {
         let size = NSSize(width: 100, height: 100)

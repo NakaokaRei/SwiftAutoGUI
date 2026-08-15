@@ -88,6 +88,39 @@ struct TemplateMatcherTests {
         #expect(matches.first?.y == 1)
     }
 
+    @Test("Finds a match with a 64x64 template using the tiled pipeline")
+    func tiledPipelineBoundaryTemplateMatch() throws {
+        let templateWidth = 64
+        let templateHeight = 64
+        let template = (0..<(templateWidth * templateHeight)).map {
+            UInt8(truncatingIfNeeded: $0 &* 31)
+        }
+        var haystack = [UInt8](repeating: 17, count: 68 * 68)
+        insert(
+            template,
+            width: templateWidth,
+            height: templateHeight,
+            into: &haystack,
+            haystackWidth: 68,
+            x: 2,
+            y: 3
+        )
+
+        let matches = try makeMatcher().match(
+            needle: makeImage(
+                width: templateWidth,
+                height: templateHeight,
+                pixels: template
+            ),
+            in: makeImage(width: 68, height: 68, pixels: haystack),
+            threshold: 0.999,
+            findAll: false
+        )
+
+        #expect(matches.first?.x == 2)
+        #expect(matches.first?.y == 3)
+    }
+
     @Test("Finds a match with a template larger than the tiled-kernel limit")
     func largeTemplateMatch() throws {
         let templateWidth = 65
