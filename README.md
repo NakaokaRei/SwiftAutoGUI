@@ -67,6 +67,71 @@ sagui mouse click --x 100 --y 200
 sagui mouse click --right --x 100 --y 200
 ```
 
+## Optional Chromium CDP backend
+
+> Quick start: [Browser Agent guide](Documentation/BrowserAgent.md)
+
+`SwiftAutoGUIBrowser` adds semantic automation for an existing Chrome, Edge,
+or other Chromium debugging session. It is a separate product, so applications
+that use only native macOS automation do not acquire browser-specific code.
+
+Add the optional product to the client target:
+
+```swift
+.target(
+    name: "MyProject",
+    dependencies: [
+        .product(name: "SwiftAutoGUI", package: "SwiftAutoGUI"),
+        .product(name: "SwiftAutoGUIBrowser", package: "SwiftAutoGUI")
+    ]
+)
+```
+
+Start Chromium with a dedicated profile and a loopback debugging port. Chrome
+136 and later do not honor remote debugging against the default profile.
+
+```bash
+"/Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/swift-auto-gui-browser-profile
+```
+
+Connect with an explicit navigation allowlist:
+
+```swift
+import SwiftAutoGUI
+import SwiftAutoGUIBrowser
+
+let browser = try await BrowserSession.connect(
+    endpoint: URL(string: "http://127.0.0.1:9222")!,
+    securityPolicy: BrowserSecurityPolicy(
+        allowedDomains: ["example.com", "*.example.org"]
+    )
+)
+
+let observation = try await browser.observe()
+print(observation.formattedContext)
+
+let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]!
+let browserAgent = Agent(
+    backend: OpenAIVisionBackend(apiKey: apiKey),
+    automationBackend: browser
+)
+```
+
+The browser Agent is intentionally browser-only: native app, window, AX-label,
+and coordinate mouse actions fail as unsupported instead of falling back to
+Accessibility or CGEvent. Stale DOM elements also fail safely without clicking
+a saved coordinate. Cross-origin navigation and downloads require a
+`BrowserActionAuthorizing` implementation; without one they are denied.
+
+The `sagui` CLI can run the same browser-only Agent:
+
+```bash
+sagui browser tabs
+sagui browser agent "Open issue 118" --domain github.com --allow-cross-origin
+```
+
 
 # Example Usage
 

@@ -13,6 +13,9 @@ let package = Package(
         .library(
             name: "SwiftAutoGUI",
             targets: ["SwiftAutoGUI"]),
+        .library(
+            name: "SwiftAutoGUIBrowser",
+            targets: ["SwiftAutoGUIBrowser"]),
         .executable(
             name: "sagui",
             targets: ["sagui"]),
@@ -38,15 +41,22 @@ let package = Package(
             dependencies: [
                 "ImageRecognition"
             ]),
+        .target(
+            name: "SwiftAutoGUIBrowser",
+            dependencies: ["SwiftAutoGUI"]),
         .executableTarget(
             name: "sagui",
             dependencies: [
                 "SwiftAutoGUI",
+                "SwiftAutoGUIBrowser",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]),
         .testTarget(
             name: "SwiftAutoGUITests",
             dependencies: ["SwiftAutoGUI"]),
+        .testTarget(
+            name: "SwiftAutoGUIBrowserTests",
+            dependencies: ["SwiftAutoGUIBrowser", "SwiftAutoGUI"]),
         .testTarget(
             name: "SaguiTests",
             dependencies: ["sagui"]),

@@ -46,6 +46,9 @@ public struct Agent: Sendable {
     /// Controls whether screenshots accompany structured screen context.
     public let visionMode: AgentVisionMode
 
+    /// The environment used to observe and execute actions.
+    public let automationBackend: any AgentAutomationBackend
+
     /// Creates an agent with the specified configuration.
     ///
     /// - Parameters:
@@ -55,18 +58,23 @@ public struct Agent: Sendable {
     ///   - screenContextOptions: Options for screen context gathering (default: enabled with defaults).
     ///     Pass `nil` to disable.
     ///   - visionMode: Controls when screenshots are included (default: ``AgentVisionMode/always``).
+    ///   - automationBackend: Optional observation/execution environment. `nil` preserves
+    ///     the native Accessibility and CGEvent backend.
     public init(
         backend: any VisionActionGenerating,
         maxIterations: Int = 20,
         delayBetweenSteps: TimeInterval = 1.0,
         screenContextOptions: ScreenContextProvider.Options? = ScreenContextProvider.Options(),
-        visionMode: AgentVisionMode = .always
+        visionMode: AgentVisionMode = .always,
+        automationBackend: (any AgentAutomationBackend)? = nil
     ) {
         self.backend = backend
         self.maxIterations = maxIterations
         self.delayBetweenSteps = delayBetweenSteps
         self.screenContextOptions = screenContextOptions
         self.visionMode = visionMode
+        self.automationBackend = automationBackend
+            ?? NativeAutomationBackend(screenContextOptions: screenContextOptions)
     }
 
     /// Runs the agent loop to achieve the given goal.
@@ -92,58 +100,31 @@ public struct Agent: Sendable {
         for _ in 0..<maxIterations {
             try Task.checkCancellation()
 
-            // 1. Observe structured screen state first.
-            let screenContext: ScreenContext? = screenContextOptions.map { options in
-                ScreenContextProvider.gather(options: options)
-            }
-
-            let includeScreenshot: Bool
-            switch visionMode {
-            case .always:
-                includeScreenshot = true
-            case .automatic:
-                includeScreenshot = screenContext?.actionableElementCount == 0
-            case .never:
-                includeScreenshot = false
-            }
-
-            let jpegData: Data?
-            if includeScreenshot {
-                guard let screenshot = try await SwiftAutoGUI.screenshot(),
-                      let data = screenshot.jpegData(compressionFactor: 0.5) else {
-                    throw ActionGeneratorError.invalidResponse(detail: "Failed to capture screenshot")
-                }
-                jpegData = data
-            } else {
-                jpegData = nil
-            }
-
-            let screenSize = SwiftAutoGUI.size()
-            let screenCGSize = CGSize(width: screenSize.width, height: screenSize.height)
+            // 1. Observe through the selected automation environment.
+            let observation = try await automationBackend.observe(visionMode: visionMode)
 
             // 2. Think: send to backend
             let response = try await backend.generateActions(
                 goal: goal,
-                screenshot: jpegData,
-                screenSize: screenCGSize,
+                screenshot: observation.screenshotJPEGData,
+                screenSize: observation.viewportSize,
                 history: steps,
-                screenContext: screenContext
+                observation: observation
             )
 
             // 3. Act: execute against the observation used by the model. Stop
             // as soon as the UI changes or an action fails, then re-observe.
-            var currentContext = screenContext
+            var currentObservation = observation
             var executedActions: [BasicAction] = []
             var executionResults: [ActionExecutionResult] = []
             for action in response.actions {
-                let execution = await AgentActionExecutor.execute(
+                let execution = await automationBackend.execute(
                     action,
-                    in: currentContext,
-                    screenContextOptions: screenContextOptions
+                    in: currentObservation
                 )
                 executedActions.append(action)
                 executionResults.append(execution.result)
-                currentContext = execution.screenContext
+                currentObservation = execution.observation
 
                 if !execution.result.succeeded || execution.result.screenChanged {
                     break

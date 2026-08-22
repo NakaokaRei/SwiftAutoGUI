@@ -210,6 +210,16 @@ struct ActionGeneratorTests {
                 return
             }
         }
+
+        @Test("activateTab round-trip")
+        func activateTabRoundTrip() throws {
+            let roundTripped = try roundTrip(.activateTab(tabID: "target-123"))
+            guard case .activateTab(let tabID) = roundTripped else {
+                Issue.record("Expected .activateTab, got \(roundTripped)")
+                return
+            }
+            #expect(tabID == "target-123")
+        }
     }
 
     // MARK: - OpenAI JSON Response Parsing Tests

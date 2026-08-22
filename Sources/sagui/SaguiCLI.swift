@@ -35,6 +35,13 @@ struct SaguiCLI: AsyncParsableCommand {
         abstract: "Control mouse and keyboard on macOS from the command line.",
         discussion: "Requires accessibility permissions in System Settings > Privacy & Security > Accessibility.",
         version: SaguiVersion.current,
-        subcommands: [KeyCommand.self, MouseCommand.self, ScreenCommand.self, AXCommand.self, AgentCommand.self]
+        subcommands: [
+            KeyCommand.self,
+            MouseCommand.self,
+            ScreenCommand.self,
+            AXCommand.self,
+            AgentCommand.self,
+            BrowserCommand.self,
+        ]
     )
 }

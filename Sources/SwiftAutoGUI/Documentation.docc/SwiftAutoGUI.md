@@ -53,6 +53,9 @@ let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
 ```
 
+`Agent` uses ``NativeAutomationBackend`` by default. Optional modules can supply
+another ``AgentAutomationBackend`` explicitly while preserving the native default.
+
 ### With Step Callback
 
 ```swift

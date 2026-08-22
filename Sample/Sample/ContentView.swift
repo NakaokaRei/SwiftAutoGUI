@@ -110,6 +110,8 @@ struct ContentView: View {
                             AIGenerationDemoView()
                         case .screenContext:
                             ScreenContextDemoView()
+                        case .browser:
+                            BrowserDemoView()
                         case .agent:
                             AgentDemoView()
                         }

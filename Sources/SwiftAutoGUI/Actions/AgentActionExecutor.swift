@@ -10,8 +10,60 @@ import Foundation
 public enum AgentActionExecutionMethod: String, Sendable, Codable {
     case accessibility
     case cgEvent
+    case cdp
     case standardAction
     case none
+}
+
+/// A top-level browser navigation observed after an action.
+public struct AgentNavigationResult: Sendable, Codable, Equatable {
+    public let fromURL: String?
+    public let toURL: String
+
+    public init(fromURL: String?, toURL: String) {
+        self.fromURL = fromURL
+        self.toURL = toURL
+    }
+}
+
+/// A browser tab lifecycle change observed after an action.
+public struct AgentTabChange: Sendable, Codable, Equatable {
+    public enum Kind: String, Sendable, Codable { case opened, closed, activated }
+
+    public let kind: Kind
+    public let tabID: String
+    public let url: String?
+
+    public init(kind: Kind, tabID: String, url: String? = nil) {
+        self.kind = kind
+        self.tabID = tabID
+        self.url = url
+    }
+}
+
+/// A browser download lifecycle update observed after an action.
+public struct AgentDownloadResult: Sendable, Codable, Equatable {
+    public enum State: String, Sendable, Codable { case requested, inProgress, completed, canceled }
+
+    public let identifier: String
+    public let url: String?
+    public let suggestedFilename: String?
+    public let state: State
+    public let filePath: String?
+
+    public init(
+        identifier: String,
+        url: String? = nil,
+        suggestedFilename: String? = nil,
+        state: State,
+        filePath: String? = nil
+    ) {
+        self.identifier = identifier
+        self.url = url
+        self.suggestedFilename = suggestedFilename
+        self.state = state
+        self.filePath = filePath
+    }
 }
 
 /// Structured result for a single action executed by ``Agent``.
@@ -23,6 +75,9 @@ public struct ActionExecutionResult: Sendable, Codable {
     public let screenChanged: Bool
     public let focusedAppChanged: Bool
     public let focusedElementChanged: Bool
+    public let navigation: AgentNavigationResult?
+    public let tabChanges: [AgentTabChange]
+    public let downloads: [AgentDownloadResult]
 
     public init(
         action: BasicAction,
@@ -31,7 +86,10 @@ public struct ActionExecutionResult: Sendable, Codable {
         failureReason: String? = nil,
         screenChanged: Bool = false,
         focusedAppChanged: Bool = false,
-        focusedElementChanged: Bool = false
+        focusedElementChanged: Bool = false,
+        navigation: AgentNavigationResult? = nil,
+        tabChanges: [AgentTabChange] = [],
+        downloads: [AgentDownloadResult] = []
     ) {
         self.action = action
         self.succeeded = succeeded
@@ -40,6 +98,9 @@ public struct ActionExecutionResult: Sendable, Codable {
         self.screenChanged = screenChanged
         self.focusedAppChanged = focusedAppChanged
         self.focusedElementChanged = focusedElementChanged
+        self.navigation = navigation
+        self.tabChanges = tabChanges
+        self.downloads = downloads
     }
 }
 
@@ -96,6 +157,8 @@ public enum AgentActionExecutor {
         in observation: ScreenContext?
     ) async -> (succeeded: Bool, method: AgentActionExecutionMethod, failureReason: String?) {
         switch action {
+        case .activateTab:
+            return (false, .none, "Browser tab actions require SwiftAutoGUIBrowser.")
         case .pressElement(let elementID):
             guard elementID > 0,
                   let observation,
