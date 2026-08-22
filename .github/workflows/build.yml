@@ -180,8 +180,11 @@ jobs:
       - name: Build documentation
         run: |
           set -o pipefail
-          swift package generate-documentation --target SwiftAutoGUI 2>&1 | xcbeautify
-          swift package generate-documentation --target SwiftAutoGUIBrowser 2>&1 | xcbeautify
+          swift package generate-documentation \
+            --target SwiftAutoGUI \
+            --target SwiftAutoGUIBrowser \
+            --enable-experimental-combined-documentation \
+            2>&1 | xcbeautify
 
   sample-app:
     name: Build Sample App
