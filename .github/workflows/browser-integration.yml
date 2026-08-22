@@ -22,7 +22,7 @@ jobs:
         id: chrome
         uses: browser-actions/setup-chrome@v2
         with:
-          chrome-version: 151.0.7922.137
+          chrome-version: stable
 
       - name: Start local fixture and Chrome
         run: |
