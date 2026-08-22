@@ -24,13 +24,19 @@ jobs:
         with:
           chrome-version: stable
 
-      - name: Start local fixture and Chrome
+      - name: Run browser integration tests
+        env:
+          SWIFTAUTOGUI_RUN_CDP_TESTS: "1"
+          SWIFTAUTOGUI_CDP_ENDPOINT: http://127.0.0.1:9222
+          SWIFTAUTOGUI_CDP_PAGE_URL: http://127.0.0.1:8765/index.html
         run: |
+          set -euo pipefail
+
           python3 -m http.server 8765 \
             --bind 127.0.0.1 \
             --directory Tests/Fixtures/Browser \
             >"${RUNNER_TEMP}/fixture.log" 2>&1 &
-          echo "$!" > "${RUNNER_TEMP}/fixture.pid"
+          fixture_pid=$!
 
           "${{ steps.chrome.outputs.chrome-path }}" \
             --headless \
@@ -40,38 +46,33 @@ jobs:
             --remote-debugging-port=9222 \
             http://127.0.0.1:8765/index.html \
             >"${RUNNER_TEMP}/chrome.log" 2>&1 &
-          echo "$!" > "${RUNNER_TEMP}/chrome.pid"
+          chrome_pid=$!
 
-      - name: Wait for browser endpoint
-        run: |
+          cleanup() {
+            kill "${chrome_pid}" 2>/dev/null || true
+            kill "${fixture_pid}" 2>/dev/null || true
+            wait "${chrome_pid}" 2>/dev/null || true
+            wait "${fixture_pid}" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready=0
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8765/index.html >/dev/null \
               && curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
-              exit 0
+              ready=1
+              break
             fi
             sleep 1
           done
 
-          cat "${RUNNER_TEMP}/fixture.log"
-          cat "${RUNNER_TEMP}/chrome.log"
-          exit 1
-
-      - name: Run browser integration tests
-        env:
-          SWIFTAUTOGUI_RUN_CDP_TESTS: "1"
-          SWIFTAUTOGUI_CDP_ENDPOINT: http://127.0.0.1:9222
-          SWIFTAUTOGUI_CDP_PAGE_URL: http://127.0.0.1:8765/index.html
-        run: swift test --filter BrowserIntegrationTests
-
-      - name: Stop browser processes
-        if: always()
-        run: |
-          if [ -f "${RUNNER_TEMP}/chrome.pid" ]; then
-            kill "$(cat "${RUNNER_TEMP}/chrome.pid")" 2>/dev/null || true
+          if [ "${ready}" -ne 1 ]; then
+            cat "${RUNNER_TEMP}/fixture.log"
+            cat "${RUNNER_TEMP}/chrome.log"
+            exit 1
           fi
-          if [ -f "${RUNNER_TEMP}/fixture.pid" ]; then
-            kill "$(cat "${RUNNER_TEMP}/fixture.pid")" 2>/dev/null || true
-          fi
+
+          swift test --filter BrowserIntegrationTests
 
       - name: Upload browser logs
         if: always()
