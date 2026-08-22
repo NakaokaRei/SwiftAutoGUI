@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SwiftAutoGUI browser fixture</title>
+  <style>
+    body { font: 16px system-ui; margin: 40px; }
+    label, input, button, a { display: block; margin-block: 12px; }
+    input, button, a { width: 240px; min-height: 36px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Browser integration fixture</h1>
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text">
+    <button id="submit" type="button">Submit</button>
+    <a href="/second.html" target="_blank" rel="noopener">Open second tab</a>
+  </main>
+  <script>
+    document.querySelector('#submit').addEventListener('click', event => {
+      event.currentTarget.textContent = 'Submitted';
+    });
+  </script>
+</body>
+</html>

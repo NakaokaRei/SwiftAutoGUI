@@ -1,0 +1,82 @@
+name: Browser Integration
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-integration:
+    name: Browser Integration
+    runs-on: macos-26
+    env:
+      CHROME_PATH: /Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run browser integration tests
+        env:
+          SWIFTAUTOGUI_RUN_CDP_TESTS: "1"
+          SWIFTAUTOGUI_CDP_ENDPOINT: http://127.0.0.1:9222
+          SWIFTAUTOGUI_CDP_PAGE_URL: http://127.0.0.1:8765/index.html
+        run: |
+          set -euo pipefail
+
+          "${CHROME_PATH}" --version
+
+          python3 -m http.server 8765 \
+            --bind 127.0.0.1 \
+            --directory Tests/Fixtures/Browser \
+            >"${RUNNER_TEMP}/fixture.log" 2>&1 &
+          fixture_pid=$!
+
+          "${CHROME_PATH}" \
+            --headless \
+            --no-first-run \
+            --user-data-dir="${RUNNER_TEMP}/chrome-profile" \
+            --remote-debugging-address=127.0.0.1 \
+            --remote-debugging-port=9222 \
+            http://127.0.0.1:8765/index.html \
+            >"${RUNNER_TEMP}/chrome.log" 2>&1 &
+          chrome_pid=$!
+
+          cleanup() {
+            kill "${chrome_pid}" 2>/dev/null || true
+            kill "${fixture_pid}" 2>/dev/null || true
+            wait "${chrome_pid}" 2>/dev/null || true
+            wait "${fixture_pid}" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8765/index.html >/dev/null \
+              && curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "${ready}" -ne 1 ]; then
+            cat "${RUNNER_TEMP}/fixture.log"
+            cat "${RUNNER_TEMP}/chrome.log"
+            exit 1
+          fi
+
+          swift test --filter BrowserIntegrationTests
+
+      - name: Upload browser logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-integration-logs
+          path: |
+            ${{ runner.temp }}/chrome.log
+            ${{ runner.temp }}/fixture.log
