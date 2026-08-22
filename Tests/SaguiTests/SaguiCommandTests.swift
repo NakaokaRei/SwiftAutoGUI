@@ -139,4 +139,91 @@ struct SaguiCommandTests {
         let command = try BrowserTabsCommand.parse([])
         #expect(command.endpoint == "http://127.0.0.1:9222")
     }
+
+    @Test("Browser observe requires and accepts a tab ID")
+    func browserObserveOptions() throws {
+        let command = try BrowserObserveCommand.parse([
+            "--tab-id", "target-123",
+            "--screenshot", "/tmp/page.jpg",
+        ])
+        #expect(command.target.tabID == "target-123")
+        #expect(command.target.connection.endpoint == "http://127.0.0.1:9222")
+        #expect(command.screenshot == "/tmp/page.jpg")
+    }
+
+    @Test("Browser open accepts a narrow navigation policy")
+    func browserOpenOptions() throws {
+        let command = try BrowserOpenCommand.parse([
+            "https://github.com/NakaokaRei/SwiftAutoGUI",
+            "--tab-id", "target-123",
+            "--domain", "github.com",
+            "--domain", "*.github.com",
+            "--allow-cross-origin",
+        ])
+        #expect(command.target.tabID == "target-123")
+        #expect(command.target.connection.domains == ["github.com", "*.github.com"])
+        #expect(command.target.connection.allowCrossOrigin)
+    }
+
+    @Test("Browser click accepts semantic selectors with optional disambiguation")
+    func browserClickOptions() throws {
+        let semantic = try BrowserClickCommand.parse([
+            "--tab-id", "target-123",
+            "--role", "button",
+            "--name", "Save",
+        ])
+        #expect(semantic.selector.elementID == nil)
+        #expect(semantic.selector.role == "button")
+        #expect(semantic.selector.name == "Save")
+
+        let disambiguated = try BrowserClickCommand.parse([
+            "--tab-id", "target-123",
+            "--role", "button",
+            "--name", "Save",
+            "--element-id", "4",
+        ])
+        #expect(disambiguated.selector.elementID == 4)
+    }
+
+    @Test("Browser click rejects incomplete and invalid selectors")
+    func browserClickRejectsInvalidSelector() {
+        #expect(throws: (any Error).self) {
+            try BrowserClickCommand.parse([
+                "--tab-id", "target-123",
+                "--role", "button",
+            ])
+        }
+        #expect(throws: (any Error).self) {
+            try BrowserClickCommand.parse([
+                "--tab-id", "target-123",
+                "--role", "button",
+                "--name", "Save",
+                "--element-id", "0",
+            ])
+        }
+    }
+
+    @Test("Browser key and scroll commands parse deterministic actions")
+    func browserInputOptions() throws {
+        let key = try BrowserKeyCommand.parse([
+            "command", "a",
+            "--tab-id", "target-123",
+        ])
+        #expect(key.keys == ["command", "a"])
+
+        let scroll = try BrowserScrollCommand.parse([
+            "--vertical", "-5",
+            "--horizontal", "2",
+            "--tab-id", "target-123",
+        ])
+        #expect(scroll.vertical == -5)
+        #expect(scroll.horizontal == 2)
+    }
+
+    @Test("Browser scroll rejects an empty movement")
+    func browserScrollRejectsEmptyMovement() {
+        #expect(throws: (any Error).self) {
+            try BrowserScrollCommand.parse(["--tab-id", "target-123"])
+        }
+    }
 }

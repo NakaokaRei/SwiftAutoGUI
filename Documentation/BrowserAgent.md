@@ -37,10 +37,33 @@ text field or the `OPENAI_API_KEY` environment variable and is never stored in s
 
 ## 3. Try it with sagui
 
+Direct commands do not use the OpenAI API. List tabs, observe a semantic element map, and perform
+known actions with an explicit tab target:
+
+```bash
+sagui browser tabs
+sagui browser observe --tab-id TARGET_ID
+
+sagui browser click \
+  --tab-id TARGET_ID \
+  --role link \
+  --name "Issues" \
+  --domain github.com
+
+sagui browser set-value "SwiftAutoGUI" \
+  --tab-id TARGET_ID \
+  --role searchbox \
+  --name "Search"
+```
+
+Other direct commands include `activate-tab`, `open`, `type`, `key`, and `scroll`. Element actions
+always require the exact semantic role and accessible name from a fresh observation. Add
+`--element-id` only to disambiguate duplicate role/name pairs.
+
+To run the AI Agent:
+
 ```bash
 export OPENAI_API_KEY="your-key-in-your-shell"
-
-sagui browser tabs
 
 sagui browser agent "Open issue 118" \
   --domain github.com \

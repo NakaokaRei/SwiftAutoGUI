@@ -1,6 +1,6 @@
 ---
 name: browser-control
-description: Control web pages in an existing Chromium remote-debugging session with the sagui browser-only AI Agent. Use when Claude Code needs to list Chromium tabs or complete a browser task through CDP without controlling native macOS UI, Accessibility, or CGEvent input.
+description: Control web pages in an existing Chromium remote-debugging session with deterministic sagui commands or the browser-only AI Agent. Use when Claude Code needs to inspect tabs, observe semantic elements, navigate, click, type, send keys, scroll, or complete a browser goal through CDP without controlling native macOS UI, Accessibility, or CGEvent input.
 ---
 
 # browser-control
@@ -70,6 +70,70 @@ An allowlist entry only makes a destination eligible. Cross-origin navigation is
 unless `--allow-cross-origin` is present. Use that flag only when the goal requires navigation from
 another origin, such as from `chrome://newtab/` to an allowed website. It never permits navigation
 outside the allowlist. Downloads remain denied.
+
+## Use deterministic commands
+
+Prefer direct commands when the requested action is known. They do not call the OpenAI API and do
+not require `OPENAI_API_KEY`.
+
+First list tabs and observe the intended tab:
+
+```bash
+sagui browser tabs
+sagui browser observe --tab-id TARGET_ID
+sagui browser observe --tab-id TARGET_ID --screenshot /tmp/page.jpg
+```
+
+The observation prints actionable elements as `[#N] role "name"`. Select elements by exact
+`--role` and `--name`. When multiple current elements share both values, also pass the observed
+`--element-id`; the command verifies all three values against a fresh observation before acting.
+
+```bash
+sagui browser click \
+  --tab-id TARGET_ID \
+  --role link \
+  --name "Issues" \
+  --domain github.com \
+  --allow-cross-origin
+
+sagui browser set-value "SwiftAutoGUI" \
+  --tab-id TARGET_ID \
+  --role searchbox \
+  --name "Search"
+```
+
+Other deterministic commands:
+
+```bash
+sagui browser activate-tab TARGET_ID
+
+sagui browser open "https://github.com/NakaokaRei/SwiftAutoGUI/issues" \
+  --tab-id TARGET_ID \
+  --domain github.com \
+  --allow-cross-origin
+
+sagui browser type "additional text" --tab-id TARGET_ID
+sagui browser key command a --tab-id TARGET_ID
+sagui browser key return --tab-id TARGET_ID
+sagui browser scroll --vertical -5 --tab-id TARGET_ID
+sagui browser scroll --horizontal 3 --tab-id TARGET_ID
+```
+
+| Command | Purpose | Required selection |
+|---|---|---|
+| `tabs` | List page targets | None |
+| `observe` | Print tabs and semantic elements | `--tab-id` |
+| `activate-tab` | Activate a page target | positional target ID |
+| `open` | Navigate to an allowed HTTP(S) URL | URL, `--tab-id`, `--domain` |
+| `click` | Click a freshly verified semantic element | `--tab-id`, `--role`, `--name` |
+| `set-value` | Replace an editable element value | value, `--tab-id`, `--role`, `--name` |
+| `type` | Insert text into the focused element | text, `--tab-id` |
+| `key` | Send a key or shortcut | keys, `--tab-id` |
+| `scroll` | Scroll the page | non-zero axis, `--tab-id` |
+
+After navigation, click, typing, keys, or scrolling, use the updated semantic map printed by the
+command. Do not reuse an old element ID after the page changes. Prefer `set-value` over `type` when
+the target textbox is known because `set-value` focuses and verifies the semantic element first.
 
 ## Handle the OpenAI API key
 

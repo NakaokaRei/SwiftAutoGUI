@@ -1,4 +1,4 @@
 interface:
   display_name: "Browser Control"
-  short_description: "Control Chromium pages safely through sagui and CDP"
-  default_prompt: "Use $browser-control to control an existing Chromium tab safely."
+  short_description: "Control Chromium safely with direct commands or AI"
+  default_prompt: "Use $browser-control to inspect and control an existing Chromium tab safely."

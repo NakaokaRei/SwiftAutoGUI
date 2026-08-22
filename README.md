@@ -125,10 +125,12 @@ Accessibility or CGEvent. Stale DOM elements also fail safely without clicking
 a saved coordinate. Cross-origin navigation and downloads require a
 `BrowserActionAuthorizing` implementation; without one they are denied.
 
-The `sagui` CLI can run the same browser-only Agent:
+The `sagui` CLI supports deterministic CDP commands as well as the browser-only Agent:
 
 ```bash
 sagui browser tabs
+sagui browser observe --tab-id TARGET_ID
+sagui browser click --tab-id TARGET_ID --role link --name "Issues" --domain github.com
 sagui browser agent "Open issue 118" --domain github.com --allow-cross-origin
 ```
 
