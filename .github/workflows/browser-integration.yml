@@ -1,0 +1,83 @@
+name: Browser Integration
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-integration:
+    name: Browser Integration
+    runs-on: macos-26
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Chrome for Testing
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: 151.0.7922.174
+
+      - name: Start local fixture and Chrome
+        run: |
+          python3 -m http.server 8765 \
+            --bind 127.0.0.1 \
+            --directory Tests/Fixtures/Browser \
+            >"${RUNNER_TEMP}/fixture.log" 2>&1 &
+          echo "$!" > "${RUNNER_TEMP}/fixture.pid"
+
+          "${{ steps.chrome.outputs.chrome-path }}" \
+            --headless \
+            --no-first-run \
+            --user-data-dir="${RUNNER_TEMP}/chrome-profile" \
+            --remote-debugging-address=127.0.0.1 \
+            --remote-debugging-port=9222 \
+            http://127.0.0.1:8765/index.html \
+            >"${RUNNER_TEMP}/chrome.log" 2>&1 &
+          echo "$!" > "${RUNNER_TEMP}/chrome.pid"
+
+      - name: Wait for browser endpoint
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8765/index.html >/dev/null \
+              && curl --fail --silent http://127.0.0.1:9222/json/version >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat "${RUNNER_TEMP}/fixture.log"
+          cat "${RUNNER_TEMP}/chrome.log"
+          exit 1
+
+      - name: Run browser integration tests
+        env:
+          SWIFTAUTOGUI_RUN_CDP_TESTS: "1"
+          SWIFTAUTOGUI_CDP_ENDPOINT: http://127.0.0.1:9222
+          SWIFTAUTOGUI_CDP_PAGE_URL: http://127.0.0.1:8765/index.html
+        run: swift test --filter BrowserIntegrationTests
+
+      - name: Stop browser processes
+        if: always()
+        run: |
+          if [ -f "${RUNNER_TEMP}/chrome.pid" ]; then
+            kill "$(cat "${RUNNER_TEMP}/chrome.pid")" 2>/dev/null || true
+          fi
+          if [ -f "${RUNNER_TEMP}/fixture.pid" ]; then
+            kill "$(cat "${RUNNER_TEMP}/fixture.pid")" 2>/dev/null || true
+          fi
+
+      - name: Upload browser logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-integration-logs
+          path: |
+            ${{ runner.temp }}/chrome.log
+            ${{ runner.temp }}/fixture.log
