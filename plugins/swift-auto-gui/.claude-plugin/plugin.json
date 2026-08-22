@@ -1,6 +1,6 @@
 {
   "name": "swift-auto-gui",
-  "description": "Control macOS GUI applications via mouse, keyboard, screenshots, image recognition, and AppleScript using the sagui CLI.",
+  "description": "Control macOS GUI applications and Chromium pages using the sagui CLI.",
   "version": "0.29.0",
   "author": {
     "name": "NakaokaRei"
@@ -14,6 +14,9 @@
     "gui",
     "mouse",
     "keyboard",
-    "screenshot"
+    "screenshot",
+    "browser",
+    "chromium",
+    "cdp"
   ]
 }

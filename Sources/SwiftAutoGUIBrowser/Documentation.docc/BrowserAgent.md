@@ -147,6 +147,31 @@ List available tabs:
 sagui browser tabs --endpoint http://127.0.0.1:9222
 ```
 
+Use deterministic commands when the desired action is already known. These commands do not call
+the OpenAI API:
+
+```bash
+sagui browser observe --tab-id TARGET_ID
+
+sagui browser click \
+  --tab-id TARGET_ID \
+  --role link \
+  --name "Issues" \
+  --domain github.com
+
+sagui browser set-value "SwiftAutoGUI" \
+  --tab-id TARGET_ID \
+  --role searchbox \
+  --name "Search"
+
+sagui browser key return --tab-id TARGET_ID
+sagui browser scroll --vertical -5 --tab-id TARGET_ID
+```
+
+The direct command set also includes `activate-tab`, `open`, and `type`. Element actions resolve
+the exact role and accessible name against a fresh observation. Use `--element-id` in addition to
+`--role` and `--name` only when multiple current elements have the same semantic identity.
+
 Run a browser-only Agent:
 
 ```bash
