@@ -201,7 +201,7 @@ await actions.execute()
 
 # Claude Code Plugin
 
-SwiftAutoGUI ships as a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin so Claude can control macOS GUI applications via the `sagui` CLI — taking screenshots, clicking buttons, typing text, scrolling, and more.
+SwiftAutoGUI ships as a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin so Claude can control native macOS applications and Chromium pages through the `sagui` CLI.
 
 ## Install from the marketplace
 
@@ -212,7 +212,12 @@ Inside Claude Code:
 /plugin install swift-auto-gui@swift-auto-gui
 ```
 
-This installs the `macos-control` skill, which is invoked as `/swift-auto-gui:macos-control`. The skill walks Claude through installing the `sagui` binary the first time it's needed (Swift 6.2+ toolchain required).
+This installs two skills:
+
+- `macos-control`, invoked as `/swift-auto-gui:macos-control`, controls native macOS UI.
+- `browser-control`, invoked as `/swift-auto-gui:browser-control`, controls Chromium pages through CDP without native input fallback.
+
+The skills walk Claude through installing or updating the `sagui` binary when needed.
 
 ## Permissions
 
@@ -221,7 +226,9 @@ Grant the application running Claude Code (Terminal.app, iTerm, etc.) both:
 - **Accessibility** — System Settings → Privacy & Security → Accessibility
 - **Screen Recording** — System Settings → Privacy & Security → Screen Recording
 
-For full skill details, see [`plugins/swift-auto-gui/skills/macos-control/SKILL.md`](plugins/swift-auto-gui/skills/macos-control/SKILL.md).
+These permissions are required for `macos-control`; browser-only CDP actions do not require them.
+
+For full details, see the [`macos-control`](plugins/swift-auto-gui/skills/macos-control/SKILL.md) and [`browser-control`](plugins/swift-auto-gui/skills/browser-control/SKILL.md) skill definitions.
 
 # Contributors
 
