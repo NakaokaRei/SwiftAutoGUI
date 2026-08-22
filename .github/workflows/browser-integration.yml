@@ -14,15 +14,11 @@ jobs:
   browser-integration:
     name: Browser Integration
     runs-on: macos-26
+    env:
+      CHROME_PATH: /Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-
-      - name: Install Chrome for Testing
-        id: chrome
-        uses: browser-actions/setup-chrome@v2
-        with:
-          chrome-version: stable
 
       - name: Run browser integration tests
         env:
@@ -32,13 +28,15 @@ jobs:
         run: |
           set -euo pipefail
 
+          "${CHROME_PATH}" --version
+
           python3 -m http.server 8765 \
             --bind 127.0.0.1 \
             --directory Tests/Fixtures/Browser \
             >"${RUNNER_TEMP}/fixture.log" 2>&1 &
           fixture_pid=$!
 
-          "${{ steps.chrome.outputs.chrome-path }}" \
+          "${CHROME_PATH}" \
             --headless \
             --no-first-run \
             --user-data-dir="${RUNNER_TEMP}/chrome-profile" \
