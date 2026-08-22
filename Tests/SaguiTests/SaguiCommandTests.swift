@@ -110,4 +110,33 @@ struct SaguiCommandTests {
             ])
         }
     }
+
+    @Test("Browser Agent requires no implicit domains at parse time")
+    func browserAgentDefaults() throws {
+        let command = try BrowserAgentCommand.parse(["Open the Issues page"])
+        #expect(command.endpoint == "http://127.0.0.1:9222")
+        #expect(command.domains.isEmpty)
+        #expect(command.visionMode == .automatic)
+        #expect(!command.allowCrossOrigin)
+    }
+
+    @Test("Browser Agent accepts repeated domain entries and a tab ID")
+    func browserAgentOptions() throws {
+        let command = try BrowserAgentCommand.parse([
+            "Open issue 118",
+            "--domain", "github.com",
+            "--domain", "*.github.com",
+            "--tab-id", "target-123",
+            "--allow-cross-origin",
+        ])
+        #expect(command.domains == ["github.com", "*.github.com"])
+        #expect(command.tabID == "target-123")
+        #expect(command.allowCrossOrigin)
+    }
+
+    @Test("Browser tabs defaults to the loopback endpoint")
+    func browserTabsDefaults() throws {
+        let command = try BrowserTabsCommand.parse([])
+        #expect(command.endpoint == "http://127.0.0.1:9222")
+    }
 }
