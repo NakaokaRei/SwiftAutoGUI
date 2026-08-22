@@ -44,11 +44,42 @@ public protocol VisionActionGenerating: Sendable {
         screenSize: CGSize,
         history: [AgentStep]
     ) async throws -> AgentResponse
+
+    /// Generates actions from a backend-neutral automation observation.
+    /// Implementations may use structured native or browser context without a screenshot.
+    func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        observation: AgentObservation
+    ) async throws -> AgentResponse
 }
 
 // MARK: - Default Implementation with Screen Context
 
 extension VisionActionGenerating {
+    /// Generates actions from a backend-neutral automation observation.
+    ///
+    /// Existing custom vision backends remain compatible: the default
+    /// implementation forwards native observations to the screen-context
+    /// overload and forwards browser observations as screenshot-only input.
+    public func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        observation: AgentObservation
+    ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history,
+            screenContext: observation.nativeScreenContext
+        )
+    }
+
     /// Generates actions with additional screen context alongside the screenshot.
     ///
     /// The default implementation ignores the screen context and delegates to the

@@ -77,6 +77,10 @@ public enum BasicAction: Sendable, Codable {
     /// Get the name of the frontmost application.
     case getFrontmostApp
 
+    /// Activate a browser tab by its CDP target identifier.
+    /// Native automation backends report this action as unsupported.
+    case activateTab(tabID: String)
+
     /// Convert to an executable ``Action``.
     public func toAction() -> Action {
         switch self {
@@ -131,6 +135,9 @@ public enum BasicAction: Sendable, Codable {
             return .quitApp(name: name)
         case .getFrontmostApp:
             return .getFrontmostApp
+        case .activateTab:
+            // Browser-only actions are executed by SwiftAutoGUIBrowser.
+            return .wait(0)
         }
     }
 
@@ -169,14 +176,14 @@ public enum BasicAction: Sendable, Codable {
         case text, x, y, clicks, duration, keys
         case fromX, fromY, toX, toY
         case label, value, path, title, bundleID, elementID
-        case url, name
+        case url, name, tabID
     }
 
     private enum ActionType: String, Codable {
         case write, move, leftClick, rightClick, doubleClick
         case vscroll, hscroll, wait, keyShortcut, drag
         case pressButton, pressElement, setTextField, setElementValue, selectMenuItem, raiseWindow
-        case openURL, activateApp, quitApp, getFrontmostApp
+        case openURL, activateApp, quitApp, getFrontmostApp, activateTab
     }
 
     public init(from decoder: Decoder) throws {
@@ -250,6 +257,9 @@ public enum BasicAction: Sendable, Codable {
             self = .quitApp(name: name)
         case .getFrontmostApp:
             self = .getFrontmostApp
+        case .activateTab:
+            let tabID = try container.decodeIfPresent(String.self, forKey: .tabID) ?? ""
+            self = .activateTab(tabID: tabID)
         }
     }
 
@@ -323,6 +333,9 @@ public enum BasicAction: Sendable, Codable {
             try container.encode(name, forKey: .name)
         case .getFrontmostApp:
             try container.encode(ActionType.getFrontmostApp, forKey: .type)
+        case .activateTab(let tabID):
+            try container.encode(ActionType.activateTab, forKey: .type)
+            try container.encode(tabID, forKey: .tabID)
         }
     }
 }

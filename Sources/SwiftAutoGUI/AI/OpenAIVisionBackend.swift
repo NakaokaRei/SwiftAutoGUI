@@ -102,20 +102,56 @@ public struct OpenAIVisionBackend: VisionActionGenerating, Sendable {
         history: [AgentStep],
         screenContext: ScreenContext?
     ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history,
+            formattedContext: screenContext?.formatted(),
+            observationKind: screenContext == nil ? nil : .native
+        )
+    }
+
+    public func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        observation: AgentObservation
+    ) async throws -> AgentResponse {
+        try await generateActions(
+            goal: goal,
+            screenshot: screenshot,
+            screenSize: screenSize,
+            history: history,
+            formattedContext: observation.formattedContext,
+            observationKind: observation.kind
+        )
+    }
+
+    private func generateActions(
+        goal: String,
+        screenshot: Data?,
+        screenSize: CGSize,
+        history: [AgentStep],
+        formattedContext: String?,
+        observationKind: AgentObservationKind?
+    ) async throws -> AgentResponse {
         let input = buildInput(
             goal: goal,
             screenshot: screenshot,
             screenSize: screenSize,
             history: history,
-            screenContext: screenContext
+            formattedContext: formattedContext
         )
 
         var requestBody: [String: Any] = [
             "model": model,
             "instructions": Self.buildSystemPrompt(
                 screenSize: screenSize,
-                hasScreenContext: screenContext != nil,
-                hasScreenshot: screenshot != nil
+                hasScreenContext: !(formattedContext?.isEmpty ?? true),
+                hasScreenshot: screenshot != nil,
+                observationKind: observationKind
             ),
             "input": input,
             "text": [
@@ -180,7 +216,7 @@ extension OpenAIVisionBackend {
         screenshot: Data?,
         screenSize: CGSize,
         history: [AgentStep],
-        screenContext: ScreenContext? = nil
+        formattedContext: String? = nil
     ) -> [[String: Any]] {
         var input: [[String: Any]] = []
 
@@ -201,9 +237,9 @@ extension OpenAIVisionBackend {
         }
 
         var userText = "Goal: \(goal)\n"
-        if let context = screenContext {
+        if let formattedContext, !formattedContext.isEmpty {
             userText += "\n--- Screen Context ---\n"
-            userText += context.formatted()
+            userText += formattedContext
             userText += "\n--- End Screen Context ---\n"
         }
         userText += screenshot == nil
@@ -264,6 +300,8 @@ extension OpenAIVisionBackend {
             return "quitApp(\"\(name)\")"
         case .getFrontmostApp:
             return "getFrontmostApp"
+        case .activateTab(let tabID):
+            return "activateTab(\"\(tabID)\")"
         }
     }
 }
@@ -274,7 +312,8 @@ extension OpenAIVisionBackend {
     static func buildSystemPrompt(
         screenSize: CGSize,
         hasScreenContext: Bool = false,
-        hasScreenshot: Bool = true
+        hasScreenshot: Bool = true,
+        observationKind: AgentObservationKind? = nil
     ) -> String {
         var prompt = """
         You are an AI agent controlling a macOS computer to achieve a user's goal. \
@@ -312,6 +351,7 @@ extension OpenAIVisionBackend {
         - activateApp: Launch an app if needed and bring it to the front. Parameters: name (string)
         - quitApp: Gracefully quit an app. Parameters: name (string)
         - getFrontmostApp: Get the name of the frontmost application. No additional parameters needed.
+        - activateTab: Activate a browser tab. Parameters: tabID (string from the browser context).
 
         Prefer openURL/activateApp/quitApp and the AX-based actions \
         (pressElement, setElementValue, pressButton, setTextField, selectMenuItem, raiseWindow) when applicable. \
@@ -353,6 +393,17 @@ extension OpenAIVisionBackend {
             When the keyboard input source indicates a non-ASCII input mode (e.g., Japanese), \
             consider switching to an ASCII-capable source before using the 'write' action for English text. \
             Common shortcuts to toggle input source include Control+Space or Caps Lock, depending on user settings.
+            """
+        }
+
+        if observationKind == .browser {
+            prompt += """
+
+
+            This is a browser-only CDP observation. Use pressElement, setElementValue, openURL,
+            keyShortcut, scrolling, wait, and activateTab. Do not use native application,
+            window, menu, Accessibility-label, coordinate mouse, or drag actions. Browser
+            element identifiers are step-local and must never be reused in a later observation.
             """
         }
 
@@ -434,6 +485,9 @@ extension OpenAIVisionBackend {
             return .quitApp(name: name)
         case "getFrontmostApp":
             return .getFrontmostApp
+        case "activateTab":
+            let tabID = dict["tabID"] as? String ?? ""
+            return .activateTab(tabID: tabID)
         default:
             return nil
         }
@@ -518,7 +572,7 @@ extension OpenAIVisionBackend {
                 "enum": ["write", "move", "leftClick", "rightClick", "doubleClick",
                          "vscroll", "hscroll", "wait", "keyShortcut", "drag",
                          "pressButton", "pressElement", "setTextField", "setElementValue", "selectMenuItem", "raiseWindow",
-                         "openURL", "activateApp", "quitApp", "getFrontmostApp"]
+                         "openURL", "activateApp", "quitApp", "getFrontmostApp", "activateTab"]
             ] as [String: Any],
             "text": ["type": ["string", "null"], "description": "Text to type. Used with 'write' action."] as [String: Any],
             "x": ["type": ["number", "null"], "description": "X coordinate. Used with 'move' action."] as [String: Any],
@@ -538,10 +592,11 @@ extension OpenAIVisionBackend {
             "elementID": ["type": ["integer", "null"], "description": "Step-local [#N] element identifier. Used with element actions."] as [String: Any],
             "url": ["type": ["string", "null"], "description": "HTTP or HTTPS URL. Used with 'openURL'."] as [String: Any],
             "name": ["type": ["string", "null"], "description": "Application name. Used with 'activateApp' and 'quitApp'."] as [String: Any],
+            "tabID": ["type": ["string", "null"], "description": "CDP target identifier. Used with 'activateTab'."] as [String: Any],
         ] as [String: Any],
         "required": ["type", "text", "x", "y", "clicks", "duration", "keys",
                      "fromX", "fromY", "toX", "toY",
-                     "label", "value", "path", "title", "bundleID", "elementID", "url", "name"],
+                     "label", "value", "path", "title", "bundleID", "elementID", "url", "name", "tabID"],
         "additionalProperties": false
     ] as [String: Any]
 
