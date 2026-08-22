@@ -16,6 +16,8 @@ jobs:
         run: |
           swift package --allow-writing-to-directory ./docs generate-documentation \
           --target SwiftAutoGUI \
+          --target SwiftAutoGUIBrowser \
+          --enable-experimental-combined-documentation \
           --transform-for-static-hosting \
           --hosting-base-path SwiftAutoGUI \
           --output-path ./docs

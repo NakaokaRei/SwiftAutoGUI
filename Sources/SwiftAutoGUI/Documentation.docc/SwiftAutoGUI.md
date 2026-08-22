@@ -56,6 +56,9 @@ print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
 `Agent` uses ``NativeAutomationBackend`` by default. Optional modules can supply
 another ``AgentAutomationBackend`` explicitly while preserving the native default.
 
+To observe and control an existing Chromium session through the Chrome DevTools
+Protocol, see [Using a Browser Agent](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautoguibrowser/browseragent/).
+
 ### With Step Callback
 
 ```swift

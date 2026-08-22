@@ -137,7 +137,7 @@ sagui browser agent "Open issue 118" --domain github.com --allow-cross-origin
 
 # Example Usage
 
-If you would like to know more details, please refer to the [DocC Style Document](https://nakaokarei.github.io/SwiftAutoGUI/documentation/swiftautogui/).
+For complete API and module documentation, see the [SwiftAutoGUI DocC site](https://nakaokarei.github.io/SwiftAutoGUI/documentation/).
 
 ## AI Agent
 
