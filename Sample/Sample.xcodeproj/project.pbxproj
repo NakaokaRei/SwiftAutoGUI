@@ -12,6 +12,7 @@
 		5C3CE0262973398400D9CE50 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0252973398400D9CE50 /* Assets.xcassets */; };
 		5C3CE0292973398400D9CE50 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */; };
 		5C3CE032297339AA00D9CE50 /* SwiftAutoGUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */; };
+		A1180001297339AA00D9CE50 /* SwiftAutoGUIBrowser in Frameworks */ = {isa = PBXBuildFile; productRef = A1180000297339AA00D9CE50 /* SwiftAutoGUIBrowser */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,7 +22,6 @@
 		5C3CE0252973398400D9CE50 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5C3CE0282973398400D9CE50 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5C3CE02A2973398400D9CE50 /* Sample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Sample.entitlements; sourceTree = "<group>"; };
-		5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftAutoGUI; path = ../..; sourceTree = "<group>"; };
 		5CBA7E592E2B7D3700CBB992 /* SwiftAutoGUITestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SwiftAutoGUITestPlan.xctestplan; path = Sample/SwiftAutoGUITestPlan.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -36,6 +36,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5C3CE032297339AA00D9CE50 /* SwiftAutoGUI in Frameworks */,
+				A1180001297339AA00D9CE50 /* SwiftAutoGUIBrowser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,7 +64,6 @@
 		5C3CE0202973398300D9CE50 /* Sample */ = {
 			isa = PBXGroup;
 			children = (
-				5C3E344A2C3030D600BAD11F /* SwiftAutoGUI */,
 				5C3CE0212973398300D9CE50 /* SampleApp.swift */,
 				5C3CE0232973398300D9CE50 /* ContentView.swift */,
 				5CBA7D5E2E1FB87700CBB992 /* Common */,
@@ -112,6 +112,7 @@
 			name = Sample;
 			packageProductDependencies = (
 				5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */,
+				A1180000297339AA00D9CE50 /* SwiftAutoGUIBrowser */,
 			);
 			productName = Sample;
 			productReference = 5C3CE01E2973398300D9CE50 /* Sample.app */;
@@ -141,6 +142,9 @@
 				Base,
 			);
 			mainGroup = 5C3CE0152973398300D9CE50;
+			packageReferences = (
+				5C3E344A2C3030D600BAD11F /* XCLocalSwiftPackageReference "SwiftAutoGUI" */,
+			);
 			productRefGroup = 5C3CE01F2973398300D9CE50 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -369,10 +373,23 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		5C3E344A2C3030D600BAD11F /* XCLocalSwiftPackageReference "SwiftAutoGUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		5C3CE031297339AA00D9CE50 /* SwiftAutoGUI */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 5C3E344A2C3030D600BAD11F /* XCLocalSwiftPackageReference "SwiftAutoGUI" */;
 			productName = SwiftAutoGUI;
+		};
+		A1180000297339AA00D9CE50 /* SwiftAutoGUIBrowser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5C3E344A2C3030D600BAD11F /* XCLocalSwiftPackageReference "SwiftAutoGUI" */;
+			productName = SwiftAutoGUIBrowser;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -142,6 +142,8 @@ class AgentDemoViewModel {
             return "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
         case .openURL(let url):
             return "openURL(\"\(url)\")"
+        case .activateTab(let tabID):
+            return "activateTab(\"\(tabID)\")"
         case .activateApp(let name):
             return "activateApp(\"\(name)\")"
         case .quitApp(let name):

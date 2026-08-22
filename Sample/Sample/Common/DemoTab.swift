@@ -22,6 +22,7 @@ enum DemoTab: String, CaseIterable {
     case actions
     case aiGeneration
     case screenContext
+    case browser
     case agent
 
     var title: String {
@@ -40,6 +41,7 @@ enum DemoTab: String, CaseIterable {
         case .actions: return "Actions"
         case .aiGeneration: return "AI Generation"
         case .screenContext: return "Screen Context"
+        case .browser: return "Browser CDP"
         case .agent: return "AI Agent"
         }
     }
@@ -60,6 +62,7 @@ enum DemoTab: String, CaseIterable {
         case .actions: return "play.circle"
         case .aiGeneration: return "sparkles"
         case .screenContext: return "accessibility"
+        case .browser: return "network"
         case .agent: return "brain"
         }
     }
