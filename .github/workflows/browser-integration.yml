@@ -13,7 +13,7 @@ permissions:
 jobs:
   browser-integration:
     name: Browser Integration
-    runs-on: macos-26
+    runs-on: xcode-27
     env:
       CHROME_PATH: /Applications/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
     steps:

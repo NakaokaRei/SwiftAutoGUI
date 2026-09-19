@@ -74,7 +74,7 @@ Three subcommands: `KeyCommand`, `MouseCommand`, `ScreenCommand`, each in their 
 
 ## CI
 
-GitHub Actions workflow (`build.yml`) runs on `macos-26` with four parallel jobs: build, test, docs (xcodebuild docbuild), and sample app build. PRs get automated test result comments.
+GitHub Actions workflow (`build.yml`) runs on `xcode-27` (Xcode 27 series) with four parallel jobs: build, test, docs (Swift-DocC), and sample app build. The browser integration and DocC deployment builds also use `xcode-27`. PRs get automated test result comments.
 
 ## Releases
 
