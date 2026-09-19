@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     name: Build Library
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -38,7 +38,7 @@ jobs:
 
   test:
     name: Run Tests
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -169,7 +169,7 @@ jobs:
 
   docs:
     name: Build Documentation
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -188,7 +188,7 @@ jobs:
 
   sample-app:
     name: Build Sample App
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
