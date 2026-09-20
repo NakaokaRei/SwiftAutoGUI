@@ -137,7 +137,7 @@ the target textbox is known because `set-value` focuses and verifies the semanti
 
 ## Handle the OpenAI API key
 
-The Agent uses the OpenAI API. Prefer `OPENAI_API_KEY`; never print the value, request it in chat, or
+The Agent defaults to the on-device Apple model. For `--provider openai`, prefer `OPENAI_API_KEY`; never print the value, request it in chat, or
 put it in a command with `--api-key`, where it may enter shell history or process listings.
 
 Check only whether the variable exists:
@@ -150,7 +150,7 @@ else
 fi
 ```
 
-If it is absent, ask the user to configure it securely in their shell and stop until they confirm.
+When using `--provider openai`, if the key is absent, ask the user to configure it securely in their shell and stop until they confirm. On-device use does not need an API key.
 
 ## Run a browser-only Agent
 
@@ -173,7 +173,7 @@ controls include:
 ```bash
 --endpoint http://127.0.0.1:9222
 --model gpt-5.6-sol
---reasoning-effort low
+--provider openai
 --max-iterations 20
 --delay 1.0
 --vision-mode automatic

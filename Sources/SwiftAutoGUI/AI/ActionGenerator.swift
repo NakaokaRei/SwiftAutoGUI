@@ -342,134 +342,60 @@ public enum BasicAction: Sendable, Codable {
 
 // MARK: - ActionGenerator
 
-/// Generates automation actions from natural language prompts using AI.
-///
-/// `ActionGenerator` uses AI backends to convert natural language
-/// descriptions into executable ``Action`` instances. This enables AI-powered automation
-/// where users can describe what they want to do in plain language.
-///
-/// ## Example Usage
-///
-/// ```swift
-/// // Generate a single action from a prompt (uses default backend)
-/// let action = try await ActionGenerator.generateAction(from: "click at position 100, 200")
-/// await action.execute()
-///
-/// // Generate multiple actions for a complex task
-/// let actions = try await ActionGenerator.generateActionSequence(
-///     from: "Click at 100, 100, wait 1 second, then type 'test'"
-/// )
-/// await actions.execute()
-///
-/// // Use a specific backend
-/// let generator = ActionGenerator(openAIKey: "sk-...")
-/// let actions = try await generator.generateActionSequence(from: "type hello")
-/// ```
-///
-/// ## Requirements
-///
-/// - macOS 26.0 or later
-/// - For Foundation Models backend: Apple Intelligence enabled
-/// - For OpenAI backend: Valid API key
-///
+/// Generates actions through Foundation Models using any LanguageModel.
+/// Each independent request gets a fresh session. No input is executed here.
 public struct ActionGenerator: Sendable {
+    @MainActor public static var defaultModel: any LanguageModel = SystemLanguageModel.default
+    public let model: any LanguageModel
+    public let fallbackModel: (any LanguageModel)?
 
-    /// The default backend used by static methods.
-    ///
-    /// Defaults to ``FoundationModelsBackend``. Change this to use a different
-    /// backend globally:
-    ///
-    /// ```swift
-    /// ActionGenerator.defaultBackend = OpenAIBackend(apiKey: "sk-...")
-    /// ```
-    @MainActor
-    public static var defaultBackend: any ActionGenerating = FoundationModelsBackend()
-
-    /// The backend used by this instance.
-    public let backend: any ActionGenerating
-
-    /// Creates an ActionGenerator with the specified backend.
-    ///
-    /// - Parameter backend: The backend to use for action generation.
-    public init(backend: any ActionGenerating) {
-        self.backend = backend
+    /// A fallback is opt-in. Passing a cloud model permits sending the prompt to it.
+    public init(model: some LanguageModel, fallbackModel: (any LanguageModel)? = nil) {
+        self.model = model
+        self.fallbackModel = fallbackModel
     }
 
-    /// Creates an ActionGenerator using the OpenAI backend.
-    ///
-    /// - Parameters:
-    ///   - openAIKey: Your OpenAI API key.
-    ///   - model: The model to use (default: `gpt-5.6-luna`).
-    ///   - reasoningEffort: Optional reasoning effort sent to the Responses API.
-    public init(
-        openAIKey: String,
-        model: String = OpenAIBackend.defaultModel,
-        reasoningEffort: String? = nil
-    ) {
-        self.backend = OpenAIBackend(
-            apiKey: openAIKey,
-            model: model,
-            reasoningEffort: reasoningEffort
-        )
-    }
-
-    // MARK: - Instance Methods
-
-    /// Generates a single action from a natural language prompt using this instance's backend.
-    ///
-    /// - Parameter prompt: A natural language description of the desired action.
-    /// - Returns: An ``Action`` instance.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
     public func generateAction(from prompt: String) async throws -> Action {
-        try await backend.generateAction(from: prompt)
+        let session = makeSession()
+        let result = try await session.respond(to: Prompt(prompt), generating: SingleAction.self)
+        return result.action.toAction()
     }
 
-    /// Generates multiple actions from a natural language prompt using this instance's backend.
-    ///
-    /// - Parameter prompt: A natural language description of a multi-step task.
-    /// - Returns: An array of ``Action`` instances representing the sequence.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
-        try await backend.generateActionSequence(from: prompt)
+        let session = makeSession()
+        let plan = try await session.respond(to: Prompt(prompt), generating: ActionPlan.self)
+        guard !plan.actions.isEmpty else { throw ActionGeneratorError.noActionsGenerated }
+        return plan.actions.map { $0.toAction() }
     }
 
-    // MARK: - Static Methods (backward compatible, delegate to defaultBackend)
-
-    /// Checks if the default backend is available.
-    ///
-    /// Use this method to verify backend availability before attempting to generate actions.
-    @MainActor
-    public static var isAvailable: Bool {
-        defaultBackend.isAvailable
+    private func makeSession() -> ActionSession {
+        ActionSession(model: model, fallbackModel: fallbackModel, instructions:
+            "Convert the user's request into a short sequence of automation actions. Use only the provided schema.")
     }
 
-    /// Returns a human-readable message describing why the default backend is unavailable.
-    ///
-    /// - Returns: A message string if the backend is unavailable, `nil` if available.
-    @MainActor
-    public static var unavailableReason: String? {
-        defaultBackend.unavailableReason
+    @MainActor public static var isAvailable: Bool { unavailableReason == nil }
+    @MainActor public static var unavailableReason: String? {
+        AutomationModels.unavailableReason(for: defaultModel)
     }
 
-    /// Generates a single action from a natural language prompt using the default backend.
-    ///
-    /// - Parameter prompt: A natural language description of the desired action.
-    /// - Returns: An ``Action`` instance.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
-    @MainActor
-    public static func generateAction(from prompt: String) async throws -> Action {
-        try await defaultBackend.generateAction(from: prompt)
+    @MainActor public static func generateAction(from prompt: String) async throws -> Action {
+        try await ActionGenerator(model: defaultModel).generateAction(from: prompt)
     }
 
-    /// Generates multiple actions from a natural language prompt using the default backend.
-    ///
-    /// - Parameter prompt: A natural language description of a multi-step task.
-    /// - Returns: An array of ``Action`` instances representing the sequence.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
-    @MainActor
-    public static func generateActionSequence(from prompt: String) async throws -> [Action] {
-        try await defaultBackend.generateActionSequence(from: prompt)
+    @MainActor public static func generateActionSequence(from prompt: String) async throws -> [Action] {
+        try await ActionGenerator(model: defaultModel).generateActionSequence(from: prompt)
     }
+}
+
+@Generable
+struct SingleAction: Sendable {
+    var action: BasicAction
+}
+
+@Generable
+struct ActionPlan: Sendable {
+    @Guide(.maximumCount(20))
+    var actions: [BasicAction]
 }
 
 // MARK: - Convenience Extensions

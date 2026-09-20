@@ -423,32 +423,6 @@ struct ActionGeneratorTests {
             }
         }
 
-        @Test("Vision parser supports Tier 1 app-control actions")
-        func visionParserSupportsAppControlActions() {
-            let dictionaries: [[String: Any]] = [
-                ["type": "openURL", "url": "https://example.com"],
-                ["type": "activateApp", "name": "Safari"],
-                ["type": "quitApp", "name": "TextEdit"],
-                ["type": "getFrontmostApp"]
-            ]
-            let actions = dictionaries.compactMap(OpenAIVisionBackend.parseAction)
-            #expect(actions.count == 4)
-
-            guard case .openURL(let url) = actions[0] else {
-                Issue.record("Expected .openURL")
-                return
-            }
-            #expect(url == "https://example.com")
-
-            guard case .activateApp(let activateName) = actions[1],
-                  case .quitApp(let quitName) = actions[2],
-                  case .getFrontmostApp = actions[3] else {
-                Issue.record("Expected all Tier 1 app-control actions")
-                return
-            }
-            #expect(activateName == "Safari")
-            #expect(quitName == "TextEdit")
-        }
     }
 
     // MARK: - BasicAction to Action Conversion Tests
@@ -652,56 +626,6 @@ struct ActionGeneratorTests {
     @Suite("Backend and API")
     struct BackendTests {
 
-        @Test("Vision backend defaults to the current flagship model")
-        func visionBackendDefaults() {
-            #expect(OpenAIVisionBackend.defaultModel == "gpt-5.6-sol")
-            #expect(OpenAIVisionBackend.defaultReasoningEffort == "low")
-        }
-
-        @Test("Text backend defaults to the efficient model")
-        func textBackendDefaults() {
-            #expect(OpenAIBackend.defaultModel == "gpt-5.6-luna")
-            #expect(OpenAIBackend.defaultReasoningEffort == "none")
-        }
-
-        @Test("OpenAIBackend is always available")
-        func openAIBackendAvailable() {
-            let backend = OpenAIBackend(apiKey: "test-key")
-            #expect(backend.isAvailable)
-            #expect(backend.unavailableReason == nil)
-        }
-
-        @Test("ActionGenerator with OpenAI key creates working instance")
-        func generatorWithOpenAIKey() {
-            let generator = ActionGenerator(openAIKey: "test-key", model: "gpt-4o")
-            #expect(generator.backend.isAvailable)
-        }
-
-        @Test("ActionGenerator with custom backend")
-        func generatorWithCustomBackend() {
-            let backend = OpenAIBackend(apiKey: "test-key")
-            let generator = ActionGenerator(backend: backend)
-            #expect(generator.backend.isAvailable)
-        }
-
-        @Test("OpenAI action schema includes Tier 1 app-control fields")
-        func actionSchemaIncludesAppControlFields() {
-            let schema = OpenAIVisionBackend.actionItemSchemaDict
-            let properties = schema["properties"] as? [String: Any]
-            let required = schema["required"] as? [String]
-            let typeProperty = properties?["type"] as? [String: Any]
-            let actionTypes = typeProperty?["enum"] as? [String]
-
-            #expect(properties?["url"] != nil)
-            #expect(properties?["name"] != nil)
-            #expect(required?.contains("url") == true)
-            #expect(required?.contains("name") == true)
-            #expect(actionTypes?.contains("openURL") == true)
-            #expect(actionTypes?.contains("activateApp") == true)
-            #expect(actionTypes?.contains("quitApp") == true)
-            #expect(actionTypes?.contains("getFrontmostApp") == true)
-        }
-
         @Test("semantic element actions round-trip and parse")
         func semanticElementActions() throws {
             let press = try roundTrip(.pressElement(elementID: 12))
@@ -716,26 +640,6 @@ struct ActionGeneratorTests {
             #expect(valueID == 13)
             #expect(value == "Swift")
 
-            let parsedPress = OpenAIVisionBackend.parseAction(["type": "pressElement", "elementID": 21])
-            guard case .pressElement(let parsedID) = parsedPress else {
-                Issue.record("Expected parsed pressElement")
-                return
-            }
-            #expect(parsedID == 21)
-        }
-
-        @Test("OpenAI schema exposes semantic element fields")
-        func schemaIncludesSemanticElements() {
-            let schema = OpenAIVisionBackend.actionItemSchemaDict
-            let properties = schema["properties"] as? [String: Any]
-            let required = schema["required"] as? [String]
-            let typeProperty = properties?["type"] as? [String: Any]
-            let actionTypes = typeProperty?["enum"] as? [String]
-
-            #expect(properties?["elementID"] != nil)
-            #expect(required?.contains("elementID") == true)
-            #expect(actionTypes?.contains("pressElement") == true)
-            #expect(actionTypes?.contains("setElementValue") == true)
         }
 
         @Test("semantic action without an observation fails safely")

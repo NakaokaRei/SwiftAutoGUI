@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import FoundationModels
 import SwiftAutoGUI
 
 /// Run an AI agent that observes the screen and executes actions to achieve a goal.
@@ -10,17 +11,14 @@ import SwiftAutoGUI
 /// ## Usage
 ///
 /// ```bash
-/// sagui agent "Open Safari and search for Swift" --api-key sk-...
-/// sagui agent "Click the trash icon" --model gpt-5.6-sol --reasoning-effort low --max-iterations 15
+/// sagui agent "Open Safari and search for Swift" --provider openai
+/// sagui agent "Click the trash icon" --model gpt-5.6-sol --provider openai --max-iterations 15
 /// ```
 struct AgentCommand: AsyncParsableCommand {
-    enum ReasoningEffort: String, CaseIterable, ExpressibleByArgument {
-        case none
-        case low
-        case medium
-        case high
-        case xhigh
-        case max
+    enum Provider: String, CaseIterable, ExpressibleByArgument {
+        case onDevice = "on-device"
+        case pcc
+        case openAI = "openai"
     }
 
     enum VisionMode: String, CaseIterable, ExpressibleByArgument {
@@ -29,7 +27,7 @@ struct AgentCommand: AsyncParsableCommand {
         case never
     }
 
-    static let defaultModel = OpenAIVisionBackend.defaultModel
+    static let defaultModel = AutomationModels.defaultAgentModel
 
     static let configuration = CommandConfiguration(
         commandName: "agent",
@@ -42,11 +40,14 @@ struct AgentCommand: AsyncParsableCommand {
     @Option(help: "OpenAI API key. Can also be set via OPENAI_API_KEY environment variable.")
     var apiKey: String?
 
-    @Option(help: "Vision model to use.")
+    @Option(help: "Model name for --provider openai.")
     var model: String = Self.defaultModel
 
-    @Option(help: "Reasoning effort: none, low, medium, high, xhigh, or max. Defaults to low for GPT-5.6 models.")
-    var reasoningEffort: ReasoningEffort?
+    @Option(help: "AI provider: on-device, pcc (requires entitlement), or openai. Cloud providers receive screen content.")
+    var provider: Provider = .onDevice
+
+    @Flag(help: "Explicitly fall back to the on-device model if the selected provider is unavailable.")
+    var fallbackOnDevice = false
 
     @Option(help: "Maximum number of iterations.")
     var maxIterations: Int = 20
@@ -62,19 +63,11 @@ struct AgentCommand: AsyncParsableCommand {
 
     @MainActor
     func run() async throws {
-        let key = apiKey ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
-        guard let key else {
-            throw ValidationError("Provide --api-key or set OPENAI_API_KEY environment variable.")
-        }
-
-        let backend = OpenAIVisionBackend(
-            apiKey: key,
-            model: model,
-            reasoningEffort: reasoningEffort?.rawValue
-        )
+        let selectedModel = try Self.makeModel(provider: provider, apiKey: apiKey, name: model)
         let contextOptions: ScreenContextProvider.Options? = noScreenContext ? nil : ScreenContextProvider.Options()
         let agent = Agent(
-            backend: backend,
+            model: selectedModel,
+            fallbackModel: fallbackOnDevice ? SystemLanguageModel.default : nil,
             maxIterations: maxIterations,
             delayBetweenSteps: delay,
             screenContextOptions: contextOptions,
@@ -82,8 +75,8 @@ struct AgentCommand: AsyncParsableCommand {
         )
 
         print("Agent starting with goal: \"\(goal)\"")
-        print("Model: \(model)")
-        print("Reasoning effort: \(effectiveReasoningEffort)")
+        if provider == .openAI { print("Model: \(model)") }
+        print("Provider: \(provider.rawValue)")
         print("Max iterations: \(maxIterations), Delay: \(delay)s, Screen context: \(!noScreenContext)")
         print("Vision mode: \(visionMode.rawValue)")
         print("---")
@@ -109,13 +102,16 @@ struct AgentCommand: AsyncParsableCommand {
         print("Iterations used: \(result.iterationsUsed)")
     }
 
-    var effectiveReasoningEffort: String {
-        if let reasoningEffort {
-            return reasoningEffort.rawValue
+    static func makeModel(provider: Provider, apiKey: String?, name: String) throws -> any LanguageModel {
+        switch provider {
+        case .onDevice: return SystemLanguageModel.default
+        case .pcc: return PrivateCloudComputeLanguageModel()
+        case .openAI:
+            let key = apiKey ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
+            guard let key, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw ValidationError("Provide --api-key or set OPENAI_API_KEY for --provider openai.")
+            }
+            return AutomationModels.openAI(apiKey: key, model: name)
         }
-        if model.hasPrefix("gpt-5.6") {
-            return OpenAIVisionBackend.defaultReasoningEffort
-        }
-        return "model default"
     }
 }

@@ -2,6 +2,15 @@
   "originHash" : "64f069b7c22787ac59104fba3fcc126a5dfc1eee6786b6cc68ca411bcb405236",
   "pins" : [
     {
+      "identity" : "foundation-models-utilities",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/foundation-models-utilities",
+      "state" : {
+        "revision" : "2aa12937e30d310687f40fc470ea35495816c9a4",
+        "version" : "1.0.0-beta5"
+      }
+    },
+    {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",

@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import FoundationModels
 import SwiftAutoGUI
 import SwiftAutoGUIBrowser
 
@@ -237,10 +238,13 @@ struct BrowserAgentCommand: AsyncParsableCommand {
     var apiKey: String?
 
     @Option(help: "OpenAI model to use.")
-    var model: String = OpenAIVisionBackend.defaultModel
+    var model: String = AutomationModels.defaultAgentModel
 
-    @Option(help: "Reasoning effort: none, low, medium, high, xhigh, or max.")
-    var reasoningEffort: AgentCommand.ReasoningEffort?
+    @Option(help: "AI provider: on-device, pcc (requires entitlement), or openai. Cloud providers receive page content.")
+    var provider: AgentCommand.Provider = .onDevice
+
+    @Flag(help: "Explicitly fall back to the on-device model.")
+    var fallbackOnDevice = false
 
     @Option(help: "Maximum number of observe-think-act iterations.")
     var maxIterations = 20
@@ -256,10 +260,7 @@ struct BrowserAgentCommand: AsyncParsableCommand {
         guard !domains.isEmpty else {
             throw ValidationError("Provide at least one --domain allowlist entry.")
         }
-        let key = apiKey ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
-        guard let key, !key.isEmpty else {
-            throw ValidationError("Set OPENAI_API_KEY or provide --api-key.")
-        }
+        let selectedModel = try AgentCommand.makeModel(provider: provider, apiKey: apiKey, name: model)
 
         let endpointURL = try validatedEndpoint(endpoint)
         let domainSet = Set(domains.map { $0.lowercased() })
@@ -275,13 +276,9 @@ struct BrowserAgentCommand: AsyncParsableCommand {
         do {
             if let tabID { try await browser.activateTab(tabID) }
 
-            let backend = OpenAIVisionBackend(
-                apiKey: key,
-                model: model,
-                reasoningEffort: reasoningEffort?.rawValue
-            )
             let agent = Agent(
-                backend: backend,
+                model: selectedModel,
+                fallbackModel: fallbackOnDevice ? SystemLanguageModel.default : nil,
                 maxIterations: maxIterations,
                 delayBetweenSteps: delay,
                 screenContextOptions: nil,
@@ -292,7 +289,8 @@ struct BrowserAgentCommand: AsyncParsableCommand {
             print("Browser Agent starting with goal: \"\(goal)\"")
             print("Endpoint: \(endpoint)")
             print("Domains: \(domains.joined(separator: ", "))")
-            print("Model: \(model), Vision mode: \(visionMode.rawValue)")
+            print("Provider: \(provider.rawValue), Vision mode: \(visionMode.rawValue)")
+            if provider == .openAI { print("Model: \(model)") }
             print("Cross-origin: \(allowCrossOrigin ? "allowlisted" : "denied"), Downloads: denied")
             print("---")
 

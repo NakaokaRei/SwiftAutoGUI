@@ -57,7 +57,7 @@ if let button = observation.elements.first {
 Pass the session explicitly to use it as an Agent environment:
 
 ```swift
-let agent = Agent(backend: llm, automationBackend: browser)
+let agent = Agent(model: llm, automationBackend: browser)
 ```
 
 ## Security behavior
