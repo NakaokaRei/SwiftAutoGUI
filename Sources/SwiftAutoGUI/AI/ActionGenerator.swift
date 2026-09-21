@@ -40,7 +40,7 @@ public enum BasicAction: Sendable, Codable {
     case wait(duration: Double)
 
     /// Press a keyboard shortcut. Use key names like "command", "shift", "a", "c", "returnKey", "space", "delete", "tab", "escape", "upArrow", "downArrow", "leftArrow", "rightArrow".
-    case keyShortcut(keys: [String])
+    case keyShortcut(keys: [Key])
 
     /// Drag mouse from one position to another.
     case drag(fromX: Double, fromY: Double, toX: Double, toY: Double)
@@ -101,9 +101,7 @@ public enum BasicAction: Sendable, Codable {
         case .wait(let duration):
             return .wait(duration)
         case .keyShortcut(let keys):
-            let mapped = keys.compactMap { Key(rawValue: $0) }
-            guard !mapped.isEmpty else { return .wait(0) }
-            return .keyShortcut(mapped)
+            return .keyShortcut(keys)
         case .drag(let fromX, let fromY, let toX, let toY):
             return .drag(from: CGPoint(x: fromX, y: fromY), to: CGPoint(x: toX, y: toY))
         case .pressButton(let label, let bundleID):
@@ -214,7 +212,7 @@ public enum BasicAction: Sendable, Codable {
             let duration = try container.decodeIfPresent(Double.self, forKey: .duration) ?? 0
             self = .wait(duration: duration)
         case .keyShortcut:
-            let keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
+            let keys = try container.decodeIfPresent([Key].self, forKey: .keys) ?? []
             self = .keyShortcut(keys: keys)
         case .drag:
             let fromX = try container.decodeIfPresent(Double.self, forKey: .fromX) ?? 0

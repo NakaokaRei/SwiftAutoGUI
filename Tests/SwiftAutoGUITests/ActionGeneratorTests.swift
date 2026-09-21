@@ -100,13 +100,13 @@ struct ActionGeneratorTests {
 
         @Test("keyShortcut round-trip")
         func keyShortcutRoundTrip() throws {
-            let action = BasicAction.keyShortcut(keys: ["command", "shift", "a"])
+            let action = BasicAction.keyShortcut(keys: [.command, .shift, .a])
             let roundTripped = try roundTrip(action)
             guard case .keyShortcut(let keys) = roundTripped else {
                 Issue.record("Expected .keyShortcut, got \(roundTripped)")
                 return
             }
-            #expect(keys == ["command", "shift", "a"])
+            #expect(keys == [.command, .shift, .a])
         }
 
         @Test("drag round-trip")
@@ -308,7 +308,7 @@ struct ActionGeneratorTests {
                 Issue.record("Expected .keyShortcut")
                 return
             }
-            #expect(keys == ["command", "c"])
+            #expect(keys == [.command, .c])
         }
 
         @Test("parse drag action")
@@ -455,7 +455,7 @@ struct ActionGeneratorTests {
 
         @Test("keyShortcut with valid keys maps correctly")
         func keyShortcutValidKeys() {
-            let basic = BasicAction.keyShortcut(keys: ["command", "c"])
+            let basic = BasicAction.keyShortcut(keys: [.command, .c])
             let action = basic.toAction()
             guard case .keyShortcut(let keys) = action else {
                 Issue.record("Expected Action.keyShortcut")
@@ -464,15 +464,23 @@ struct ActionGeneratorTests {
             #expect(keys == [.command, .c])
         }
 
-        @Test("keyShortcut with invalid keys falls back to wait(0)")
+        @Test("Unknown key names fail decoding instead of becoming no-op success")
         func keyShortcutInvalidKeys() {
-            let basic = BasicAction.keyShortcut(keys: ["invalidkey123"])
-            let action = basic.toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait(0) for invalid keys")
-                return
+            for keys in ["[\"CMD\",\"SPACE\"]", "[\"command\",\"invalidkey123\"]"] {
+                let json = "{\"type\":\"keyShortcut\",\"keys\":\(keys)}"
+                #expect(throws: (any Error).self) {
+                    try JSONDecoder().decode(BasicAction.self, from: Data(json.utf8))
+                }
             }
-            #expect(duration == 0)
+        }
+
+        @Test("Empty shortcuts fail before posting input")
+        @MainActor
+        func emptyShortcutFails() async {
+            let result = await AgentActionExecutor.execute(.keyShortcut(keys: []), in: nil,
+                screenContextOptions: nil, observationDelay: 0).result
+            #expect(!result.succeeded)
+            #expect(result.method == .none)
         }
 
         @Test("pressButton with bundleID maps to .bundleID scope")

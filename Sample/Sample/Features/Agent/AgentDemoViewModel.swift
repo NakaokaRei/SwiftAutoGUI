@@ -138,7 +138,7 @@ class AgentDemoViewModel {
         case .vscroll(let clicks): return "vscroll(\(clicks))"
         case .hscroll(let clicks): return "hscroll(\(clicks))"
         case .wait(let duration): return "wait(\(duration)s)"
-        case .keyShortcut(let keys): return "keyShortcut(\(keys.joined(separator: "+")))"
+        case .keyShortcut(let keys): return "keyShortcut(\(keys.map(\.rawValue).joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             return "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
         case .openURL(let url):

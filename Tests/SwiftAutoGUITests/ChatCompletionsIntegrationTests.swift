@@ -48,6 +48,15 @@ struct ChatCompletionsIntegrationTests {
         let schema = try #require(wrapper["schema"] as? [String: Any])
         #expect(schema["type"] as? String == "object")
         #expect(schema["anyOf"] == nil)
+        // Inspect the actual outgoing OpenAI schema, not just our Swift type.
+        func containsKeyChoices(_ value: Any) -> Bool {
+            if let array = value as? [Any] { return array.contains(where: containsKeyChoices) }
+            guard let object = value as? [String: Any] else { return false }
+            if let values = object["enum"] as? [String],
+               Set(values) == Set(Key.allCases.map(\.rawValue)) { return true }
+            return object.values.contains(where: containsKeyChoices)
+        }
+        #expect(containsKeyChoices(schema))
     }
 }
 
@@ -100,6 +109,20 @@ private final class StubChatProtocol: URLProtocol, @unchecked Sendable {
 /// Explicit opt-in only. Generates decisions from synthetic input, never executes them.
 @Suite("Live model smoke tests")
 struct LiveModelSmokeTests {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "on-device"))
+    func onDeviceSpotlightShortcut() async throws {
+        let session = ActionSession(model: SystemLanguageModel.default, instructions: Agent.instructions,
+                                    options: .init(maximumResponseTokens: 512))
+        let generated = try await session.respond(
+            to: Prompt("Open Spotlight using the Command + Space keyboard shortcut. Generate exactly that shortcut; do not activate an app or browser tab."),
+            generating: SingleAction.self)
+        guard case .keyShortcut(let keys) = generated.action else {
+            Issue.record("Expected a keyboard shortcut, received: \(generated.action)")
+            return
+        }
+        #expect(keys == [.command, .space])
+    }
+
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "on-device"))
     func onDevice() async throws {
         let model = SystemLanguageModel.default

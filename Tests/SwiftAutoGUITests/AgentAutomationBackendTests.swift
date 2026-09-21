@@ -267,7 +267,7 @@ struct AgentAutomationBackendTests {
     func generatedSchema() throws {
         let actions: [BasicAction] = [
             .write(text: "hello"), .move(x: 1, y: 2), .leftClick, .rightClick, .doubleClick,
-            .vscroll(clicks: -1), .hscroll(clicks: 1), .wait(duration: 0), .keyShortcut(keys: ["command", "a"]),
+            .vscroll(clicks: -1), .hscroll(clicks: 1), .wait(duration: 0), .keyShortcut(keys: [.command, .a]),
             .drag(fromX: 1, fromY: 2, toX: 3, toY: 4), .pressButton(label: "OK", bundleID: ""),
             .pressElement(elementID: 1), .setTextField(label: "Search", value: "a", bundleID: ""),
             .setElementValue(elementID: 2, value: "b"), .selectMenuItem(path: ["File"], bundleID: ""),

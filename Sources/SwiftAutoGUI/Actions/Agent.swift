@@ -206,6 +206,9 @@ public struct Agent: Sendable {
     For a browser observation use ONLY pressElement, setElementValue, openURL, keyShortcut,
     scrolling, wait, and activateTab. Do not propose native app, menu, window, mouse or drag actions.
     For native observations coordinates are in screen points with origin at top-left.
+    Native observations have no browser tab IDs: never use activateTab for apps or Spotlight.
+    Spotlight opens with keyShortcut(keys: ["command", "space"]).
+    Each key is a separate exact schema value, not "CMD+SPACE" or an uppercase abbreviation.
     If no image is attached, use the structured context; do not invent coordinates or element IDs.
     """
 

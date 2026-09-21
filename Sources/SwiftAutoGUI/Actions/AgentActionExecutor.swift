@@ -157,6 +157,16 @@ public enum AgentActionExecutor {
         in observation: ScreenContext?
     ) async -> (succeeded: Bool, method: AgentActionExecutionMethod, failureReason: String?) {
         switch action {
+        case .keyShortcut(let keys):
+            guard !keys.isEmpty else {
+                return (false, .none, "A keyboard shortcut must contain at least one key.")
+            }
+            guard AXIsProcessTrusted() else {
+                return (false, .none, "Accessibility permission is required to send keyboard shortcuts.")
+            }
+            await SwiftAutoGUI.sendKeyShortcut(keys)
+            // Posting input is not proof that the destination UI handled it.
+            return (true, .cgEvent, nil)
         case .activateTab:
             return (false, .none, "Browser tab actions require SwiftAutoGUIBrowser.")
         case .pressElement(let elementID):

@@ -671,7 +671,7 @@ public actor BrowserSession: AgentAutomationBackend {
         case .pressElement(let id): .click(elementID: id)
         case .setElementValue(let id, let value): .replaceText(elementID: id, value: value)
         case .write(let text): .insertText(text)
-        case .keyShortcut(let keys): .keyShortcut(keys)
+        case .keyShortcut(let keys): .keyShortcut(keys.map(\.rawValue))
         case .vscroll(let clicks): .scroll(horizontal: 0, vertical: clicks)
         case .hscroll(let clicks): .scroll(horizontal: clicks, vertical: 0)
         case .wait(let duration): .wait(duration)

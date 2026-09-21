@@ -39,6 +39,14 @@ have been removed. Implement custom providers using Apple's `LanguageModel` and
 `reasoningSummary` holding only a short user-facing explanation. `BasicAction`
 already conformed to `Generable`; its schema is now used for every provider.
 `AgentStep.reasoning` remains the callback's short explanation, not hidden reasoning.
+`BasicAction.keyShortcut(keys:)` now takes `[Key]`, for example
+`.keyShortcut(keys: [.command, .space])`. `Key` is `Generable`, so every provider
+receives the canonical key names as enum choices, not unrestricted strings.
+The Codable wire representation remains an array of canonical strings; unknown
+names now fail decoding rather than being silently dropped. Native Agent execution
+rejects empty shortcuts and missing Accessibility permission. A successful input
+posting result does not prove that the target application handled the shortcut.
+
 Static `ActionGenerator` helpers remain and use `defaultModel` instead of
 `defaultBackend`. Independent action requests always start fresh sessions.
 

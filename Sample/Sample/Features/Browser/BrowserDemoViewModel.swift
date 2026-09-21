@@ -279,7 +279,7 @@ final class BrowserDemoViewModel {
         case .vscroll(let clicks): "vscroll(\(clicks))"
         case .hscroll(let clicks): "hscroll(\(clicks))"
         case .wait(let duration): "wait(\(duration)s)"
-        case .keyShortcut(let keys): "keyShortcut(\(keys.joined(separator: "+")))"
+        case .keyShortcut(let keys): "keyShortcut(\(keys.map(\.rawValue).joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
         case .openURL(let url): "openURL(\"\(url)\")"
