@@ -431,9 +431,9 @@ struct ActionGeneratorTests {
     struct ConversionTests {
 
         @Test("write converts to Action.write")
-        func writeConversion() {
+        func writeConversion() throws {
             let basic = BasicAction.write(text: "test")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .write(let text, _) = action else {
                 Issue.record("Expected Action.write")
                 return
@@ -442,9 +442,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("move converts to Action.move with correct CGPoint")
-        func moveConversion() {
+        func moveConversion() throws {
             let basic = BasicAction.move(x: 100, y: 200)
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .move(let point) = action else {
                 Issue.record("Expected Action.move")
                 return
@@ -454,9 +454,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("keyShortcut with valid keys maps correctly")
-        func keyShortcutValidKeys() {
+        func keyShortcutValidKeys() throws {
             let basic = BasicAction.keyShortcut(keys: [.command, .c])
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .keyShortcut(let keys) = action else {
                 Issue.record("Expected Action.keyShortcut")
                 return
@@ -484,9 +484,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("pressButton with bundleID maps to .bundleID scope")
-        func pressButtonWithBundleID() {
+        func pressButtonWithBundleID() throws {
             let basic = BasicAction.pressButton(label: "Save", bundleID: "com.apple.TextEdit")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .pressButton(let label, let app, let exact, let axOnly) = action else {
                 Issue.record("Expected Action.pressButton")
                 return
@@ -502,9 +502,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("pressButton with empty bundleID maps to .frontmost")
-        func pressButtonFrontmost() {
+        func pressButtonFrontmost() throws {
             let basic = BasicAction.pressButton(label: "OK", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .pressButton(_, let app, _, _) = action else {
                 Issue.record("Expected Action.pressButton")
                 return
@@ -516,9 +516,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("setTextField with empty label converts to nil")
-        func setTextFieldEmptyLabel() {
+        func setTextFieldEmptyLabel() throws {
             let basic = BasicAction.setTextField(label: "", value: "hello", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .setTextField(let label, _, let value, _, _) = action else {
                 Issue.record("Expected Action.setTextField")
                 return
@@ -528,9 +528,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("selectMenuItem preserves path and scope")
-        func selectMenuItemConversion() {
+        func selectMenuItemConversion() throws {
             let basic = BasicAction.selectMenuItem(path: ["File", "New"], bundleID: "com.apple.TextEdit")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .selectMenuItem(let path, let app, _) = action else {
                 Issue.record("Expected Action.selectMenuItem")
                 return
@@ -544,9 +544,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("raiseWindow preserves title")
-        func raiseWindowConversion() {
+        func raiseWindowConversion() throws {
             let basic = BasicAction.raiseWindow(title: "Untitled", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .raiseWindow(let title, _, _) = action else {
                 Issue.record("Expected Action.raiseWindow")
                 return
@@ -555,8 +555,8 @@ struct ActionGeneratorTests {
         }
 
         @Test("openURL converts to native Action.openURL")
-        func openURLConversion() {
-            let action = BasicAction.openURL(url: "https://example.com/path?q=swift").toAction()
+        func openURLConversion() throws {
+            let action = try BasicAction.openURL(url: "https://example.com/path?q=swift").toAction()
             guard case .openURL(let url) = action else {
                 Issue.record("Expected Action.openURL")
                 return
@@ -565,18 +565,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("openURL rejects non-HTTP schemes")
-        func openURLRejectsUnsafeScheme() {
-            let action = BasicAction.openURL(url: "javascript:alert(1)").toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait for invalid URL")
-                return
-            }
-            #expect(duration == 0)
+        func openURLRejectsUnsafeScheme() throws {
+            #expect(throws: ActionGeneratorError.self) { try BasicAction.openURL(url: "javascript:alert(1)").toAction() }
         }
 
         @Test("activateApp converts to native Action.activateApp")
-        func activateAppConversion() {
-            let action = BasicAction.activateApp(name: "Safari").toAction()
+        func activateAppConversion() throws {
+            let action = try BasicAction.activateApp(name: "Safari").toAction()
             guard case .activateApp(let name) = action else {
                 Issue.record("Expected Action.activateApp")
                 return
@@ -585,8 +580,8 @@ struct ActionGeneratorTests {
         }
 
         @Test("quitApp converts to native Action.quitApp")
-        func quitAppConversion() {
-            let action = BasicAction.quitApp(name: "Google Chrome").toAction()
+        func quitAppConversion() throws {
+            let action = try BasicAction.quitApp(name: "Google Chrome").toAction()
             guard case .quitApp(let name) = action else {
                 Issue.record("Expected Action.quitApp")
                 return
@@ -595,13 +590,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("app names are passed as data without AppleScript interpolation")
-        func appNamesRemainData() {
+        func appNamesRemainData() throws {
             let name = #"Example "App" & Tools"#
 
             guard case .activateApp(let activatedName) =
-                    BasicAction.activateApp(name: name).toAction(),
+                    try BasicAction.activateApp(name: name).toAction(),
                   case .quitApp(let quitName) =
-                    BasicAction.quitApp(name: name).toAction() else {
+                    try BasicAction.quitApp(name: name).toAction() else {
                 Issue.record("Expected native app-control actions")
                 return
             }
@@ -610,18 +605,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("app actions reject path traversal")
-        func appActionsRejectPathTraversal() {
-            let action = BasicAction.activateApp(name: "../Calculator").toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait for an invalid app path")
-                return
-            }
-            #expect(duration == 0)
+        func appActionsRejectPathTraversal() throws {
+            #expect(throws: ActionGeneratorError.self) { try BasicAction.activateApp(name: "../Calculator").toAction() }
         }
 
         @Test("getFrontmostApp converts to native action")
-        func getFrontmostAppConversion() {
-            let action = BasicAction.getFrontmostApp.toAction()
+        func getFrontmostAppConversion() throws {
+            let action = try BasicAction.getFrontmostApp.toAction()
             guard case .getFrontmostApp = action else {
                 Issue.record("Expected Action.getFrontmostApp")
                 return

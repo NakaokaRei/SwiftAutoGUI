@@ -82,7 +82,9 @@ public enum BasicAction: Sendable, Codable {
     case activateTab(tabID: String)
 
     /// Convert to an executable ``Action``.
-    public func toAction() -> Action {
+    /// Throws for invalid parameters and actions requiring an observation or browser session.
+    public func toAction() throws -> Action {
+        try validate()
         switch self {
         case .write(let text):
             return .write(text)
@@ -108,8 +110,8 @@ public enum BasicAction: Sendable, Codable {
             return .pressButton(label: label, app: scope(bundleID))
         case .pressElement:
             // Element IDs require the ScreenContext captured by Agent and are
-            // executed by AgentActionExecutor. A standalone conversion is a no-op.
-            return .wait(0)
+            // executed by AgentActionExecutor. Standalone conversion is an error.
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         case .setTextField(let label, let value, let bundleID):
             return .setTextField(
                 label: label.isEmpty ? nil : label,
@@ -117,25 +119,25 @@ public enum BasicAction: Sendable, Codable {
                 app: scope(bundleID)
             )
         case .setElementValue:
-            return .wait(0)
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         case .selectMenuItem(let path, let bundleID):
             return .selectMenuItem(path: path, app: scope(bundleID))
         case .raiseWindow(let title, let bundleID):
             return .raiseWindow(title: title, app: scope(bundleID))
         case .openURL(let url):
-            guard let url = validatedHTTPURL(url) else { return .wait(0) }
+            guard let url = validatedHTTPURL(url) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .openURL(url)
         case .activateApp(let name):
-            guard let name = normalizedAppName(name) else { return .wait(0) }
+            guard let name = normalizedAppName(name) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .activateApp(name: name)
         case .quitApp(let name):
-            guard let name = normalizedAppName(name) else { return .wait(0) }
+            guard let name = normalizedAppName(name) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .quitApp(name: name)
         case .getFrontmostApp:
             return .getFrontmostApp
         case .activateTab:
             // Browser-only actions are executed by SwiftAutoGUIBrowser.
-            return .wait(0)
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         }
     }
 
@@ -143,20 +145,20 @@ public enum BasicAction: Sendable, Codable {
         bundleID.isEmpty ? .frontmost : .bundleID(bundleID)
     }
 
-    private func validatedHTTPURL(_ value: String) -> URL? {
+    func validatedHTTPURL(_ value: String) -> URL? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard value.count <= 2_048,
               let components = URLComponents(string: value),
               let scheme = components.scheme?.lowercased(),
               scheme == "http" || scheme == "https",
-              components.host != nil,
+              components.host?.isEmpty == false,
               let url = components.url else {
             return nil
         }
         return url
     }
 
-    private func normalizedAppName(_ value: String) -> String? {
+    func normalizedAppName(_ value: String) -> String? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty,
               value.count <= 128,
@@ -190,11 +192,11 @@ public enum BasicAction: Sendable, Codable {
 
         switch type {
         case .write:
-            let text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+            let text = try container.decode(String.self, forKey: .text)
             self = .write(text: text)
         case .move:
-            let x = try container.decodeIfPresent(Double.self, forKey: .x) ?? 0
-            let y = try container.decodeIfPresent(Double.self, forKey: .y) ?? 0
+            let x = try container.decode(Double.self, forKey: .x)
+            let y = try container.decode(Double.self, forKey: .y)
             self = .move(x: x, y: y)
         case .leftClick:
             self = .leftClick
@@ -203,60 +205,60 @@ public enum BasicAction: Sendable, Codable {
         case .doubleClick:
             self = .doubleClick
         case .vscroll:
-            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
+            let clicks = try container.decode(Int.self, forKey: .clicks)
             self = .vscroll(clicks: clicks)
         case .hscroll:
-            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
+            let clicks = try container.decode(Int.self, forKey: .clicks)
             self = .hscroll(clicks: clicks)
         case .wait:
-            let duration = try container.decodeIfPresent(Double.self, forKey: .duration) ?? 0
+            let duration = try container.decode(Double.self, forKey: .duration)
             self = .wait(duration: duration)
         case .keyShortcut:
-            let keys = try container.decodeIfPresent([Key].self, forKey: .keys) ?? []
+            let keys = try container.decode([Key].self, forKey: .keys)
             self = .keyShortcut(keys: keys)
         case .drag:
-            let fromX = try container.decodeIfPresent(Double.self, forKey: .fromX) ?? 0
-            let fromY = try container.decodeIfPresent(Double.self, forKey: .fromY) ?? 0
-            let toX = try container.decodeIfPresent(Double.self, forKey: .toX) ?? 0
-            let toY = try container.decodeIfPresent(Double.self, forKey: .toY) ?? 0
+            let fromX = try container.decode(Double.self, forKey: .fromX)
+            let fromY = try container.decode(Double.self, forKey: .fromY)
+            let toX = try container.decode(Double.self, forKey: .toX)
+            let toY = try container.decode(Double.self, forKey: .toY)
             self = .drag(fromX: fromX, fromY: fromY, toX: toX, toY: toY)
         case .pressButton:
-            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+            let label = try container.decode(String.self, forKey: .label)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .pressButton(label: label, bundleID: bundleID)
         case .pressElement:
-            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
+            let elementID = try container.decode(Int.self, forKey: .elementID)
             self = .pressElement(elementID: elementID)
         case .setTextField:
-            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
-            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            let label = try container.decode(String.self, forKey: .label)
+            let value = try container.decode(String.self, forKey: .value)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .setTextField(label: label, value: value, bundleID: bundleID)
         case .setElementValue:
-            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
-            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            let elementID = try container.decode(Int.self, forKey: .elementID)
+            let value = try container.decode(String.self, forKey: .value)
             self = .setElementValue(elementID: elementID, value: value)
         case .selectMenuItem:
-            let path = try container.decodeIfPresent([String].self, forKey: .path) ?? []
+            let path = try container.decode([String].self, forKey: .path)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .selectMenuItem(path: path, bundleID: bundleID)
         case .raiseWindow:
-            let title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+            let title = try container.decode(String.self, forKey: .title)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .raiseWindow(title: title, bundleID: bundleID)
         case .openURL:
-            let url = try container.decodeIfPresent(String.self, forKey: .url) ?? ""
+            let url = try container.decode(String.self, forKey: .url)
             self = .openURL(url: url)
         case .activateApp:
-            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            let name = try container.decode(String.self, forKey: .name)
             self = .activateApp(name: name)
         case .quitApp:
-            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            let name = try container.decode(String.self, forKey: .name)
             self = .quitApp(name: name)
         case .getFrontmostApp:
             self = .getFrontmostApp
         case .activateTab:
-            let tabID = try container.decodeIfPresent(String.self, forKey: .tabID) ?? ""
+            let tabID = try container.decode(String.self, forKey: .tabID)
             self = .activateTab(tabID: tabID)
         }
     }
@@ -356,19 +358,20 @@ public struct ActionGenerator: Sendable {
     public func generateAction(from prompt: String) async throws -> Action {
         let session = makeSession()
         let result = try await session.respond(to: Prompt(prompt), generating: SingleAction.self)
-        return result.action.toAction()
+        return try result.action.toAction()
     }
 
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
         let session = makeSession()
         let plan = try await session.respond(to: Prompt(prompt), generating: ActionPlan.self)
         guard !plan.actions.isEmpty else { throw ActionGeneratorError.noActionsGenerated }
-        return plan.actions.map { $0.toAction() }
+        guard plan.actions.count <= 20 else { throw ActionGeneratorError.invalidResponse(detail: "An action plan may contain at most twenty actions.") }
+        return try plan.actions.map { try $0.toAction() }
     }
 
     private func makeSession() -> ActionSession {
         ActionSession(model: model, fallbackModel: fallbackModel, instructions:
-            "Convert the user's request into a short sequence of automation actions. Use only the provided schema.")
+            "Convert the user's request into a short sequence of automation actions. Use only the provided schema. No observation or browser session is available: do not use pressElement, setElementValue, or activateTab.")
     }
 
     @MainActor public static var isAvailable: Bool { unavailableReason == nil }

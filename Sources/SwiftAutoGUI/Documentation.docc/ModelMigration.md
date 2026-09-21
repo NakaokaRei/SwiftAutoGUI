@@ -47,6 +47,15 @@ names now fail decoding rather than being silently dropped. Native Agent executi
 rejects empty shortcuts and missing Accessibility permission. A successful input
 posting result does not prove that the target application handled the shortcut.
 
+`BasicAction.toAction()` now throws: use `try`. Invalid URLs, app names, numeric
+parameters, and observation-dependent actions no longer turn into `wait(0)`.
+Standalone generation rejects element/tab actions because it has no observation
+or browser session. Tagged Codable decoding requires the parameters of the selected
+action instead of replacing missing values with zero or empty strings.
+Native Agent execution preserves Boolean failures from app and Accessibility actions.
+Browser shortcut dispatch supports canonical digit/function/navigation/punctuation
+keys and rejects unsupported keys before sending events.
+
 Static `ActionGenerator` helpers remain and use `defaultModel` instead of
 `defaultBackend`. Independent action requests always start fresh sessions.
 

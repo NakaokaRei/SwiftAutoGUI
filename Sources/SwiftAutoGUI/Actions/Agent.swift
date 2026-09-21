@@ -101,6 +101,8 @@ public struct Agent: Sendable {
                 throw ActionGeneratorError.invalidResponse(detail: "A decision may contain at most three actions.")
             }
 
+            for action in response.actions { try action.validate() }
+
             // 3. Act: execute against the observation used by the model. Stop
             // as soon as the UI changes or an action fails, then re-observe.
             var currentObservation = observation
