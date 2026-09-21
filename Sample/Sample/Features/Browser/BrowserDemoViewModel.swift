@@ -150,7 +150,7 @@ final class BrowserDemoViewModel {
 
         agentTask = Task {
             do {
-                let result = try await agent.run(goal: goal) { [weak self] step in
+                let result = try await agent.run(goal: goal) { [weak self = self] step in
                     Task { @MainActor in
                         guard let self else { return }
                         let actions = step.actions.map(self.describeAction).joined(separator: ", ")

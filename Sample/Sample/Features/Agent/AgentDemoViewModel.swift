@@ -85,7 +85,7 @@ class AgentDemoViewModel {
                     screenContextOptions: contextOptions
                 )
 
-                let result = try await agent.run(goal: goal) { [weak self] step in
+                let result = try await agent.run(goal: goal) { [weak self = self] step in
                     guard let self else { return }
                     Task { @MainActor in
                         let actionSummary = step.actions.map { self.describeAction($0) }.joined(separator: ", ")
