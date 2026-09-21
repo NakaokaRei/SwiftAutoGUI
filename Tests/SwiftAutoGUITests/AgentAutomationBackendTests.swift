@@ -10,6 +10,53 @@ struct AgentAutomationBackendTests {
         .text(AgentDecision(actions: actions, reasoningSummary: "Test decision", isDone: done).generatedContent.jsonString)
     }
 
+    @Test("An unfinished empty decision requests one action without re-observing or replaying")
+    @MainActor
+    func emptyDecisionRecovery() async throws {
+        let model = MockLanguageModel([decision(),
+            .text(SingleAction(action: .pressElement(elementID: 1)).generatedContent.jsonString),
+            decision(done: true)])
+        let automation = FakeAutomationBackend()
+        let result = try await Agent(model: model, delayBetweenSteps: 0,
+                                     automationBackend: automation).run(goal: "Press the button")
+        #expect(result.completed)
+        #expect(await automation.observationCount == 2)
+        #expect(await automation.executed.count == 1)
+        #expect(model.recorder.requests.count == 3)
+        #expect(model.recorder.requests[1].transcript.history.count == 1)
+    }
+
+    @Test("Native image context recovery preserves goal and screenshot and rejects unseen IDs", arguments: [false, true])
+    @MainActor
+    func imageContextRecovery(invalidID: Bool) async throws {
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2,
+            bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        let jpeg = try #require(bitmap.representation(using: .jpeg, properties: [:]))
+        let model = MockLanguageModel([.context,
+            decision([invalidID ? .pressElement(elementID: 1) : .activateApp(name: "Safari")])])
+        let session = ActionSession(model: model, instructions: Agent.instructions)
+        let observation = AgentObservation(kind: .native, formattedContext: "LARGE_SEMANTIC_TREE",
+            stateFingerprint: "test", actionableElementCount: 1,
+            viewportSize: CGSize(width: 100, height: 100), screenshotJPEGData: jpeg)
+        if invalidID {
+            await #expect(throws: ActionGeneratorError.self) {
+                try await Agent.decision(session: session, goal: "Open Safari", observation: observation, lastStep: nil)
+            }
+        } else {
+            let result = try await Agent.decision(session: session, goal: "Open Safari", observation: observation, lastStep: nil)
+            #expect(result.actions.count == 1)
+        }
+        let request = try #require(model.recorder.requests.last)
+        #expect(!request.transcript.renderedText.contains("LARGE_SEMANTIC_TREE"))
+        #expect(request.transcript.renderedText.contains("Open Safari"))
+        let images = request.transcript.compactMap { entry -> Transcript.Prompt? in
+            if case .prompt(let prompt) = entry { return prompt }; return nil
+        }.flatMap(\.segments).filter { if case .attachment = $0 { true } else { false } }
+        #expect(images.count == 1)
+        #expect(model.recorder.requests.count == 2)
+    }
+
     @Test("Agent defaults to native automation")
     func nativeDefault() {
         #expect(Agent(model: MockLanguageModel([])).automationBackend is NativeAutomationBackend)

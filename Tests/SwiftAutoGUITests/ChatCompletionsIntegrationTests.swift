@@ -109,6 +109,39 @@ struct LiveModelSmokeTests {
         _ = try await ActionGenerator(model: model).generateAction(from: "Type hello")
     }
 
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "on-device"))
+    @MainActor
+    func onDeviceSafariAction() async throws {
+        let session = ActionSession(model: SystemLanguageModel.default, instructions: Agent.instructions,
+                                    options: .init(maximumResponseTokens: 512))
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 32, pixelsHigh: 32,
+            bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        let pixels = try #require(bitmap.bitmapData)
+        pixels.initialize(repeating: 255, count: bitmap.bytesPerRow * bitmap.pixelsHigh)
+        let jpeg = try #require(bitmap.representation(using: .jpeg, properties: [:]))
+        let observation = AgentObservation(kind: .native,
+            formattedContext: "Frontmost application: Xcode. Window: Sample. Safari is not open.",
+            stateFingerprint: "synthetic", actionableElementCount: 0,
+            viewportSize: CGSize(width: 1440, height: 900))
+        for index in 0..<5 {
+            // Exercise text, images, and an AX tree much larger than the 4K context.
+            let current = index == 0 ? observation : AgentObservation(kind: .native,
+                formattedContext: observation.formattedContext + (index == 4 ? String(repeating: "\n[#1] AXButton Test button", count: 1200) : ""),
+                stateFingerprint: "synthetic", actionableElementCount: 0,
+                viewportSize: observation.viewportSize, screenshotJPEGData: jpeg)
+            let decision = try await Agent.decision(session: session,
+                goal: "Open Safari and search for Swift programming", observation: current, lastStep: nil)
+            #expect(!decision.actions.isEmpty)
+            #expect(!decision.isDone)
+            guard case .activateApp(let name) = decision.actions.first else {
+                Issue.record("Expected Safari activation, received: \(decision.actions)")
+                continue
+            }
+            #expect(name.lowercased().contains("safari"))
+        }
+    }
+
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "openai"))
     func openAI() async throws {
         guard let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty else {

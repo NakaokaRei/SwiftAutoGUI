@@ -61,11 +61,19 @@ not an exact universal tokenizer. On-device requests additionally use
 `SystemLanguageModel.contextSize` and `tokenCount(for:)`, including instructions,
 schema and a response budget when the token-count service supports the input.
 The Xcode 27.2 model service can reject token counting for an image that generation
-accepts. If counting is unavailable, retain the turn/character limits and let the
+accepts. If counting is unavailable, discard old conversation turns and let the
 model enforce its context limit; cancellation still propagates. Old turns are
 dropped before the current observation.
-The full current goal, observation and latest actual results are retained; a
-request that still cannot fit fails instead of truncating element IDs or JSON.
+The current goal and latest actual results are retained. If a native observation
+with a screenshot still exceeds the context limit, retry once without its semantic
+screen tree, retaining the image and viewport. Element-ID actions are rejected in
+that retry because their IDs were not shown to the model. Browser and text-only
+observations are not reduced this way. If the reduced request cannot fit, it fails.
+No element IDs or JSON values are partially truncated.
+
+An unfinished decision with no actions triggers one generation using a single-action
+schema and fresh history. It does not execute or record an empty step repeatedly.
+A completed decision with no actions still ends the run normally.
 
 A context-size error permits one retry with fresh history. Compaction discards
 older details; this is not an unlimited memory or a guarantee of task completion.

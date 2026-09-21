@@ -43,9 +43,9 @@ public struct AgentStep: Sendable {
 /// A structured decision shared by all model providers.
 @Generable
 public struct AgentDecision: Sendable {
-    @Guide(.maximumCount(3))
+    @Guide(description: "Concrete actions to execute now. If the goal is unfinished, include at least one action. To open an app, use activateApp(name:). An empty array is only for a completed goal.", .maximumCount(3))
     public var actions: [BasicAction]
-    @Guide(description: "A brief user-facing explanation, not private chain-of-thought.")
+    @Guide(description: "One short sentence explaining the chosen action.")
     public var reasoningSummary: String
     public var isDone: Bool
 

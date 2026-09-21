@@ -46,7 +46,8 @@ actor ActionSession {
     func respond<Content: Generable & Sendable>(
         to prompt: Prompt,
         generating: Content.Type,
-        includesImage: Bool = false
+        includesImage: Bool = false,
+        discardHistory: Bool = false
     ) async throws -> Content {
         guard !responding else { throw LanguageModelSession.Error.concurrentRequests }
         guard historyPolicy.maximumTurns >= 0, historyPolicy.maximumCharacters >= 0 else {
@@ -55,6 +56,7 @@ actor ActionSession {
         responding = true
         defer { responding = false }
         try Task.checkCancellation()
+        if discardHistory { resetSession() }
         compactHistory()
         var recoveredContext = false
         while true {
@@ -116,7 +118,7 @@ actor ActionSession {
             let fixed = try await system.tokenCount(for: prompt)
                 + system.tokenCount(for: Instructions(instructions))
                 + system.tokenCount(for: schema)
-            let reserve = max(1, options.maximumResponseTokens ?? 512)
+            let reserve = max(1, options.maximumResponseTokens ?? 512) + 128
             let limit = system.contextSize
             // Drop whole old turns. Do not cut the current observation or JSON schema.
             while !session.transcript.history.isEmpty {
@@ -135,8 +137,9 @@ actor ActionSession {
             if error is CancellationError || Self.isContextError(error) { throw error }
             // Xcode 27.2's token-count service can reject multimodal prompts
             // that respond() accepts. Counting is an optimization, not a gate.
-            // Keep bounded history and let generation enforce its context limit;
-            // context-size recovery below still permits at most one reset.
+            // Without reliable counting, old turns can consume the 4K budget.
+            // The current prompt already includes the goal and latest execution results.
+            resetSession()
         }
     }
 
