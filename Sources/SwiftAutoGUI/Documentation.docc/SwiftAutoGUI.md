@@ -8,8 +8,8 @@ SwiftAutoGUI brings GUI automation to Swift, inspired by [pyautogui](https://git
 
 ## Requirements
 
-- macOS 26.0+
-- Swift 6.0+
+- macOS 27.0+
+- Swift 6.2+
 
 ## Installation
 
@@ -46,8 +46,8 @@ SwiftAutoGUI includes an ``Agent`` that can autonomously observe the screen, rea
 ```swift
 import SwiftAutoGUI
 
-let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
-let agent = Agent(backend: backend, maxIterations: 15, visionMode: .automatic)
+let backend = AutomationModels.openAI(apiKey: "sk-...", model: "gpt-5.6-sol")
+let agent = Agent(model: backend, maxIterations: 15, visionMode: .automatic)
 
 let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
@@ -68,48 +68,37 @@ let result = try await agent.run(goal: "Click the Settings icon") { step in
 }
 ```
 
-### Custom Backend
+### Model selection
 
-You can implement the ``VisionActionGenerating`` protocol to use any vision-capable LLM:
-
-```swift
-struct MyBackend: VisionActionGenerating {
-    var isAvailable: Bool { true }
-    var unavailableReason: String? { nil }
-    
-    func generateActions(
-        goal: String,
-        screenshot: Data,
-        screenSize: CGSize,
-        history: [AgentStep]
-    ) async throws -> AgentResponse {
-        // Send screenshot to your LLM and parse the response
-        ...
-    }
-}
-```
+Pass any Foundation Models `LanguageModel` to `Agent(model:)` or
+`ActionGenerator(model:)`. Apple's `SystemLanguageModel` and
+`PrivateCloudComputeLanguageModel` use the same orchestration as the Chat
+Completions model returned by ``AutomationModels/openAI(apiKey:model:baseURL:urlSessionConfiguration:)``.
+Custom providers implement Apple's `LanguageModel` / `LanguageModelExecutor`,
+not a SwiftAutoGUI-specific model protocol. See <doc:ModelMigration>.
 
 ### CLI
 
 ```bash
 # Run the agent from the command line
-sagui agent "Open Safari and search for Swift" --api-key sk-...
+sagui agent "Open Safari and search for Swift" --provider openai
 
 # With options
-sagui agent "Click the trash icon" --model gpt-5.6-sol --reasoning-effort low --max-iterations 15 --delay 2.0
+sagui agent "Click the trash icon" --model gpt-5.6-sol --provider openai --max-iterations 15 --delay 2.0
 
 # Use AX-only observation when actionable elements are available
 sagui agent "Press the Save button" --vision-mode automatic
 
 # Using environment variable for the API key
 export OPENAI_API_KEY=sk-...
-sagui agent "Open Terminal"
+sagui agent "Open Terminal" --provider openai
 ```
 
-The command prints the effective reasoning effort at startup and a `Reasoning:`
-summary for each step. `--reasoning-effort` accepts `none`, `low`, `medium`,
-`high`, `xhigh`, or `max`, and defaults to `low` for GPT-5.6 models. The step
-summary explains the selected actions; it is not the model's hidden chain of thought.
+The command defaults to `--provider on-device`. Use `--provider openai` to send
+observations to OpenAI, or `--provider pcc` for an eligible, entitled PCC host.
+`--fallback-on-device` is opt-in; there is no automatic cloud fallback.
+The old `--reasoning-effort` option is removed because Apple's pinned adapter
+ignores it. The per-step summary explains selected actions in a few words.
 
 With screen context enabled, actionable AX elements are formatted with step-local
 identifiers such as `[#12]`. Element actions are resolved against the live hierarchy
@@ -309,7 +298,7 @@ let action = try await Action.fromPrompt("scroll down 5 clicks")
 await action.execute()
 ```
 
-> Note: Requires macOS 26.0+ with Apple Intelligence enabled.
+> Note: Requires macOS 27.0+ with Apple Intelligence enabled.
 
 ## Direct Method Calls
 
@@ -370,15 +359,17 @@ The sample app demonstrates all SwiftAutoGUI features with interactive examples.
 ### AI Agent
 
 - ``Agent``
-- ``VisionActionGenerating``
-- ``OpenAIVisionBackend``
+- ``AgentDecision``
+- ``AutomationModels``
+- ``OpenAIChatLanguageModel``
+- <doc:ModelMigration>
 - ``AgentStep``
-- ``AgentResponse``
+- ``AgentHistoryPolicy``
 - ``AgentResult``
 
 ### AI Action Generation
 
 - ``ActionGenerator``
-- ``ActionGenerating``
-- ``OpenAIBackend``
+- ``ActionGeneratorError``
+- ``AutomationModels``
 - ``BasicAction``

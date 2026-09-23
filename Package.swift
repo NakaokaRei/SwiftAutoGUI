@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftAutoGUI",
     platforms: [
-        .macOS(.v26)
+        .macOS("27.0")
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -23,7 +23,8 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.3.0"),
+        .package(url: "https://github.com/apple/foundation-models-utilities", exact: "1.0.0-beta5")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -39,7 +40,8 @@ let package = Package(
         .target(
             name: "SwiftAutoGUI",
             dependencies: [
-                "ImageRecognition"
+                "ImageRecognition",
+                .product(name: "FoundationModelsUtilities", package: "foundation-models-utilities")
             ]),
         .target(
             name: "SwiftAutoGUIBrowser",

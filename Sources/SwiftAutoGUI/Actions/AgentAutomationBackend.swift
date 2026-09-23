@@ -7,7 +7,7 @@ public enum AgentObservationKind: String, Sendable, Codable {
     case browser
 }
 
-/// A backend-neutral observation consumed by ``Agent`` and vision backends.
+/// A backend-neutral observation consumed by ``Agent`` and model sessions.
 ///
 /// `nativeScreenContext` is populated only by ``NativeAutomationBackend`` and
 /// keeps the existing screen-context API source-compatible. Browser backends
@@ -87,7 +87,7 @@ public struct NativeAutomationBackend: AgentAutomationBackend, Sendable {
         }
         let includeScreenshot = switch visionMode {
         case .always: true
-        case .automatic: context?.actionableElementCount == 0
+        case .automatic: (context?.actionableElementCount ?? 0) == 0
         case .never: false
         }
 

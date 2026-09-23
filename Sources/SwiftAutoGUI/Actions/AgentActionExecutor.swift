@@ -156,7 +156,19 @@ public enum AgentActionExecutor {
         _ action: BasicAction,
         in observation: ScreenContext?
     ) async -> (succeeded: Bool, method: AgentActionExecutionMethod, failureReason: String?) {
+        do { try action.validate() }
+        catch { return (false, .none, error.localizedDescription) }
         switch action {
+        case .keyShortcut(let keys):
+            guard !keys.isEmpty else {
+                return (false, .none, "A keyboard shortcut must contain at least one key.")
+            }
+            guard AXIsProcessTrusted() else {
+                return (false, .none, "Accessibility permission is required to send keyboard shortcuts.")
+            }
+            await SwiftAutoGUI.sendKeyShortcut(keys)
+            // Posting input is not proof that the destination UI handled it.
+            return (true, .cgEvent, nil)
         case .activateTab:
             return (false, .none, "Browser tab actions require SwiftAutoGUIBrowser.")
         case .pressElement(let elementID):
@@ -202,9 +214,28 @@ public enum AgentActionExecutor {
             }
             return (true, .accessibility, nil)
 
+        case .pressButton, .setTextField, .selectMenuItem, .raiseWindow, .openURL, .activateApp, .quitApp:
+            do {
+                let result = try await action.toAction().execute()
+                let succeeded = result as? Bool == true
+                return (succeeded, .standardAction, succeeded ? nil : "The target was not found or the operation failed.")
+            } catch { return (false, .none, error.localizedDescription) }
+        case .getFrontmostApp:
+            let name = SwiftAutoGUI.frontmostAppName()
+            return (name != nil, .standardAction, name == nil ? "No frontmost application was found." : nil)
+        case .wait(let duration):
+            do {
+                try await Task.sleep(for: .seconds(duration))
+                return (true, .standardAction, nil)
+            } catch { return (false, .none, "Wait was cancelled.") }
         default:
-            _ = await action.toAction().execute()
-            return (true, .standardAction, nil)
+            guard AXIsProcessTrusted() else {
+                return (false, .none, "Accessibility permission is required to post input events.")
+            }
+            do {
+                _ = try await action.toAction().execute()
+                return (true, .cgEvent, nil)
+            } catch { return (false, .none, error.localizedDescription) }
         }
     }
 }

@@ -52,7 +52,7 @@ Located at `Sample/Sample.xcodeproj`. Open in Xcode and run (⌘+R).
 - `Input/` — Key codes, keyboard layouts, and tweening functions.
 - `Accessibility/` — Accessibility element lookup, attributes, actions, and matching types.
 - `Actions/` — Declarative actions and agent orchestration.
-- `AI/` — Action-generation protocols, model backends, and screen context.
+- `AI/` — Foundation Models sessions, model factories, structured decisions, and screen context.
 - `Screen/` — Screen capture and image-recognition integration.
 - `System/` — AppleScript and system-dialog helpers.
 - `Documentation.docc/` — DocC catalog for the library.
@@ -65,12 +65,12 @@ Three subcommands: `KeyCommand`, `MouseCommand`, `ScreenCommand`, each in their 
 
 ## Important Technical Details
 
-- **Platform**: macOS 26.0+, Swift 6.2
+- **Platform**: macOS 27.0+, Swift 6.2
 - **Permissions**: Requires Accessibility permissions in System Settings
 - **Event Posting**: Uses `CGEventTapLocation.cghidEventTap` for event injection
 - **Coordinate System**: CGWindow coordinates (origin at top-left)
 - **Thread Safety**: `Thread.sleep(0.01)` after events for timing
-- **Dependencies**: swift-argument-parser (CLI), swift-docc-plugin (docs)
+- **Dependencies**: swift-argument-parser (CLI), swift-docc-plugin (docs), foundation-models-utilities 1.0.0-beta5 (Chat Completions adapter)
 
 ## CI
 

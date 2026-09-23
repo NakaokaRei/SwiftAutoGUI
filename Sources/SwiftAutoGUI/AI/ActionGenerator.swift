@@ -40,7 +40,7 @@ public enum BasicAction: Sendable, Codable {
     case wait(duration: Double)
 
     /// Press a keyboard shortcut. Use key names like "command", "shift", "a", "c", "returnKey", "space", "delete", "tab", "escape", "upArrow", "downArrow", "leftArrow", "rightArrow".
-    case keyShortcut(keys: [String])
+    case keyShortcut(keys: [Key])
 
     /// Drag mouse from one position to another.
     case drag(fromX: Double, fromY: Double, toX: Double, toY: Double)
@@ -82,7 +82,9 @@ public enum BasicAction: Sendable, Codable {
     case activateTab(tabID: String)
 
     /// Convert to an executable ``Action``.
-    public func toAction() -> Action {
+    /// Throws for invalid parameters and actions requiring an observation or browser session.
+    public func toAction() throws -> Action {
+        try validate()
         switch self {
         case .write(let text):
             return .write(text)
@@ -101,17 +103,15 @@ public enum BasicAction: Sendable, Codable {
         case .wait(let duration):
             return .wait(duration)
         case .keyShortcut(let keys):
-            let mapped = keys.compactMap { Key(rawValue: $0) }
-            guard !mapped.isEmpty else { return .wait(0) }
-            return .keyShortcut(mapped)
+            return .keyShortcut(keys)
         case .drag(let fromX, let fromY, let toX, let toY):
             return .drag(from: CGPoint(x: fromX, y: fromY), to: CGPoint(x: toX, y: toY))
         case .pressButton(let label, let bundleID):
             return .pressButton(label: label, app: scope(bundleID))
         case .pressElement:
             // Element IDs require the ScreenContext captured by Agent and are
-            // executed by AgentActionExecutor. A standalone conversion is a no-op.
-            return .wait(0)
+            // executed by AgentActionExecutor. Standalone conversion is an error.
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         case .setTextField(let label, let value, let bundleID):
             return .setTextField(
                 label: label.isEmpty ? nil : label,
@@ -119,25 +119,25 @@ public enum BasicAction: Sendable, Codable {
                 app: scope(bundleID)
             )
         case .setElementValue:
-            return .wait(0)
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         case .selectMenuItem(let path, let bundleID):
             return .selectMenuItem(path: path, app: scope(bundleID))
         case .raiseWindow(let title, let bundleID):
             return .raiseWindow(title: title, app: scope(bundleID))
         case .openURL(let url):
-            guard let url = validatedHTTPURL(url) else { return .wait(0) }
+            guard let url = validatedHTTPURL(url) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .openURL(url)
         case .activateApp(let name):
-            guard let name = normalizedAppName(name) else { return .wait(0) }
+            guard let name = normalizedAppName(name) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .activateApp(name: name)
         case .quitApp(let name):
-            guard let name = normalizedAppName(name) else { return .wait(0) }
+            guard let name = normalizedAppName(name) else { throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.") }
             return .quitApp(name: name)
         case .getFrontmostApp:
             return .getFrontmostApp
         case .activateTab:
             // Browser-only actions are executed by SwiftAutoGUIBrowser.
-            return .wait(0)
+            throw ActionGeneratorError.invalidResponse(detail: "This action requires a valid target or an observation-aware automation backend.")
         }
     }
 
@@ -145,20 +145,20 @@ public enum BasicAction: Sendable, Codable {
         bundleID.isEmpty ? .frontmost : .bundleID(bundleID)
     }
 
-    private func validatedHTTPURL(_ value: String) -> URL? {
+    func validatedHTTPURL(_ value: String) -> URL? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard value.count <= 2_048,
               let components = URLComponents(string: value),
               let scheme = components.scheme?.lowercased(),
               scheme == "http" || scheme == "https",
-              components.host != nil,
+              components.host?.isEmpty == false,
               let url = components.url else {
             return nil
         }
         return url
     }
 
-    private func normalizedAppName(_ value: String) -> String? {
+    func normalizedAppName(_ value: String) -> String? {
         let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty,
               value.count <= 128,
@@ -192,11 +192,11 @@ public enum BasicAction: Sendable, Codable {
 
         switch type {
         case .write:
-            let text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+            let text = try container.decode(String.self, forKey: .text)
             self = .write(text: text)
         case .move:
-            let x = try container.decodeIfPresent(Double.self, forKey: .x) ?? 0
-            let y = try container.decodeIfPresent(Double.self, forKey: .y) ?? 0
+            let x = try container.decode(Double.self, forKey: .x)
+            let y = try container.decode(Double.self, forKey: .y)
             self = .move(x: x, y: y)
         case .leftClick:
             self = .leftClick
@@ -205,60 +205,60 @@ public enum BasicAction: Sendable, Codable {
         case .doubleClick:
             self = .doubleClick
         case .vscroll:
-            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
+            let clicks = try container.decode(Int.self, forKey: .clicks)
             self = .vscroll(clicks: clicks)
         case .hscroll:
-            let clicks = try container.decodeIfPresent(Int.self, forKey: .clicks) ?? 0
+            let clicks = try container.decode(Int.self, forKey: .clicks)
             self = .hscroll(clicks: clicks)
         case .wait:
-            let duration = try container.decodeIfPresent(Double.self, forKey: .duration) ?? 0
+            let duration = try container.decode(Double.self, forKey: .duration)
             self = .wait(duration: duration)
         case .keyShortcut:
-            let keys = try container.decodeIfPresent([String].self, forKey: .keys) ?? []
+            let keys = try container.decode([Key].self, forKey: .keys)
             self = .keyShortcut(keys: keys)
         case .drag:
-            let fromX = try container.decodeIfPresent(Double.self, forKey: .fromX) ?? 0
-            let fromY = try container.decodeIfPresent(Double.self, forKey: .fromY) ?? 0
-            let toX = try container.decodeIfPresent(Double.self, forKey: .toX) ?? 0
-            let toY = try container.decodeIfPresent(Double.self, forKey: .toY) ?? 0
+            let fromX = try container.decode(Double.self, forKey: .fromX)
+            let fromY = try container.decode(Double.self, forKey: .fromY)
+            let toX = try container.decode(Double.self, forKey: .toX)
+            let toY = try container.decode(Double.self, forKey: .toY)
             self = .drag(fromX: fromX, fromY: fromY, toX: toX, toY: toY)
         case .pressButton:
-            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+            let label = try container.decode(String.self, forKey: .label)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .pressButton(label: label, bundleID: bundleID)
         case .pressElement:
-            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
+            let elementID = try container.decode(Int.self, forKey: .elementID)
             self = .pressElement(elementID: elementID)
         case .setTextField:
-            let label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
-            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            let label = try container.decode(String.self, forKey: .label)
+            let value = try container.decode(String.self, forKey: .value)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .setTextField(label: label, value: value, bundleID: bundleID)
         case .setElementValue:
-            let elementID = try container.decodeIfPresent(Int.self, forKey: .elementID) ?? 0
-            let value = try container.decodeIfPresent(String.self, forKey: .value) ?? ""
+            let elementID = try container.decode(Int.self, forKey: .elementID)
+            let value = try container.decode(String.self, forKey: .value)
             self = .setElementValue(elementID: elementID, value: value)
         case .selectMenuItem:
-            let path = try container.decodeIfPresent([String].self, forKey: .path) ?? []
+            let path = try container.decode([String].self, forKey: .path)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .selectMenuItem(path: path, bundleID: bundleID)
         case .raiseWindow:
-            let title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+            let title = try container.decode(String.self, forKey: .title)
             let bundleID = try container.decodeIfPresent(String.self, forKey: .bundleID) ?? ""
             self = .raiseWindow(title: title, bundleID: bundleID)
         case .openURL:
-            let url = try container.decodeIfPresent(String.self, forKey: .url) ?? ""
+            let url = try container.decode(String.self, forKey: .url)
             self = .openURL(url: url)
         case .activateApp:
-            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            let name = try container.decode(String.self, forKey: .name)
             self = .activateApp(name: name)
         case .quitApp:
-            let name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+            let name = try container.decode(String.self, forKey: .name)
             self = .quitApp(name: name)
         case .getFrontmostApp:
             self = .getFrontmostApp
         case .activateTab:
-            let tabID = try container.decodeIfPresent(String.self, forKey: .tabID) ?? ""
+            let tabID = try container.decode(String.self, forKey: .tabID)
             self = .activateTab(tabID: tabID)
         }
     }
@@ -342,134 +342,61 @@ public enum BasicAction: Sendable, Codable {
 
 // MARK: - ActionGenerator
 
-/// Generates automation actions from natural language prompts using AI.
-///
-/// `ActionGenerator` uses AI backends to convert natural language
-/// descriptions into executable ``Action`` instances. This enables AI-powered automation
-/// where users can describe what they want to do in plain language.
-///
-/// ## Example Usage
-///
-/// ```swift
-/// // Generate a single action from a prompt (uses default backend)
-/// let action = try await ActionGenerator.generateAction(from: "click at position 100, 200")
-/// await action.execute()
-///
-/// // Generate multiple actions for a complex task
-/// let actions = try await ActionGenerator.generateActionSequence(
-///     from: "Click at 100, 100, wait 1 second, then type 'test'"
-/// )
-/// await actions.execute()
-///
-/// // Use a specific backend
-/// let generator = ActionGenerator(openAIKey: "sk-...")
-/// let actions = try await generator.generateActionSequence(from: "type hello")
-/// ```
-///
-/// ## Requirements
-///
-/// - macOS 26.0 or later
-/// - For Foundation Models backend: Apple Intelligence enabled
-/// - For OpenAI backend: Valid API key
-///
+/// Generates actions through Foundation Models using any LanguageModel.
+/// Each independent request gets a fresh session. No input is executed here.
 public struct ActionGenerator: Sendable {
+    @MainActor public static var defaultModel: any LanguageModel = SystemLanguageModel.default
+    public let model: any LanguageModel
+    public let fallbackModel: (any LanguageModel)?
 
-    /// The default backend used by static methods.
-    ///
-    /// Defaults to ``FoundationModelsBackend``. Change this to use a different
-    /// backend globally:
-    ///
-    /// ```swift
-    /// ActionGenerator.defaultBackend = OpenAIBackend(apiKey: "sk-...")
-    /// ```
-    @MainActor
-    public static var defaultBackend: any ActionGenerating = FoundationModelsBackend()
-
-    /// The backend used by this instance.
-    public let backend: any ActionGenerating
-
-    /// Creates an ActionGenerator with the specified backend.
-    ///
-    /// - Parameter backend: The backend to use for action generation.
-    public init(backend: any ActionGenerating) {
-        self.backend = backend
+    /// A fallback is opt-in. Passing a cloud model permits sending the prompt to it.
+    public init(model: some LanguageModel, fallbackModel: (any LanguageModel)? = nil) {
+        self.model = model
+        self.fallbackModel = fallbackModel
     }
 
-    /// Creates an ActionGenerator using the OpenAI backend.
-    ///
-    /// - Parameters:
-    ///   - openAIKey: Your OpenAI API key.
-    ///   - model: The model to use (default: `gpt-5.6-luna`).
-    ///   - reasoningEffort: Optional reasoning effort sent to the Responses API.
-    public init(
-        openAIKey: String,
-        model: String = OpenAIBackend.defaultModel,
-        reasoningEffort: String? = nil
-    ) {
-        self.backend = OpenAIBackend(
-            apiKey: openAIKey,
-            model: model,
-            reasoningEffort: reasoningEffort
-        )
-    }
-
-    // MARK: - Instance Methods
-
-    /// Generates a single action from a natural language prompt using this instance's backend.
-    ///
-    /// - Parameter prompt: A natural language description of the desired action.
-    /// - Returns: An ``Action`` instance.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
     public func generateAction(from prompt: String) async throws -> Action {
-        try await backend.generateAction(from: prompt)
+        let session = makeSession()
+        let result = try await session.respond(to: Prompt(prompt), generating: SingleAction.self)
+        return try result.action.toAction()
     }
 
-    /// Generates multiple actions from a natural language prompt using this instance's backend.
-    ///
-    /// - Parameter prompt: A natural language description of a multi-step task.
-    /// - Returns: An array of ``Action`` instances representing the sequence.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
     public func generateActionSequence(from prompt: String) async throws -> [Action] {
-        try await backend.generateActionSequence(from: prompt)
+        let session = makeSession()
+        let plan = try await session.respond(to: Prompt(prompt), generating: ActionPlan.self)
+        guard !plan.actions.isEmpty else { throw ActionGeneratorError.noActionsGenerated }
+        guard plan.actions.count <= 20 else { throw ActionGeneratorError.invalidResponse(detail: "An action plan may contain at most twenty actions.") }
+        return try plan.actions.map { try $0.toAction() }
     }
 
-    // MARK: - Static Methods (backward compatible, delegate to defaultBackend)
-
-    /// Checks if the default backend is available.
-    ///
-    /// Use this method to verify backend availability before attempting to generate actions.
-    @MainActor
-    public static var isAvailable: Bool {
-        defaultBackend.isAvailable
+    private func makeSession() -> ActionSession {
+        ActionSession(model: model, fallbackModel: fallbackModel, instructions:
+            "Convert the user's request into a short sequence of automation actions. Use only the provided schema. No observation or browser session is available: do not use pressElement, setElementValue, or activateTab.")
     }
 
-    /// Returns a human-readable message describing why the default backend is unavailable.
-    ///
-    /// - Returns: A message string if the backend is unavailable, `nil` if available.
-    @MainActor
-    public static var unavailableReason: String? {
-        defaultBackend.unavailableReason
+    @MainActor public static var isAvailable: Bool { unavailableReason == nil }
+    @MainActor public static var unavailableReason: String? {
+        AutomationModels.unavailableReason(for: defaultModel)
     }
 
-    /// Generates a single action from a natural language prompt using the default backend.
-    ///
-    /// - Parameter prompt: A natural language description of the desired action.
-    /// - Returns: An ``Action`` instance.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
-    @MainActor
-    public static func generateAction(from prompt: String) async throws -> Action {
-        try await defaultBackend.generateAction(from: prompt)
+    @MainActor public static func generateAction(from prompt: String) async throws -> Action {
+        try await ActionGenerator(model: defaultModel).generateAction(from: prompt)
     }
 
-    /// Generates multiple actions from a natural language prompt using the default backend.
-    ///
-    /// - Parameter prompt: A natural language description of a multi-step task.
-    /// - Returns: An array of ``Action`` instances representing the sequence.
-    /// - Throws: ``ActionGeneratorError`` or backend-specific errors.
-    @MainActor
-    public static func generateActionSequence(from prompt: String) async throws -> [Action] {
-        try await defaultBackend.generateActionSequence(from: prompt)
+    @MainActor public static func generateActionSequence(from prompt: String) async throws -> [Action] {
+        try await ActionGenerator(model: defaultModel).generateActionSequence(from: prompt)
     }
+}
+
+@Generable
+struct SingleAction: Sendable {
+    var action: BasicAction
+}
+
+@Generable
+struct ActionPlan: Sendable {
+    @Guide(.maximumCount(20))
+    var actions: [BasicAction]
 }
 
 // MARK: - Convenience Extensions

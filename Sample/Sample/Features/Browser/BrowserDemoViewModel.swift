@@ -12,8 +12,9 @@ final class BrowserDemoViewModel {
     var selectedElementID = 1
     var replacementText = ""
     var agentGoal = "Find the SwiftAutoGUI repository and open its Issues page"
+    var provider: AIProviderChoice = .onDevice
     var openAIKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
-    var openAIModel = OpenAIVisionBackend.defaultModel
+    var openAIModel = AutomationModels.defaultAgentModel
     var maxAgentIterations = 12
     var agentDelay = 0.8
 
@@ -124,7 +125,7 @@ final class BrowserDemoViewModel {
             agentError = "Enter a browser goal."
             return
         }
-        guard !openAIKey.isEmpty else {
+        guard provider != .openAI || !openAIKey.isEmpty else {
             agentError = "Enter an OpenAI API key or launch the app with OPENAI_API_KEY."
             return
         }
@@ -137,9 +138,9 @@ final class BrowserDemoViewModel {
         statusMessage = "Browser AI Agent is running…"
 
         let goal = agentGoal
-        let backend = OpenAIVisionBackend(apiKey: openAIKey, model: openAIModel)
+        let backend = provider.model(apiKey: openAIKey, name: openAIModel)
         let agent = Agent(
-            backend: backend,
+            model: backend,
             maxIterations: maxAgentIterations,
             delayBetweenSteps: agentDelay,
             screenContextOptions: nil,
@@ -149,7 +150,7 @@ final class BrowserDemoViewModel {
 
         agentTask = Task {
             do {
-                let result = try await agent.run(goal: goal) { [weak self] step in
+                let result = try await agent.run(goal: goal) { [weak self = self] step in
                     Task { @MainActor in
                         guard let self else { return }
                         let actions = step.actions.map(self.describeAction).joined(separator: ", ")
@@ -278,7 +279,7 @@ final class BrowserDemoViewModel {
         case .vscroll(let clicks): "vscroll(\(clicks))"
         case .hscroll(let clicks): "hscroll(\(clicks))"
         case .wait(let duration): "wait(\(duration)s)"
-        case .keyShortcut(let keys): "keyShortcut(\(keys.joined(separator: "+")))"
+        case .keyShortcut(let keys): "keyShortcut(\(keys.map(\.rawValue).joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
         case .openURL(let url): "openURL(\"\(url)\")"

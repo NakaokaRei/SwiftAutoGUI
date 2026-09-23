@@ -15,8 +15,9 @@ class AgentDemoViewModel {
 
     // MARK: - Backend Settings
 
+    var provider: AIProviderChoice = .onDevice
     var openAIKey: String = ""
-    var openAIModel: String = OpenAIVisionBackend.defaultModel
+    var openAIModel: String = AutomationModels.defaultAgentModel
     var maxIterations: Int = 20
     var delayBetweenSteps: Double = 1.0
     var useScreenContext: Bool = true
@@ -63,7 +64,7 @@ class AgentDemoViewModel {
             error = "Please enter a goal"
             return
         }
-        guard !openAIKey.isEmpty else {
+        guard provider != .openAI || !openAIKey.isEmpty else {
             error = "Please enter your OpenAI API key"
             return
         }
@@ -75,16 +76,16 @@ class AgentDemoViewModel {
 
         runTask = Task {
             do {
-                let backend = OpenAIVisionBackend(apiKey: openAIKey, model: openAIModel)
+                let backend = provider.model(apiKey: openAIKey, name: openAIModel)
                 let contextOptions: ScreenContextProvider.Options? = useScreenContext ? ScreenContextProvider.Options() : nil
                 let agent = Agent(
-                    backend: backend,
+                    model: backend,
                     maxIterations: maxIterations,
                     delayBetweenSteps: delayBetweenSteps,
                     screenContextOptions: contextOptions
                 )
 
-                let result = try await agent.run(goal: goal) { [weak self] step in
+                let result = try await agent.run(goal: goal) { [weak self = self] step in
                     guard let self else { return }
                     Task { @MainActor in
                         let actionSummary = step.actions.map { self.describeAction($0) }.joined(separator: ", ")
@@ -137,7 +138,7 @@ class AgentDemoViewModel {
         case .vscroll(let clicks): return "vscroll(\(clicks))"
         case .hscroll(let clicks): return "hscroll(\(clicks))"
         case .wait(let duration): return "wait(\(duration)s)"
-        case .keyShortcut(let keys): return "keyShortcut(\(keys.joined(separator: "+")))"
+        case .keyShortcut(let keys): return "keyShortcut(\(keys.map(\.rawValue).joined(separator: "+")))"
         case .drag(let fromX, let fromY, let toX, let toY):
             return "drag(\(Int(fromX)),\(Int(fromY))->\(Int(toX)),\(Int(toY)))"
         case .openURL(let url):
