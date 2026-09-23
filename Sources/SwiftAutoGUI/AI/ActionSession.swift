@@ -47,7 +47,8 @@ actor ActionSession {
         to prompt: Prompt,
         generating: Content.Type,
         includesImage: Bool = false,
-        discardHistory: Bool = false
+        discardHistory: Bool = false,
+        schema: GenerationSchema? = nil
     ) async throws -> Content {
         guard !responding else { throw LanguageModelSession.Error.concurrentRequests }
         guard historyPolicy.maximumTurns >= 0, historyPolicy.maximumCharacters >= 0 else {
@@ -62,7 +63,14 @@ actor ActionSession {
         while true {
             do {
                 try validate(includesImage: includesImage)
-                try await fitOnDevice(prompt: prompt, schema: Content.generationSchema)
+                try await fitOnDevice(prompt: prompt, schema: schema ?? Content.generationSchema)
+                if let schema {
+                    let response = try await session.respond(
+                        to: prompt, schema: schema, options: options,
+                        contextOptions: model.capabilities.contains(.reasoning) ? contextOptions : .init())
+                    try Task.checkCancellation()
+                    return try Content(response.content)
+                }
                 let response = try await session.respond(
                     to: prompt, generating: Content.self,
                     options: options,

@@ -10,6 +10,69 @@ struct AgentAutomationBackendTests {
         .text(AgentDecision(actions: actions, reasoningSummary: "Test decision", isDone: done).generatedContent.jsonString)
     }
 
+    @Test("Action schema restricts native and browser actions without dangling references",
+          arguments: [AgentObservationKind.native, .browser])
+    func environmentSchema(kind: AgentObservationKind) throws {
+        let schema = try AgentActionSchema.make(AgentDecision.generationSchema,
+            kind: kind, allowsElementIDs: true)
+        let root = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(schema)) as? [String: Any])
+        let definitions = try #require(root["$defs"] as? [String: Any])
+        let action = try #require(definitions["BasicAction"] as? [String: Any])
+        let refs = try #require(action["anyOf"] as? [[String: String]])
+        for ref in refs {
+            let name = try #require(ref["$ref"]?.components(separatedBy: "/").last)
+            #expect(definitions[name] != nil)
+        }
+        #expect((definitions["DiscriminatedActivateTab"] != nil) == (kind == .browser))
+        #expect((definitions["DiscriminatedWrite"] != nil) == (kind == .native))
+        #expect(definitions["DiscriminatedPressElement"] != nil)
+    }
+
+    @Test("Invalid native tab proposals are corrected before any batch action executes", arguments: ["", "invented-tab"])
+    @MainActor
+    func nativeTabRecovery(tabID: String) async throws {
+        let model = MockLanguageModel([
+            decision([.write(text: "must not execute"), .activateTab(tabID: tabID)]),
+            decision([.activateApp(name: "Visual Studio Code")]),
+            decision(done: true)
+        ])
+        let automation = FakeAutomationBackend(kind: .native)
+        let result = try await Agent(model: model, delayBetweenSteps: 0,
+            automationBackend: automation).run(goal: "Open VSCode")
+        #expect(result.completed)
+        #expect(await automation.executed.count == 1)
+        #expect(await automation.observationCount == 2)
+        #expect(model.recorder.requests.count == 3)
+        #expect(model.recorder.requests[1].transcript.renderedText.contains("activateTab is unavailable"))
+    }
+
+    @Test("Invalid proposals retry once and never execute", arguments: [AgentObservationKind.native, .browser])
+    @MainActor
+    func invalidProposalRetryBound(kind: AgentObservationKind) async {
+        let model = MockLanguageModel([
+            decision([.activateTab(tabID: "")]), decision([.activateTab(tabID: "")])
+        ])
+        let automation = FakeAutomationBackend(kind: kind)
+        await #expect(throws: ActionGeneratorError.self) {
+            try await Agent(model: model, delayBetweenSteps: 0,
+                automationBackend: automation).run(goal: "Open an app")
+        }
+        #expect(model.recorder.requests.count == 2)
+        #expect(await automation.executed.isEmpty)
+    }
+
+    @Test("Browser tab activation remains supported")
+    @MainActor
+    func browserTabActivation() async throws {
+        let model = MockLanguageModel([decision([.activateTab(tabID: "test")]), decision(done: true)])
+        let automation = FakeAutomationBackend()
+        let result = try await Agent(model: model, delayBetweenSteps: 0,
+            automationBackend: automation).run(goal: "Switch tabs")
+        #expect(result.completed)
+        #expect(await automation.executed.count == 1)
+        #expect(model.recorder.requests.count == 2)
+    }
+
     @Test("An unfinished empty decision requests one action without re-observing or replaying")
     @MainActor
     func emptyDecisionRecovery() async throws {
@@ -286,14 +349,16 @@ private actor FakeAutomationBackend: AgentAutomationBackend {
     private(set) var executed: [BasicAction] = []
     let screenChanged: Bool
     let image: Data?
-    init(screenChanged: Bool = false, image: Data? = nil) {
+    let kind: AgentObservationKind
+    init(screenChanged: Bool = false, image: Data? = nil, kind: AgentObservationKind = .browser) {
+        self.kind = kind
         self.screenChanged = screenChanged
         self.image = image
     }
 
     func observe(visionMode: AgentVisionMode) async throws -> AgentObservation {
         observationCount += 1
-        return AgentObservation(kind: .browser, formattedContext: "Browser tab: test [#1] Button",
+        return AgentObservation(kind: kind, formattedContext: "Browser tab: test [#1] Button",
             stateFingerprint: "test", actionableElementCount: 1,
             viewportSize: CGSize(width: 100, height: 100), screenshotJPEGData: image)
     }

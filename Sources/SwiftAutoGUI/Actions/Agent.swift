@@ -97,12 +97,6 @@ public struct Agent: Sendable {
             let response = try await Self.decision(
                 session: session, goal: goal, observation: observation, lastStep: steps.last)
             try Task.checkCancellation()
-            guard response.actions.count <= 3 else {
-                throw ActionGeneratorError.invalidResponse(detail: "A decision may contain at most three actions.")
-            }
-
-            for action in response.actions { try action.validate() }
-
             // 3. Act: execute against the observation used by the model. Stop
             // as soon as the UI changes or an action fails, then re-observe.
             var currentObservation = observation
@@ -155,13 +149,47 @@ public struct Agent: Sendable {
     static func decision(
         session: ActionSession, goal: String, observation: AgentObservation, lastStep: AgentStep?
     ) async throws -> AgentDecision {
+        var correction: String?
+        for attempt in 0..<2 {
+            let response = try await generateDecision(session: session, goal: goal,
+                observation: observation, lastStep: lastStep, correction: correction)
+            try Task.checkCancellation()
+            do {
+                guard response.actions.count <= 3 else {
+                    throw ActionGeneratorError.invalidResponse(detail: "A decision may contain at most three actions.")
+                }
+                for action in response.actions {
+                    if observation.kind == .native, case .activateTab = action {
+                        throw ActionGeneratorError.invalidResponse(
+                            detail: "activateTab is unavailable in native automation. Use activateApp(name:) for applications.")
+                    }
+                    try action.validate()
+                }
+                return response
+            } catch {
+                guard attempt == 0 else { throw error }
+                correction = error.localizedDescription
+            }
+        }
+        throw ActionGeneratorError.noActionsGenerated
+    }
+
+    private static func generateDecision(
+        session: ActionSession, goal: String, observation: AgentObservation,
+        lastStep: AgentStep?, correction: String?
+    ) async throws -> AgentDecision {
         let includesImage = observation.screenshotJPEGData != nil
-        var prompt = try Self.prompt(goal: goal, observation: observation, lastStep: lastStep)
+        var prompt = try Self.prompt(goal: goal, observation: observation, lastStep: lastStep, correction: correction)
         var omittedContext = false
         var response: AgentDecision
+        func schema<T: Generable>(_ type: T.Type) throws -> GenerationSchema {
+            try AgentActionSchema.make(type.generationSchema, kind: observation.kind,
+                allowsElementIDs: !omittedContext && observation.actionableElementCount > 0)
+        }
         do {
             response = try await session.respond(to: prompt, generating: AgentDecision.self,
-                                                 includesImage: includesImage)
+                                                 includesImage: includesImage, discardHistory: correction != nil,
+                                                 schema: try schema(AgentDecision.self))
         } catch {
             try Task.checkCancellation()
             guard includesImage, observation.kind == .native, ActionSession.isContextError(error) else { throw error }
@@ -169,15 +197,17 @@ public struct Agent: Sendable {
             // Omit the entire semantic tree rather than cutting element IDs or values.
             omittedContext = true
             prompt = try Self.prompt(goal: goal, observation: observation, lastStep: lastStep,
-                                     includeScreenContext: false)
+                                     includeScreenContext: false, correction: correction)
             response = try await session.respond(to: prompt, generating: AgentDecision.self,
-                                                 includesImage: true, discardHistory: true)
+                                                 includesImage: true, discardHistory: true,
+                                                 schema: try schema(AgentDecision.self))
         }
         if response.actions.isEmpty && !response.isDone {
             // A smaller schema requires one concrete action instead of permitting
             // the model to repeatedly choose an empty array and narrate a plan.
             let action = try await session.respond(to: prompt, generating: SingleAction.self,
-                                                   includesImage: includesImage, discardHistory: true)
+                                                   includesImage: includesImage, discardHistory: true,
+                                                   schema: try schema(SingleAction.self))
             response.actions = [action.action]
             response.reasoningSummary = "Next action: \(action.action)"
         }
@@ -200,6 +230,11 @@ public struct Agent: Sendable {
     If the goal is not complete, produce at least one concrete action; do not merely describe a plan.
     For native automation, first activate the app named in the goal unless it is already frontmost.
     Use activateApp(name:) to open an app and write(text:) to type text.
+    When an empty editor is already focused, write the requested text instead of clicking again.
+    write(text:) inserts text; leftClick only clicks at the current pointer and never types text.
+    A reasoningSummary that says you will type must be accompanied by an actual text-entry action.
+    Do not clear or select all existing content unless the goal requires replacing it.
+    Only change input sources when the observation shows this is necessary; do not guess shortcuts.
     openURL uses the default browser, not necessarily the browser named in the goal.
     Propose at most three actions, then re-observe. Never repeat an action solely because a model request was retried.
     Execution results describe actions actually performed; proposed actions may have been skipped after a UI change.
@@ -215,7 +250,7 @@ public struct Agent: Sendable {
     """
 
     static func prompt(goal: String, observation: AgentObservation, lastStep: AgentStep?,
-                       includeScreenContext: Bool = true) throws -> Prompt {
+                       includeScreenContext: Bool = true, correction: String? = nil) throws -> Prompt {
         let image = try observation.screenshotJPEGData.map { data in
             guard let source = CGImageSourceCreateWithData(data as CFData, nil),
                   let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
@@ -237,6 +272,10 @@ public struct Agent: Sendable {
                 "Current observation:\n\(observation.formattedContext)"
             } else {
                 "The semantic tree was omitted to fit the context limit. Use the current screenshot. No element IDs are available: do not use pressElement or setElementValue."
+            }
+            if let correction {
+                "The previous proposal was rejected before any actions executed: \(correction)"
+                "Generate a corrected decision for the same goal and observation."
             }
             if let image { Attachment(image) }
         }

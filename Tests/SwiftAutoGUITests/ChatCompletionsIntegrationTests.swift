@@ -7,6 +7,57 @@ import Testing
 
 @Suite("Chat Completions transport", .serialized)
 struct ChatCompletionsIntegrationTests {
+    @Test("Agent wire request preserves current context and image and restricts native actions")
+    @MainActor
+    func agentContextTransport() async throws {
+        let output = AgentDecision(actions: [.write(text: "hello world")],
+            reasoningSummary: "Type text", isDone: false).generatedContent.jsonString
+        StubChatProtocol.state.withLock { $0 = .init(output: output) }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubChatProtocol.self]
+        let model = AutomationModels.openAI(apiKey: "test-only", model: "mock",
+            baseURL: URL(string: "https://example.invalid")!, urlSessionConfiguration: config)
+        let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 4, pixelsHigh: 4,
+            bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        let pixels = try #require(bitmap.bitmapData)
+        pixels.initialize(repeating: 255, count: bitmap.bytesPerRow * bitmap.pixelsHigh)
+        let jpeg = try #require(bitmap.representation(using: .jpeg, properties: [:]))
+        let session = ActionSession(model: model, instructions: Agent.instructions)
+        for context in ["OLD_OBSERVATION", "CURRENT_FOCUSED_EDITOR"] {
+            let observation = AgentObservation(kind: .native, formattedContext: context,
+                stateFingerprint: context, actionableElementCount: 0,
+                viewportSize: CGSize(width: 1440, height: 900), screenshotJPEGData: jpeg)
+            let decision = try await Agent.decision(session: session, goal: "Type hello world",
+                observation: observation, lastStep: nil)
+            guard case .write(let text) = decision.actions.first else {
+                Issue.record("Text entry was lost during response decoding"); return
+            }
+            #expect(text == "hello world")
+        }
+        let body = try #require(StubChatProtocol.state.withLock { $0.body })
+        let request = try #require(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let messages = try #require(request["messages"] as? [[String: Any]])
+        #expect(messages.contains { ($0["content"] as? String)?.contains("Help accomplish") == true })
+        let parts = messages.flatMap { $0["content"] as? [[String: Any]] ?? [] }
+        #expect(parts.contains { ($0["text"] as? String)?.contains("CURRENT_FOCUSED_EDITOR") == true })
+        #expect(parts.contains { ($0["text"] as? String)?.contains("Type hello world") == true })
+        let images = parts.filter { $0["type"] as? String == "image_url" }
+        #expect(images.count == 1)
+        let url = try #require((images.first?["image_url"] as? [String: Any])?["url"] as? String)
+        #expect(url.hasPrefix("data:image/jpeg;base64,"))
+        let imageData = try #require(Data(base64Encoded: String(url.split(separator: ",", maxSplits: 1)[1])))
+        let decoded = try #require(NSBitmapImageRep(data: imageData))
+        #expect(decoded.pixelsWide == 4 && decoded.pixelsHigh == 4)
+        let format = try #require(request["response_format"] as? [String: Any])
+        let wrapper = try #require(format["json_schema"] as? [String: Any])
+        let schema = try #require(wrapper["schema"] as? [String: Any])
+        let definitions = try #require(schema["$defs"] as? [String: Any])
+        #expect(definitions["DiscriminatedWrite"] != nil)
+        #expect(definitions["DiscriminatedActivateTab"] == nil)
+        #expect(definitions["DiscriminatedSetElementValue"] == nil)
+    }
+
     @Test("Associated-value enum schemas preserve typed discriminators after normalization")
     func strictDiscriminators() throws {
         let schema = try OpenAIChatLanguageModel.Executor.strictSchema(AgentDecision.generationSchema)
@@ -109,6 +160,28 @@ private final class StubChatProtocol: URLProtocol, @unchecked Sendable {
 /// Explicit opt-in only. Generates decisions from synthetic input, never executes them.
 @Suite("Live model smoke tests")
 struct LiveModelSmokeTests {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "openai"), arguments: 0..<3)
+    func openAIEditorTyping(attempt: Int) async throws {
+        let key = try #require(ProcessInfo.processInfo.environment["OPENAI_API_KEY"])
+        let model = AutomationModels.openAI(apiKey: key)
+        let session = ActionSession(model: model, instructions: Agent.instructions,
+                                    options: .init(maximumResponseTokens: 512))
+        let observation = AgentObservation(kind: .native,
+            formattedContext: "Frontmost application: Visual Studio Code. Window: Untitled-1. Focused element: AXTextArea. Empty new text editor focused, caret at line 1 column 1.",
+            stateFingerprint: "synthetic-editor", actionableElementCount: 0,
+            viewportSize: CGSize(width: 1440, height: 900))
+        do {
+            let result = try await Agent.decision(session: session,
+                goal: "Visual Studio Codeを開き、新規テキストファイルにhello worldと入力してください。保存は不要です。",
+                observation: observation, lastStep: nil)
+            print("SYNTHETIC_EDITOR_ACTIONS", result.actions)
+            #expect(result.actions.contains { if case .write(let text) = $0 { text == "hello world" } else { false } })
+        } catch {
+            let diagnostic = error.localizedDescription.replacingOccurrences(of: key, with: "[redacted]")
+            Issue.record("Editor generation failed: \(diagnostic)")
+        }
+    }
+
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SWIFTAUTOGUI_RUN_MODEL_TESTS"] == "on-device"))
     func onDeviceSpotlightShortcut() async throws {
         let session = ActionSession(model: SystemLanguageModel.default, instructions: Agent.instructions,
