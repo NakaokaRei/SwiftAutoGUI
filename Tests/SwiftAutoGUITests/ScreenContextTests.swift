@@ -310,6 +310,16 @@ struct ScreenContextTests {
             #expect(!output.contains("Keyboard input source"))
         }
 
+        @Test("Focused editor value survives when the AX tree is missing")
+        func focusedEditorValue() {
+            let context = ScreenContext(frontmostApp: nil, visibleWindows: [],
+                focusedWindowAXTree: nil,
+                focusedElement: FocusedElementInfo(role: "AXTextArea", label: "Editor",
+                    value: "hello world", frame: CodableRect(x: 10, y: 20, width: 100, height: 80)))
+            #expect(context.formatted().contains("Focused element value: \"hello world\""))
+            #expect(context.formatted().contains("Focused element frame: {10,20 100x80}"))
+        }
+
         @Test("full context output combines all sections")
         func fullContext() {
             let context = ScreenContext(

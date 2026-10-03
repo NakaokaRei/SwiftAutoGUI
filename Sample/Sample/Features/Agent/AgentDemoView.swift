@@ -91,17 +91,25 @@ struct AgentDemoView: View {
 
     private var settingsContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                SecureField("OpenAI API Key", text: $viewModel.openAIKey)
-                    .textFieldStyle(.roundedBorder)
-
-                Picker("Model", selection: $viewModel.openAIModel) {
-                    ForEach(AgentDemoViewModel.availableModels, id: \.self) { model in
-                        Text(model).tag(model)
-                    }
+            Picker("AI provider", selection: $viewModel.provider) {
+                ForEach(AIProviderChoice.allCases) { provider in
+                    Text(provider.rawValue).tag(provider)
                 }
-                .pickerStyle(.menu)
-                .frame(width: 180)
+            }
+            Text(viewModel.provider.explanation).font(.caption).foregroundStyle(.secondary)
+            if viewModel.provider == .openAI {
+                HStack(spacing: 12) {
+                    SecureField("OpenAI API Key", text: $viewModel.openAIKey)
+                        .textFieldStyle(.roundedBorder)
+
+                    Picker("Model", selection: $viewModel.openAIModel) {
+                        ForEach(AgentDemoViewModel.availableModels, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 180)
+                }
             }
 
             HStack(spacing: 24) {
@@ -174,12 +182,12 @@ struct AgentDemoView: View {
                         Image(systemName: "play.fill")
                             .frame(width: 44, height: 44)
                             .background(RoundedRectangle(cornerRadius: 8).fill(
-                                viewModel.goal.isEmpty || viewModel.openAIKey.isEmpty ? Color.gray : Color.indigo
+                                viewModel.goal.isEmpty || (viewModel.provider == .openAI && viewModel.openAIKey.isEmpty) ? Color.gray : Color.indigo
                             ))
                             .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
-                    .disabled(viewModel.goal.isEmpty || viewModel.openAIKey.isEmpty)
+                    .disabled(viewModel.goal.isEmpty || (viewModel.provider == .openAI && viewModel.openAIKey.isEmpty))
                 }
             }
 

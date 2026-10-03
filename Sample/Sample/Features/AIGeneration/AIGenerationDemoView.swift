@@ -41,6 +41,10 @@ struct AIGenerationDemoView: View {
                 }
                 .pickerStyle(.segmented)
 
+                if viewModel.selectedBackend == .pcc {
+                    Text("Sends prompts to Apple. Requires an eligible, entitled app and available daily quota.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 // OpenAI Settings
                 if viewModel.selectedBackend == .openAI {
                     VStack(alignment: .leading, spacing: 8) {

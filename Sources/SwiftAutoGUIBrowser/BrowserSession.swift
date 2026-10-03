@@ -247,6 +247,11 @@ public actor BrowserSession: AgentAutomationBackend {
         _ action: BasicAction,
         in observation: AgentObservation
     ) async -> AgentAutomationExecution {
+        do { try action.validate() }
+        catch {
+            return AgentAutomationExecution(result: ActionExecutionResult(action: action, succeeded: false,
+                method: .none, failureReason: error.localizedDescription), observation: observation)
+        }
         guard observation.kind == .browser,
               let browserObservation = observations[observation.id] else {
             let result = ActionExecutionResult(
@@ -581,7 +586,7 @@ public actor BrowserSession: AgentAutomationBackend {
             try await activateTab(tabID)
 
         case .wait(let duration):
-            guard duration >= 0 else { throw BrowserError.unsupportedAction("negative wait") }
+            guard duration.isFinite && duration >= 0 else { throw BrowserError.unsupportedAction("negative wait") }
             try await Task.sleep(for: .seconds(duration))
         }
     }
@@ -632,21 +637,14 @@ public actor BrowserSession: AgentAutomationBackend {
 
     private func dispatchShortcut(_ keys: [String], sessionID: String) async throws {
         let normalized = keys.map { $0.lowercased() }
-        let modifiers = normalized.reduce(0) { result, key in
-            let bit = switch key {
-            case "option", "alt": 1
-            case "control", "ctrl": 2
-            case "command", "cmd", "meta": 4
-            case "shift": 8
-            default: 0
-            }
-            return result | bit
+        let bits = ["option": 1, "alt": 1, "control": 2, "ctrl": 2, "command": 4,
+                    "cmd": 4, "meta": 4, "shift": 8, "rightoption": 1, "rightcontrol": 2, "rightshift": 8]
+        let nonModifiers = normalized.filter { bits[$0] == nil }
+        guard nonModifiers.count == 1 else {
+            throw BrowserError.unsupportedAction("a browser shortcut requires exactly one non-modifier key")
         }
-        let modifierNames: Set<String> = ["option", "alt", "control", "ctrl", "command", "cmd", "meta", "shift"]
-        guard let keyName = normalized.last(where: { !modifierNames.contains($0) }) else {
-            throw BrowserError.unsupportedAction("key shortcut with no non-modifier key")
-        }
-        let mapped = mapKey(keyName)
+        let modifiers = normalized.reduce(0) { $0 | (bits[$1] ?? 0) }
+        let mapped = try Self.mapKey(nonModifiers[0])
         let common: [String: CDPJSONValue] = [
             "modifiers": .number(Double(modifiers)),
             "key": .string(mapped.key),
@@ -671,7 +669,7 @@ public actor BrowserSession: AgentAutomationBackend {
         case .pressElement(let id): .click(elementID: id)
         case .setElementValue(let id, let value): .replaceText(elementID: id, value: value)
         case .write(let text): .insertText(text)
-        case .keyShortcut(let keys): .keyShortcut(keys)
+        case .keyShortcut(let keys): .keyShortcut(keys.map(\.rawValue))
         case .vscroll(let clicks): .scroll(horizontal: 0, vertical: clicks)
         case .hscroll(let clicks): .scroll(horizontal: clicks, vertical: 0)
         case .wait(let duration): .wait(duration)
@@ -787,22 +785,44 @@ public actor BrowserSession: AgentAutomationBackend {
         return ids
     }
 
-    private func mapKey(_ name: String) -> (key: String, code: String, virtualKeyCode: Int) {
-        if name.count == 1, let scalar = name.uppercased().unicodeScalars.first {
-            let upper = name.uppercased()
-            return (upper.lowercased(), "Key\(upper)", Int(scalar.value))
+    static func mapKey(_ name: String) throws -> (key: String, code: String, virtualKeyCode: Int) {
+        if name.count == 1, let scalar = name.unicodeScalars.first, (97...122).contains(scalar.value) {
+            return (name, "Key\(name.uppercased())", Int(scalar.value) - 32)
         }
-        return switch name {
-        case "returnkey", "return", "enter": ("Enter", "Enter", 13)
-        case "space": (" ", "Space", 32)
-        case "tab": ("Tab", "Tab", 9)
-        case "escape": ("Escape", "Escape", 27)
-        case "delete", "backspace": ("Backspace", "Backspace", 8)
-        case "uparrow": ("ArrowUp", "ArrowUp", 38)
-        case "downarrow": ("ArrowDown", "ArrowDown", 40)
-        case "leftarrow": ("ArrowLeft", "ArrowLeft", 37)
-        case "rightarrow": ("ArrowRight", "ArrowRight", 39)
-        default: (name, name, 0)
+        let digits = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+        if let digit = digits.firstIndex(of: name) ?? Int(name).flatMap({ (0...9).contains($0) ? $0 : nil }) {
+            return (String(digit), "Digit\(digit)", 48 + digit)
+        }
+        if name.hasPrefix("f"), let number = Int(name.dropFirst()), (1...20).contains(number) {
+            return ("F\(number)", "F\(number)", 111 + number)
+        }
+        switch name {
+        case "returnkey", "return", "enter": return ("Enter", "Enter", 13)
+        case "space": return (" ", "Space", 32)
+        case "tab": return ("Tab", "Tab", 9)
+        case "escape": return ("Escape", "Escape", 27)
+        case "delete", "backspace": return ("Backspace", "Backspace", 8)
+        case "forwarddelete": return ("Delete", "Delete", 46)
+        case "uparrow": return ("ArrowUp", "ArrowUp", 38)
+        case "downarrow": return ("ArrowDown", "ArrowDown", 40)
+        case "leftarrow": return ("ArrowLeft", "ArrowLeft", 37)
+        case "rightarrow": return ("ArrowRight", "ArrowRight", 39)
+        case "home": return ("Home", "Home", 36)
+        case "end": return ("End", "End", 35)
+        case "pageup": return ("PageUp", "PageUp", 33)
+        case "pagedown": return ("PageDown", "PageDown", 34)
+        case "equals": return ("=", "Equal", 187)
+        case "minus": return ("-", "Minus", 189)
+        case "semicolon": return (";", "Semicolon", 186)
+        case "apostrophe": return ("'", "Quote", 222)
+        case "comma": return (",", "Comma", 188)
+        case "period": return (".", "Period", 190)
+        case "forwardslash": return ("/", "Slash", 191)
+        case "backslash": return ("\\", "Backslash", 220)
+        case "grave": return ("`", "Backquote", 192)
+        case "leftbracket": return ("[", "BracketLeft", 219)
+        case "rightbracket": return ("]", "BracketRight", 221)
+        default: throw BrowserError.unsupportedAction("Unsupported browser key: \(name)")
         }
     }
 

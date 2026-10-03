@@ -1,4 +1,5 @@
 import CoreGraphics
+import FoundationModels
 
 /// Keycode for keyboard input
 ///
@@ -12,7 +13,8 @@ import CoreGraphics
 /// SwiftAutoGUI.keyDown(.soundUp)
 /// SwiftAutoGUI.keyUp(.soundUp)
 /// ```
-public enum Key: String, Sendable, CaseIterable {
+@Generable
+public enum Key: String, Sendable, CaseIterable, Codable {
 
     // normal keycode
     case returnKey

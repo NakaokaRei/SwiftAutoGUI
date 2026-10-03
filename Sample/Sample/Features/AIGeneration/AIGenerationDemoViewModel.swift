@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftAutoGUI
+import FoundationModels
 
 @MainActor
 @Observable
@@ -19,7 +20,8 @@ class AIGenerationDemoViewModel {
     // MARK: - Backend Selection
 
     enum Backend: String, CaseIterable, Identifiable {
-        case foundationModels = "Foundation Models"
+        case foundationModels = "On-device"
+        case pcc = "Private Cloud Compute"
         case openAI = "OpenAI"
 
         var id: String { rawValue }
@@ -27,7 +29,7 @@ class AIGenerationDemoViewModel {
 
     var selectedBackend: Backend = .foundationModels
     var openAIKey: String = ""
-    var openAIModel: String = OpenAIBackend.defaultModel
+    var openAIModel: String = AutomationModels.defaultTextModel
 
     static let availableOpenAIModels = [
         "gpt-5.6-luna",
@@ -62,6 +64,7 @@ class AIGenerationDemoViewModel {
                 addToLog("Model unavailable: \(error!)")
                 return
             }
+        case .pcc: break
         case .openAI:
             guard !openAIKey.isEmpty else {
                 error = "Please enter your OpenAI API key."
@@ -83,8 +86,10 @@ class AIGenerationDemoViewModel {
             switch selectedBackend {
             case .foundationModels:
                 actions = try await ActionGenerator.generateActionSequence(from: prompt)
+            case .pcc:
+                actions = try await ActionGenerator(model: PrivateCloudComputeLanguageModel()).generateActionSequence(from: prompt)
             case .openAI:
-                let generator = ActionGenerator(openAIKey: openAIKey, model: openAIModel)
+                let generator = ActionGenerator(model: AutomationModels.openAI(apiKey: openAIKey, model: openAIModel))
                 actions = try await generator.generateActionSequence(from: prompt)
             }
 

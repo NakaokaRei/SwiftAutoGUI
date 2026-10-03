@@ -234,3 +234,12 @@ extension SwiftAutoGUI {
         }
     }
 }
+
+extension NSImage {
+    /// Encodes an observation image independently of the selected AI provider.
+    func jpegData(compressionFactor: CGFloat = 0.5) -> Data? {
+        guard let tiffData = tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData) else { return nil }
+        return bitmap.representation(using: .jpeg, properties: [.compressionFactor: compressionFactor])
+    }
+}

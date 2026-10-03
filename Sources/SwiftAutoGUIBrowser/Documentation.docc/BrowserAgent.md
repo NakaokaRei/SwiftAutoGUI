@@ -6,7 +6,7 @@ Build an AI Agent that observes and controls only pages in an existing Chromium 
 
 A browser Agent uses two independent backends:
 
-1. A `VisionActionGenerating` backend decides what to do next.
+1. A Foundation Models `LanguageModel` decides what to do next using structured output.
 2. A ``BrowserSession`` observes the current page and executes the selected action through CDP.
 
 Passing a ``BrowserSession`` as `automationBackend` makes the Agent browser-only. It does not
@@ -100,9 +100,9 @@ guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] else {
     fatalError("Set OPENAI_API_KEY before starting the app")
 }
 
-let llm = OpenAIVisionBackend(apiKey: apiKey)
+let llm = AutomationModels.openAI(apiKey: apiKey)
 let agent = Agent(
-    backend: llm,
+    model: llm,
     maxIterations: 20,
     delayBetweenSteps: 1,
     screenContextOptions: nil,

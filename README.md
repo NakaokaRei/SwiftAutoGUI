@@ -24,8 +24,8 @@ AI Agent that autonomously observes the screen and executes actions to achieve a
 
 # Requirements
 
-- macOS 26.0+
-- Swift 6.0+
+- macOS 27.0+
+- Swift 6.2+
 
 # Installation
 
@@ -114,7 +114,7 @@ print(observation.formattedContext)
 
 let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]!
 let browserAgent = Agent(
-    backend: OpenAIVisionBackend(apiKey: apiKey),
+    model: AutomationModels.openAI(apiKey: apiKey),
     automationBackend: browser
 )
 ```
@@ -146,9 +146,9 @@ SwiftAutoGUI includes an Agent that can autonomously observe the screen, reason 
 ```swift
 import SwiftAutoGUI
 
-let backend = OpenAIVisionBackend(apiKey: "sk-...", model: "gpt-5.6-sol")
+let backend = AutomationModels.openAI(apiKey: "sk-...", model: "gpt-5.6-sol")
 let agent = Agent(
-    backend: backend,
+    model: backend,
     maxIterations: 15,
     visionMode: .automatic
 )
@@ -157,17 +157,25 @@ let result = try await agent.run(goal: "Open Safari and search for Swift")
 print("Completed: \(result.completed), Steps: \(result.iterationsUsed)")
 ```
 
-The CLI prints the effective reasoning effort when it starts and the model-provided
-reasoning summary for every agent step:
+The CLI defaults to the on-device Apple model. Choose a cloud provider explicitly:
 
 ```bash
-sagui agent "Open Safari and search for Swift" --reasoning-effort low
 sagui agent "Press the Save button" --vision-mode automatic
+sagui agent "Open Safari and search for Swift" --provider openai
+sagui browser agent "Open Issues" --domain github.com --provider openai
 ```
 
-`--reasoning-effort` accepts `none`, `low`, `medium`, `high`, `xhigh`, or `max`.
-It defaults to `low` for GPT-5.6 models. The per-step `Reasoning:` line is the
-agent's concise explanation of its chosen actions, not the model's hidden chain of thought.
+OpenAI reads `OPENAI_API_KEY` (or `--api-key`). `--provider pcc` requires Apple's
+managed entitlement in an eligible consuming app/executable; ordinary standalone
+CLI distribution is not assumed to qualify. `--fallback-on-device` opts into a
+local fallback. No cloud fallback is automatic.
+
+The old `--reasoning-effort` option has been removed: the pinned Apple Chat
+Completions adapter does not forward it. Per-step `Reasoning:` output is a short
+user-facing explanation, not hidden chain-of-thought.
+
+See the [macOS 27 migration guide](Sources/SwiftAutoGUI/Documentation.docc/ModelMigration.md)
+for API changes, context limits, provider compatibility, and PCC configuration.
 
 When screen context is enabled, actionable Accessibility elements receive step-local
 identifiers such as `[#12]`. The agent can target these identifiers directly, resolves

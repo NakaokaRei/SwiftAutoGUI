@@ -5,6 +5,29 @@ import Testing
 
 @Suite("Browser session")
 struct BrowserSessionTests {
+    @Test("Canonical digit and function keys map to CDP, unsupported keys fail")
+    func canonicalKeys() throws {
+        #expect(try BrowserSession.mapKey("one").code == "Digit1")
+        #expect(try BrowserSession.mapKey("1").code == "Digit1")
+        #expect(try BrowserSession.mapKey("f12").virtualKeyCode == 123)
+        #expect(try BrowserSession.mapKey("forwarddelete").key == "Delete")
+        #expect(throws: BrowserError.self) { try BrowserSession.mapKey("invented") }
+        #expect(throws: BrowserError.self) { try BrowserSession.mapKey("volumeup") }
+    }
+
+    @Test("Unknown or multiple ordinary shortcut keys never dispatch input")
+    func invalidShortcuts() async throws {
+        for keys in [["command", "invented"], ["command", "a", "b"]] {
+            let transport = MockCDPTransport()
+            let session = makeSession(transport: transport)
+            try await session.start()
+            let page = try await session.observe()
+            let raw = await session.execute(.keyShortcut(keys), against: page)
+            #expect(!raw.succeeded)
+            #expect(await !transport.didSend("Input.dispatchKeyEvent"))
+        }
+    }
+
     @Test("observes numbered semantic elements through CDP")
     func observesElements() async throws {
         let transport = MockCDPTransport()

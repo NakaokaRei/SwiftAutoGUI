@@ -53,8 +53,8 @@ struct SaguiCommandTests {
     func agentDefaultModel() throws {
         let command = try AgentCommand.parse(["Inspect the frontmost app"])
         #expect(command.model == "gpt-5.6-sol")
-        #expect(command.reasoningEffort == nil)
-        #expect(command.effectiveReasoningEffort == "low")
+        #expect(command.provider == .onDevice)
+        #expect(!command.fallbackOnDevice)
     }
 
     @Test("Agent accepts an explicit model override")
@@ -66,26 +66,25 @@ struct SaguiCommandTests {
         #expect(command.model == "gpt-5.6-terra")
     }
 
-    @Test(
-        "Agent accepts every GPT-5.6 reasoning effort",
-        arguments: AgentCommand.ReasoningEffort.allCases
-    )
-    func agentReasoningEffort(effort: AgentCommand.ReasoningEffort) throws {
-        let command = try AgentCommand.parse([
-            "Inspect the frontmost app",
-            "--reasoning-effort", effort.rawValue,
-        ])
-        #expect(command.reasoningEffort == effort)
-        #expect(command.effectiveReasoningEffort == effort.rawValue)
+    @Test("Agent accepts every provider", arguments: AgentCommand.Provider.allCases)
+    func agentProvider(provider: AgentCommand.Provider) throws {
+        let command = try AgentCommand.parse(["Inspect", "--provider", provider.rawValue, "--fallback-on-device"])
+        #expect(command.provider == provider)
+        #expect(command.fallbackOnDevice)
     }
 
-    @Test("Agent rejects an unknown reasoning effort")
-    func agentRejectsUnknownReasoningEffort() {
+    @Test("Removed reasoning option is rejected instead of silently ignored")
+    func removedReasoningOption() {
         #expect(throws: (any Error).self) {
-            try AgentCommand.parse([
-                "Inspect the frontmost app",
-                "--reasoning-effort", "extreme",
-            ])
+            try AgentCommand.parse(["Inspect", "--reasoning-effort", "low"])
+        }
+    }
+
+    @Test("OpenAI requires a nonempty key; local generation does not")
+    func providerCredentials() throws {
+        _ = try AgentCommand.makeModel(provider: .onDevice, apiKey: "", name: "unused")
+        #expect(throws: (any Error).self) {
+            try AgentCommand.makeModel(provider: .openAI, apiKey: "", name: "test")
         }
     }
 

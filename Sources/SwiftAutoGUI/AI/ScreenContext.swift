@@ -505,6 +505,11 @@ extension ScreenContext {
         if let focusedElement {
             let label = focusedElement.label.map { " \"\($0)\"" } ?? ""
             lines.append("Focused element: \(focusedElement.role)\(label)")
+            if let value = focusedElement.value {
+                lines.append("Focused element value: \(String(reflecting: value))")
+            }
+            let frame = focusedElement.frame
+            lines.append("Focused element frame: {\(Int(frame.x)),\(Int(frame.y)) \(Int(frame.width))x\(Int(frame.height))}")
         }
 
         // Visible windows

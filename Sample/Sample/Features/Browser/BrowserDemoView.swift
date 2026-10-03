@@ -139,22 +139,32 @@ struct BrowserDemoView: View {
                 }
             }
 
-            Text("The Agent observes the selected page, asks the OpenAI model for semantic actions, and executes them only through this CDP session.")
+            Text("The Agent observes the selected page, asks the selected model for semantic actions, and executes them only through this CDP session.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 8) {
-                SecureField("OpenAI API Key or OPENAI_API_KEY", text: $viewModel.openAIKey)
-                    .textFieldStyle(.roundedBorder)
-                Picker("Model", selection: $viewModel.openAIModel) {
-                    ForEach(BrowserDemoViewModel.availableModels, id: \.self) { model in
-                        Text(model).tag(model)
-                    }
+            Picker("AI provider", selection: $viewModel.provider) {
+                ForEach(AIProviderChoice.allCases) { provider in
+                    Text(provider.rawValue).tag(provider)
                 }
-                .labelsHidden()
-                .frame(width: 170)
             }
             .disabled(viewModel.isAgentRunning)
+            Text(viewModel.provider.explanation).font(.caption).foregroundStyle(.secondary)
+            if viewModel.provider == .openAI {
+                HStack(spacing: 8) {
+                    SecureField("OpenAI API Key or OPENAI_API_KEY", text: $viewModel.openAIKey)
+                        .textFieldStyle(.roundedBorder)
+                    Picker("Model", selection: $viewModel.openAIModel) {
+                        ForEach(BrowserDemoViewModel.availableModels, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 170)
+                }
+                .disabled(viewModel.isAgentRunning)
+            }
+
 
             HStack(spacing: 8) {
                 TextEditor(text: $viewModel.agentGoal)
@@ -177,7 +187,7 @@ struct BrowserDemoView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.indigo)
-                    .disabled(viewModel.agentGoal.isEmpty || viewModel.openAIKey.isEmpty)
+                    .disabled(viewModel.agentGoal.isEmpty || (viewModel.provider == .openAI && viewModel.openAIKey.isEmpty))
                 }
             }
 

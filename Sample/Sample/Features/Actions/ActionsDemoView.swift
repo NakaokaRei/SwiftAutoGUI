@@ -108,7 +108,7 @@ struct ActionsDemoView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .onChange(of: viewModel.executionLog.count) { _ in
+                    .onChange(of: viewModel.executionLog.count) {
                         withAnimation {
                             proxy.scrollTo(viewModel.executionLog.count - 1, anchor: .bottom)
                         }

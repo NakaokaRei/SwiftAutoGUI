@@ -168,7 +168,7 @@ struct KeyboardLayoutView: View {
                                     : Color.blue.opacity(0.3), lineWidth: viewModel.isTargetFieldFocused ? 2 : 1)
                         )
                         .focused($isTargetFieldFocused)
-                        .onChange(of: viewModel.isTargetFieldFocused) { newValue in
+                        .onChange(of: viewModel.isTargetFieldFocused) { _, newValue in
                             isTargetFieldFocused = newValue
                         }
                 }

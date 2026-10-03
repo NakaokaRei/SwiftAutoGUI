@@ -100,13 +100,13 @@ struct ActionGeneratorTests {
 
         @Test("keyShortcut round-trip")
         func keyShortcutRoundTrip() throws {
-            let action = BasicAction.keyShortcut(keys: ["command", "shift", "a"])
+            let action = BasicAction.keyShortcut(keys: [.command, .shift, .a])
             let roundTripped = try roundTrip(action)
             guard case .keyShortcut(let keys) = roundTripped else {
                 Issue.record("Expected .keyShortcut, got \(roundTripped)")
                 return
             }
-            #expect(keys == ["command", "shift", "a"])
+            #expect(keys == [.command, .shift, .a])
         }
 
         @Test("drag round-trip")
@@ -308,7 +308,7 @@ struct ActionGeneratorTests {
                 Issue.record("Expected .keyShortcut")
                 return
             }
-            #expect(keys == ["command", "c"])
+            #expect(keys == [.command, .c])
         }
 
         @Test("parse drag action")
@@ -423,32 +423,6 @@ struct ActionGeneratorTests {
             }
         }
 
-        @Test("Vision parser supports Tier 1 app-control actions")
-        func visionParserSupportsAppControlActions() {
-            let dictionaries: [[String: Any]] = [
-                ["type": "openURL", "url": "https://example.com"],
-                ["type": "activateApp", "name": "Safari"],
-                ["type": "quitApp", "name": "TextEdit"],
-                ["type": "getFrontmostApp"]
-            ]
-            let actions = dictionaries.compactMap(OpenAIVisionBackend.parseAction)
-            #expect(actions.count == 4)
-
-            guard case .openURL(let url) = actions[0] else {
-                Issue.record("Expected .openURL")
-                return
-            }
-            #expect(url == "https://example.com")
-
-            guard case .activateApp(let activateName) = actions[1],
-                  case .quitApp(let quitName) = actions[2],
-                  case .getFrontmostApp = actions[3] else {
-                Issue.record("Expected all Tier 1 app-control actions")
-                return
-            }
-            #expect(activateName == "Safari")
-            #expect(quitName == "TextEdit")
-        }
     }
 
     // MARK: - BasicAction to Action Conversion Tests
@@ -457,9 +431,9 @@ struct ActionGeneratorTests {
     struct ConversionTests {
 
         @Test("write converts to Action.write")
-        func writeConversion() {
+        func writeConversion() throws {
             let basic = BasicAction.write(text: "test")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .write(let text, _) = action else {
                 Issue.record("Expected Action.write")
                 return
@@ -468,9 +442,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("move converts to Action.move with correct CGPoint")
-        func moveConversion() {
+        func moveConversion() throws {
             let basic = BasicAction.move(x: 100, y: 200)
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .move(let point) = action else {
                 Issue.record("Expected Action.move")
                 return
@@ -480,9 +454,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("keyShortcut with valid keys maps correctly")
-        func keyShortcutValidKeys() {
-            let basic = BasicAction.keyShortcut(keys: ["command", "c"])
-            let action = basic.toAction()
+        func keyShortcutValidKeys() throws {
+            let basic = BasicAction.keyShortcut(keys: [.command, .c])
+            let action = try basic.toAction()
             guard case .keyShortcut(let keys) = action else {
                 Issue.record("Expected Action.keyShortcut")
                 return
@@ -490,21 +464,29 @@ struct ActionGeneratorTests {
             #expect(keys == [.command, .c])
         }
 
-        @Test("keyShortcut with invalid keys falls back to wait(0)")
+        @Test("Unknown key names fail decoding instead of becoming no-op success")
         func keyShortcutInvalidKeys() {
-            let basic = BasicAction.keyShortcut(keys: ["invalidkey123"])
-            let action = basic.toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait(0) for invalid keys")
-                return
+            for keys in ["[\"CMD\",\"SPACE\"]", "[\"command\",\"invalidkey123\"]"] {
+                let json = "{\"type\":\"keyShortcut\",\"keys\":\(keys)}"
+                #expect(throws: (any Error).self) {
+                    try JSONDecoder().decode(BasicAction.self, from: Data(json.utf8))
+                }
             }
-            #expect(duration == 0)
+        }
+
+        @Test("Empty shortcuts fail before posting input")
+        @MainActor
+        func emptyShortcutFails() async {
+            let result = await AgentActionExecutor.execute(.keyShortcut(keys: []), in: nil,
+                screenContextOptions: nil, observationDelay: 0).result
+            #expect(!result.succeeded)
+            #expect(result.method == .none)
         }
 
         @Test("pressButton with bundleID maps to .bundleID scope")
-        func pressButtonWithBundleID() {
+        func pressButtonWithBundleID() throws {
             let basic = BasicAction.pressButton(label: "Save", bundleID: "com.apple.TextEdit")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .pressButton(let label, let app, let exact, let axOnly) = action else {
                 Issue.record("Expected Action.pressButton")
                 return
@@ -520,9 +502,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("pressButton with empty bundleID maps to .frontmost")
-        func pressButtonFrontmost() {
+        func pressButtonFrontmost() throws {
             let basic = BasicAction.pressButton(label: "OK", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .pressButton(_, let app, _, _) = action else {
                 Issue.record("Expected Action.pressButton")
                 return
@@ -534,9 +516,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("setTextField with empty label converts to nil")
-        func setTextFieldEmptyLabel() {
+        func setTextFieldEmptyLabel() throws {
             let basic = BasicAction.setTextField(label: "", value: "hello", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .setTextField(let label, _, let value, _, _) = action else {
                 Issue.record("Expected Action.setTextField")
                 return
@@ -546,9 +528,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("selectMenuItem preserves path and scope")
-        func selectMenuItemConversion() {
+        func selectMenuItemConversion() throws {
             let basic = BasicAction.selectMenuItem(path: ["File", "New"], bundleID: "com.apple.TextEdit")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .selectMenuItem(let path, let app, _) = action else {
                 Issue.record("Expected Action.selectMenuItem")
                 return
@@ -562,9 +544,9 @@ struct ActionGeneratorTests {
         }
 
         @Test("raiseWindow preserves title")
-        func raiseWindowConversion() {
+        func raiseWindowConversion() throws {
             let basic = BasicAction.raiseWindow(title: "Untitled", bundleID: "")
-            let action = basic.toAction()
+            let action = try basic.toAction()
             guard case .raiseWindow(let title, _, _) = action else {
                 Issue.record("Expected Action.raiseWindow")
                 return
@@ -573,8 +555,8 @@ struct ActionGeneratorTests {
         }
 
         @Test("openURL converts to native Action.openURL")
-        func openURLConversion() {
-            let action = BasicAction.openURL(url: "https://example.com/path?q=swift").toAction()
+        func openURLConversion() throws {
+            let action = try BasicAction.openURL(url: "https://example.com/path?q=swift").toAction()
             guard case .openURL(let url) = action else {
                 Issue.record("Expected Action.openURL")
                 return
@@ -583,18 +565,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("openURL rejects non-HTTP schemes")
-        func openURLRejectsUnsafeScheme() {
-            let action = BasicAction.openURL(url: "javascript:alert(1)").toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait for invalid URL")
-                return
-            }
-            #expect(duration == 0)
+        func openURLRejectsUnsafeScheme() throws {
+            #expect(throws: ActionGeneratorError.self) { try BasicAction.openURL(url: "javascript:alert(1)").toAction() }
         }
 
         @Test("activateApp converts to native Action.activateApp")
-        func activateAppConversion() {
-            let action = BasicAction.activateApp(name: "Safari").toAction()
+        func activateAppConversion() throws {
+            let action = try BasicAction.activateApp(name: "Safari").toAction()
             guard case .activateApp(let name) = action else {
                 Issue.record("Expected Action.activateApp")
                 return
@@ -603,8 +580,8 @@ struct ActionGeneratorTests {
         }
 
         @Test("quitApp converts to native Action.quitApp")
-        func quitAppConversion() {
-            let action = BasicAction.quitApp(name: "Google Chrome").toAction()
+        func quitAppConversion() throws {
+            let action = try BasicAction.quitApp(name: "Google Chrome").toAction()
             guard case .quitApp(let name) = action else {
                 Issue.record("Expected Action.quitApp")
                 return
@@ -613,13 +590,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("app names are passed as data without AppleScript interpolation")
-        func appNamesRemainData() {
+        func appNamesRemainData() throws {
             let name = #"Example "App" & Tools"#
 
             guard case .activateApp(let activatedName) =
-                    BasicAction.activateApp(name: name).toAction(),
+                    try BasicAction.activateApp(name: name).toAction(),
                   case .quitApp(let quitName) =
-                    BasicAction.quitApp(name: name).toAction() else {
+                    try BasicAction.quitApp(name: name).toAction() else {
                 Issue.record("Expected native app-control actions")
                 return
             }
@@ -628,18 +605,13 @@ struct ActionGeneratorTests {
         }
 
         @Test("app actions reject path traversal")
-        func appActionsRejectPathTraversal() {
-            let action = BasicAction.activateApp(name: "../Calculator").toAction()
-            guard case .wait(let duration) = action else {
-                Issue.record("Expected Action.wait for an invalid app path")
-                return
-            }
-            #expect(duration == 0)
+        func appActionsRejectPathTraversal() throws {
+            #expect(throws: ActionGeneratorError.self) { try BasicAction.activateApp(name: "../Calculator").toAction() }
         }
 
         @Test("getFrontmostApp converts to native action")
-        func getFrontmostAppConversion() {
-            let action = BasicAction.getFrontmostApp.toAction()
+        func getFrontmostAppConversion() throws {
+            let action = try BasicAction.getFrontmostApp.toAction()
             guard case .getFrontmostApp = action else {
                 Issue.record("Expected Action.getFrontmostApp")
                 return
@@ -651,56 +623,6 @@ struct ActionGeneratorTests {
 
     @Suite("Backend and API")
     struct BackendTests {
-
-        @Test("Vision backend defaults to the current flagship model")
-        func visionBackendDefaults() {
-            #expect(OpenAIVisionBackend.defaultModel == "gpt-5.6-sol")
-            #expect(OpenAIVisionBackend.defaultReasoningEffort == "low")
-        }
-
-        @Test("Text backend defaults to the efficient model")
-        func textBackendDefaults() {
-            #expect(OpenAIBackend.defaultModel == "gpt-5.6-luna")
-            #expect(OpenAIBackend.defaultReasoningEffort == "none")
-        }
-
-        @Test("OpenAIBackend is always available")
-        func openAIBackendAvailable() {
-            let backend = OpenAIBackend(apiKey: "test-key")
-            #expect(backend.isAvailable)
-            #expect(backend.unavailableReason == nil)
-        }
-
-        @Test("ActionGenerator with OpenAI key creates working instance")
-        func generatorWithOpenAIKey() {
-            let generator = ActionGenerator(openAIKey: "test-key", model: "gpt-4o")
-            #expect(generator.backend.isAvailable)
-        }
-
-        @Test("ActionGenerator with custom backend")
-        func generatorWithCustomBackend() {
-            let backend = OpenAIBackend(apiKey: "test-key")
-            let generator = ActionGenerator(backend: backend)
-            #expect(generator.backend.isAvailable)
-        }
-
-        @Test("OpenAI action schema includes Tier 1 app-control fields")
-        func actionSchemaIncludesAppControlFields() {
-            let schema = OpenAIVisionBackend.actionItemSchemaDict
-            let properties = schema["properties"] as? [String: Any]
-            let required = schema["required"] as? [String]
-            let typeProperty = properties?["type"] as? [String: Any]
-            let actionTypes = typeProperty?["enum"] as? [String]
-
-            #expect(properties?["url"] != nil)
-            #expect(properties?["name"] != nil)
-            #expect(required?.contains("url") == true)
-            #expect(required?.contains("name") == true)
-            #expect(actionTypes?.contains("openURL") == true)
-            #expect(actionTypes?.contains("activateApp") == true)
-            #expect(actionTypes?.contains("quitApp") == true)
-            #expect(actionTypes?.contains("getFrontmostApp") == true)
-        }
 
         @Test("semantic element actions round-trip and parse")
         func semanticElementActions() throws {
@@ -716,26 +638,6 @@ struct ActionGeneratorTests {
             #expect(valueID == 13)
             #expect(value == "Swift")
 
-            let parsedPress = OpenAIVisionBackend.parseAction(["type": "pressElement", "elementID": 21])
-            guard case .pressElement(let parsedID) = parsedPress else {
-                Issue.record("Expected parsed pressElement")
-                return
-            }
-            #expect(parsedID == 21)
-        }
-
-        @Test("OpenAI schema exposes semantic element fields")
-        func schemaIncludesSemanticElements() {
-            let schema = OpenAIVisionBackend.actionItemSchemaDict
-            let properties = schema["properties"] as? [String: Any]
-            let required = schema["required"] as? [String]
-            let typeProperty = properties?["type"] as? [String: Any]
-            let actionTypes = typeProperty?["enum"] as? [String]
-
-            #expect(properties?["elementID"] != nil)
-            #expect(required?.contains("elementID") == true)
-            #expect(actionTypes?.contains("pressElement") == true)
-            #expect(actionTypes?.contains("setElementValue") == true)
         }
 
         @Test("semantic action without an observation fails safely")
