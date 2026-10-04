@@ -1,13 +1,13 @@
 {
-  "originHash" : "ad7ff1b361d4925251e10242e80e61be24e83348402c2d5e0b78e5ecdf2c4607",
+  "originHash" : "8c8cce722ef0ef36b8d02a3a288081a81c2df4732a9f8705c3ff441804d0003c",
   "pins" : [
     {
       "identity" : "foundation-models-utilities",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/foundation-models-utilities",
       "state" : {
-        "revision" : "2aa12937e30d310687f40fc470ea35495816c9a4",
-        "version" : "1.0.0-beta5"
+        "revision" : "cc3820def1fe016bc6cd49d958cd2f2a29be76a8",
+        "version" : "1.1.0-beta1"
       }
     },
     {
