@@ -11,8 +11,10 @@
     ],
   },
   "packages": [
-    { "kind": "local", "path": "." },
     {
+      "kind": "local",
+      "path": ".",
+    }, {
       "kind": "local",
       "path": "..",
     },
@@ -26,7 +28,6 @@
         { "path": "SampleApp.swift", "target-membership": [ "Sample/compile-sources" ] },
         { "path": "ContentView.swift", "target-membership": [ "Sample/compile-sources" ] },
         { "kind": "folder", "path": "Common", "target-membership": [ "Sample" ] },
-        { "kind": "folder", "path": "Features", "target-membership": [ "Sample" ] },
         { "path": "Assets.xcassets", "target-membership": [ "Sample/resources" ] },
         { "path": "Sample.entitlements" },
         {
@@ -58,8 +59,71 @@
         "resources",
       ],
       "package-product-members": [
-        { "package": ".", "product-name": "AgentDemoFeature", "build-phase": { "build-phase": "frameworks" } },
         {
+          "package": ".",
+          "product-name": "AIGenerationDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "ActionsDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "AgentDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "AppleScriptFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "BrowserDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "DialogDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "ImageRecognitionFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "InputObserverFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "KeyboardDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "KeyboardLayoutFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "MouseControlFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "PixelDetectionFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "ScreenContextFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "ScreenshotFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "ScrollingDemoFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": ".",
+          "product-name": "TextTypingFeature",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
           "package": "..",
           "product-name": "SwiftAutoGUI",
           "build-phase": { "build-phase": "frameworks" },
