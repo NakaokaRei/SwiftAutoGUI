@@ -196,12 +196,16 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      - name: Test sample features
+        run: swift test --package-path Sample
+
       - name: Build sample app
         run: |
           set -o pipefail
           cd Sample
           xcodebuild -project Sample.xcodeproj \
             -scheme Sample \
+            -skipMacroValidation \
             -destination 'platform=macOS' \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \

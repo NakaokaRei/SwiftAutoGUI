@@ -1,3 +1,4 @@
+import AgentDemoFeature
 import SwiftAutoGUIBrowser
 import SwiftUI
 

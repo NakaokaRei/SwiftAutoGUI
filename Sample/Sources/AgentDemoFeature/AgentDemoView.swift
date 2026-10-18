@@ -3,15 +3,17 @@
 //  Sample
 //
 
+import ComposableArchitecture
 import SwiftUI
 import SwiftAutoGUI
 
-struct AgentDemoView: View {
-    @State private var viewModel = AgentDemoViewModel()
+public struct AgentDemoView: View {
+    public init() {}
+    @State private var store = Store(initialState: AgentDemoFeature.State()) { AgentDemoFeature() }
     @State private var showSettings = true
     @Environment(\.colorScheme) var colorScheme
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             HStack {
@@ -23,7 +25,7 @@ struct AgentDemoView: View {
                     .fontWeight(.bold)
                 Spacer()
 
-                if !viewModel.steps.isEmpty || viewModel.isRunning {
+                if !store.steps.isEmpty || store.isRunning {
                     statusBadge
                 }
             }
@@ -41,7 +43,7 @@ struct AgentDemoView: View {
             goalAndControls
 
             // Error
-            if let error = viewModel.error {
+            if let error = store.error {
                 HStack(alignment: .top) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
@@ -56,24 +58,25 @@ struct AgentDemoView: View {
             }
 
             // Steps table
-            if !viewModel.steps.isEmpty {
+            if !store.steps.isEmpty {
                 stepsTable
             }
         }
+        .onDisappear { store.send(.stop) }
     }
 
     // MARK: - Status Badge
 
     private var statusBadge: some View {
         HStack(spacing: 6) {
-            if viewModel.isRunning {
+            if store.isRunning {
                 ProgressView()
                     .scaleEffect(0.6)
                     .frame(width: 12, height: 12)
-                Text("Step \(viewModel.steps.count + 1)/\(viewModel.maxIterations)")
+                Text("Step \(store.steps.count + 1)/\(store.maxIterations)")
                     .font(.caption2)
                     .fontWeight(.medium)
-            } else if let completed = viewModel.completed {
+            } else if let completed = store.completed {
                 Image(systemName: completed ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                     .foregroundColor(completed ? .green : .orange)
                     .font(.caption)
@@ -90,20 +93,21 @@ struct AgentDemoView: View {
     // MARK: - Settings
 
     private var settingsContent: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("AI provider", selection: $viewModel.provider) {
+        @Bindable var store = store
+        return VStack(alignment: .leading, spacing: 8) {
+            Picker("AI provider", selection: $store.provider) {
                 ForEach(AIProviderChoice.allCases) { provider in
                     Text(provider.rawValue).tag(provider)
                 }
             }
-            Text(viewModel.provider.explanation).font(.caption).foregroundStyle(.secondary)
-            if viewModel.provider == .openAI {
+            Text(store.provider.explanation).font(.caption).foregroundStyle(.secondary)
+            if store.provider == .openAI {
                 HStack(spacing: 12) {
-                    SecureField("OpenAI API Key", text: $viewModel.openAIKey)
+                    SecureField("OpenAI API Key", text: $store.openAIKey)
                         .textFieldStyle(.roundedBorder)
 
-                    Picker("Model", selection: $viewModel.openAIModel) {
-                        ForEach(AgentDemoViewModel.availableModels, id: \.self) { model in
+                    Picker("Model", selection: $store.openAIModel) {
+                        ForEach(AgentDemoFeature.availableModels, id: \.self) { model in
                             Text(model).tag(model)
                         }
                     }
@@ -117,7 +121,7 @@ struct AgentDemoView: View {
                     Text("Max iterations:")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    TextField("", value: $viewModel.maxIterations, format: .number)
+                    TextField("", value: $store.maxIterations, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 50)
                 }
@@ -125,14 +129,14 @@ struct AgentDemoView: View {
                     Text("Delay:")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    TextField("", value: $viewModel.delayBetweenSteps, format: .number)
+                    TextField("", value: $store.delayBetweenSteps, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 50)
                     Text("s")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                Toggle(isOn: $viewModel.useScreenContext) {
+                Toggle(isOn: $store.useScreenContext) {
                     Text("Screen context")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -151,10 +155,11 @@ struct AgentDemoView: View {
     // MARK: - Goal + Controls
 
     private var goalAndControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        @Bindable var store = store
+        return VStack(alignment: .leading, spacing: 10) {
             // Goal input row
             HStack(spacing: 8) {
-                TextEditor(text: $viewModel.goal)
+                TextEditor(text: $store.goal)
                     .frame(height: 44)
                     .padding(6)
                     .background(
@@ -166,8 +171,8 @@ struct AgentDemoView: View {
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
 
-                if viewModel.isRunning {
-                    Button(action: { viewModel.stopAgent() }) {
+                if store.isRunning {
+                    Button(action: { store.send(.stop) }) {
                         Image(systemName: "stop.fill")
                             .frame(width: 44, height: 44)
                             .background(RoundedRectangle(cornerRadius: 8).fill(Color.red))
@@ -177,25 +182,25 @@ struct AgentDemoView: View {
                 } else {
                     Button(action: {
                         showSettings = false
-                        viewModel.startAgent()
+                        store.send(.start)
                     }) {
                         Image(systemName: "play.fill")
                             .frame(width: 44, height: 44)
                             .background(RoundedRectangle(cornerRadius: 8).fill(
-                                viewModel.goal.isEmpty || (viewModel.provider == .openAI && viewModel.openAIKey.isEmpty) ? Color.gray : Color.indigo
+                                store.goal.isEmpty || (store.provider == .openAI && store.openAIKey.isEmpty) ? Color.gray : Color.indigo
                             ))
                             .foregroundColor(.white)
                     }
                     .buttonStyle(.plain)
-                    .disabled(viewModel.goal.isEmpty || (viewModel.provider == .openAI && viewModel.openAIKey.isEmpty))
+                    .disabled(store.goal.isEmpty || (store.provider == .openAI && store.openAIKey.isEmpty))
                 }
             }
 
             // Sample goals
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(viewModel.sampleGoals, id: \.self) { sample in
-                        Button(action: { viewModel.useSampleGoal(sample) }) {
+                    ForEach(AgentDemoFeature.sampleGoals, id: \.self) { sample in
+                        Button(action: { store.send(.sampleGoalSelected(sample)) }) {
                             Text(sample)
                                 .font(.caption2)
                                 .padding(.horizontal, 10)
@@ -216,12 +221,12 @@ struct AgentDemoView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Table header
             HStack {
-                Text("Steps (\(viewModel.steps.count))")
+                Text("Steps (\(store.steps.count))")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 Spacer()
-                if !viewModel.isRunning {
-                    Button("Clear") { viewModel.clearResults() }
+                if !store.isRunning {
+                    Button("Clear") { store.send(.clear) }
                         .font(.caption)
                         .buttonStyle(.plain)
                         .foregroundColor(.red)
@@ -250,7 +255,7 @@ struct AgentDemoView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(viewModel.steps) { step in
+                        ForEach(store.steps) { step in
                             stepRow(step)
                                 .id(step.id)
                             Divider()
@@ -258,8 +263,8 @@ struct AgentDemoView: View {
                     }
                 }
                 .frame(maxHeight: 240)
-                .onChange(of: viewModel.steps.count) {
-                    if let last = viewModel.steps.last {
+                .onChange(of: store.steps.count) {
+                    if let last = store.steps.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
@@ -278,7 +283,7 @@ struct AgentDemoView: View {
         }
     }
 
-    private func stepRow(_ step: AgentDemoViewModel.StepDisplay) -> some View {
+    private func stepRow(_ step: AgentDemoFeature.StepDisplay) -> some View {
         HStack(spacing: 0) {
             Text("\(step.number)")
                 .font(.caption2)
