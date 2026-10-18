@@ -11,6 +11,7 @@
     ],
   },
   "packages": [
+    { "kind": "local", "path": "." },
     {
       "kind": "local",
       "path": "..",
@@ -57,6 +58,7 @@
         "resources",
       ],
       "package-product-members": [
+        { "package": ".", "product-name": "AgentDemoFeature", "build-phase": { "build-phase": "frameworks" } },
         {
           "package": "..",
           "product-name": "SwiftAutoGUI",
