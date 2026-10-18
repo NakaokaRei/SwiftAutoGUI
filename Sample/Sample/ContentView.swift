@@ -1,4 +1,19 @@
+import AIGenerationDemoFeature
+import ActionsDemoFeature
 import AgentDemoFeature
+import AppleScriptFeature
+import BrowserDemoFeature
+import DialogDemoFeature
+import ImageRecognitionFeature
+import InputObserverFeature
+import KeyboardDemoFeature
+import KeyboardLayoutFeature
+import MouseControlFeature
+import PixelDetectionFeature
+import ScreenContextFeature
+import ScreenshotFeature
+import ScrollingDemoFeature
+import TextTypingFeature
 //
 //  ContentView.swift
 //  Sample

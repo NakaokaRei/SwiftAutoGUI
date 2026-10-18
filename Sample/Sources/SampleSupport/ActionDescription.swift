@@ -1,0 +1,92 @@
+import SwiftAutoGUI
+
+public func describeAction(_ action: AutomationAction) -> String {
+    switch action {
+    case .keyDown(let key):
+        return "Key Down: \(key)"
+    case .keyUp(let key):
+        return "Key Up: \(key)"
+    case .write(let text, let interval):
+        return "Write: \"\(text)\" (interval: \(interval)s)"
+    case .keyShortcut(let keys):
+        return "Shortcut: \(keys.map { "\($0)" }.joined(separator: "+"))"
+    case .move(let point):
+        return "Move to: (\(Int(point.x)), \(Int(point.y)))"
+    case .moveSmooth(let point, let duration, let tweening, _):
+        return "Smooth move to: (\(Int(point.x)), \(Int(point.y))) in \(duration)s (\(tweening))"
+    case .moveMouse(let dx, let dy):
+        return "Move by: (dx: \(dx), dy: \(dy))"
+    case .leftClick:
+        return "Left Click"
+    case .rightClick:
+        return "Right Click"
+    case .doubleClick(let button):
+        return "Double Click (\(button == .left ? "left" : "right"))"
+    case .doubleClickAt(let position, let button):
+        return
+            "Double Click at (\(Int(position.x)), \(Int(position.y))) (\(button == .left ? "left" : "right"))"
+    case .tripleClick(let button):
+        return "Triple Click (\(button == .left ? "left" : "right"))"
+    case .tripleClickAt(let position, let button):
+        return
+            "Triple Click at (\(Int(position.x)), \(Int(position.y))) (\(button == .left ? "left" : "right"))"
+    case .drag(let from, let to):
+        return "Drag from (\(Int(from.x)), \(Int(from.y))) to (\(Int(to.x)), \(Int(to.y)))"
+    case .vscroll(let clicks):
+        return "Vertical scroll: \(clicks) clicks"
+    case .hscroll(let clicks):
+        return "Horizontal scroll: \(clicks) clicks"
+    case .smoothVScroll(let clicks, let duration, let tweening, _):
+        return "Smooth V-scroll: \(clicks) clicks in \(duration)s (\(tweening))"
+    case .smoothHScroll(let clicks, let duration, let tweening, _):
+        return "Smooth H-scroll: \(clicks) clicks in \(duration)s (\(tweening))"
+    case .screenshot:
+        return "Take screenshot"
+    case .screenshotRegion(let rect):
+        return "Screenshot region: \(rect)"
+    case .screenshotToFile(let filename, _):
+        return "Screenshot to file: \(filename)"
+    case .getScreenSize:
+        return "Get screen size"
+    case .getPixel(let x, let y):
+        return "Get pixel at (\(x), \(y))"
+    case .locateOnScreen(let path, _, _, _):
+        return "Locate image: \(path)"
+    case .locateCenterOnScreen(let path, _, _, _):
+        return "Locate image center: \(path)"
+    case .locateAllOnScreen(let path, _, _, _):
+        return "Locate all images: \(path)"
+    case .alert(let message, _, _):
+        return "Alert: \(message)"
+    case .confirm(let message, _, _):
+        return "Confirm: \(message)"
+    case .prompt(let message, _, _, _):
+        return "Prompt: \(message)"
+    case .password(let message, _, _, _):
+        return "Password: \(message)"
+    case .executeAppleScript(let script):
+        return "Execute AppleScript: \(script.prefix(30))..."
+    case .executeAppleScriptFile(let path):
+        return "Execute AppleScript file: \(path)"
+    case .openURL(let url):
+        return "Open URL: \(url.absoluteString)"
+    case .activateApp(let name):
+        return "Activate app: \(name)"
+    case .quitApp(let name):
+        return "Quit app: \(name)"
+    case .getFrontmostApp:
+        return "Get frontmost app"
+    case .pressButton(let label, _, _, _):
+        return "Press button: \"\(label)\""
+    case .setTextField(let label, _, let value, _, _):
+        return "Set text field \(label.map { "\"\($0)\"" } ?? "(role)") = \"\(value)\""
+    case .selectMenuItem(let path, _, _):
+        return "Select menu item: \(path.joined(separator: " > "))"
+    case .raiseWindow(let title, _, _):
+        return "Raise window: \"\(title)\""
+    case .wait(let duration):
+        return "Wait \(duration)s"
+    case .sequence(let actions):
+        return "Sequence with \(actions.count) actions"
+    }
+}

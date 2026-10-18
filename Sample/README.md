@@ -2,31 +2,72 @@
 
 Open `Sample.xcodeproj` and run the Sample scheme on macOS 27 or later.
 When Xcode asks to trust package macros, review and enable the TCA-related macros
-before building.
+before building. CI uses `-skipMacroValidation` for its noninteractive build;
+interactive Xcode builds retain their normal trust prompts.
 
-The Agent demo uses The Composable Architecture (TCA), pinned in this directory's
-`Package.swift`. The other demos continue to use their existing view models.
-The root SwiftAutoGUI package does not depend on TCA.
+## Structure
 
-## Agent demo
+Every demo screen is a separate TCA feature module in the Sample-only Swift
+package. The root SwiftAutoGUI library has no TCA dependency.
 
-`Sources/AgentDemoFeature` contains the view, reducer, and live dependency:
+```text
+Sample/
+  Sample/                         App entry point, tab selection, common UI, assets
+  Sources/
+    AgentDemoFeature/
+    BrowserDemoFeature/
+    AIGenerationDemoFeature/
+    ActionsDemoFeature/
+    AppleScriptFeature/
+    DialogDemoFeature/
+    ImageRecognitionFeature/
+    InputObserverFeature/
+    KeyboardDemoFeature/
+    KeyboardLayoutFeature/
+    MouseControlFeature/
+    PixelDetectionFeature/
+    ScreenContextFeature/
+    ScreenshotFeature/
+    ScrollingDemoFeature/
+    TextTypingFeature/
+    SampleSupport/                Shared provider, automation/file clients, descriptions
+  Tests/
+    AgentDemoFeatureTests/
+    SampleFeatureTests/
+```
 
-- `AgentDemoFeature` owns input settings, progress, results, and run identity.
-- `AgentClient` adapts `SwiftAutoGUI.Agent` callbacks into an ordered async stream.
-  Terminating the stream cancels the underlying task. Cancellation is cooperative;
-  an already executing system action cannot be undone.
-- The view sends actions and binds fields to the store. Leaving the screen stops
-  its run. A run uses the settings captured when Start was pressed.
-- `AIProviderChoice` is shared with the Browser demo.
+Each feature owns its view, State, Action, and Reducer. Views send actions and
+bind controls to their store. View-local presentation state such as focus and
+expanded sections stays in SwiftUI. `ContentView` composes the public feature
+views and owns tab selection; there is no application-wide root store.
 
-Run the feature tests with:
+## Effects and lifetimes
+
+- `AutomationClient` wraps the library's GUI actions. AppKit values are converted
+  to image data and color components before entering reducer state.
+- `SampleFiles` handles screenshot export and test-image rendering.
+- `AgentClient` and `BrowserClient` bridge agent callbacks into ordered streams.
+  Terminating a stream cancels its producer task. Run IDs reject stale results.
+- `BrowserClient` owns sessions outside reducer state. Disconnecting or leaving
+  the screen cancels work and closes the connection. Its domain allowlist and
+  download-denial policy apply to both manual actions and agent execution.
+- `GenerationClient` keeps executable generated actions on MainActor because the
+  library's Action type may contain non-Sendable easing closures. State exposes
+  immutable action descriptions; execution uses the captured plan.
+- `InputMonitorClient` removes its AppKit monitor when observation ends and
+  restores each window's mouse-movement setting.
+- `ScreenContextFeature` owns the auto-refresh effect and uses an injectable
+  clock. Leaving a screen cancels its effects and clears busy flags.
+
+Long-running operations capture their input settings at start. Cancellation is
+cooperative and cannot undo a system action already in progress.
+
+## Tests
 
 ```sh
 swift test --package-path Sample
 ```
 
-Tests replace `AgentClient`; they do not call a model or generate mouse/keyboard
-input. CI runs these tests before building the Sample app. The noninteractive
-CI build uses `-skipMacroValidation` for the package macros; interactive Xcode
-builds retain their normal trust prompts.
+Tests replace clients and clocks. They do not call a model, connect to a browser,
+open dialogs, save files, or generate real mouse/keyboard input. CI runs both
+feature test targets before building the Sample app.
